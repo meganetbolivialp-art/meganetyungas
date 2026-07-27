@@ -303,6 +303,13 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
   });
 }
 
+// Cache de estado del ping por router — evita parpadeo de UI y dedupe concurrente.
+type PingResult = { ok: true; latency_ms: number; cached?: true; stale?: true };
+type PingCacheEntry = { ok: boolean; latency_ms: number; at: number; inflight?: Promise<PingResult> };
+const pingCache = new Map<string, PingCacheEntry>();
+
+
+
 
 // ---------- simulation fallback ----------
 
