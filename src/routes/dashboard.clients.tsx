@@ -102,6 +102,8 @@ function ClientsPage() {
   const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
   const clearFilters = () => { setFIp(""); setFPppoe(""); setFPlan("all"); setFRouter("all"); setFCity(""); setFDebt("all"); setFBillDay(""); setQ(""); setStatusFilter("all"); setOnlineFilter("all"); };
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleExpanded = (id: string) => setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
