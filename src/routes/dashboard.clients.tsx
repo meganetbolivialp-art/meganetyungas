@@ -263,6 +263,13 @@ function ClientsPage() {
   };
 
 
+  const getClientOnlineStatus = (r: Client): "online" | "offline" | "unknown" => {
+    const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
+    if (!users.length) return "unknown";
+    const anyOnline = users.some((u: string) => onlineStatus[u] != null);
+    return anyOnline ? "online" : "offline";
+  };
+
   const filtered = useMemo(() => rows.filter(r => {
     const ql = q.toLowerCase();
     const matchesQ = !q || r.full_name.toLowerCase().includes(ql) ||
@@ -285,8 +292,10 @@ function ClientsPage() {
       || (fDebt === "promise" && hasPromise)
       || (fDebt === "vip" && (r as any).dont_cut === true);
     const matchesBillDay = !fBillDay || String((r as any).billing_day ?? "") === fBillDay;
-    return matchesQ && matchesStatus && matchesIp && matchesPppoe && matchesPlan && matchesRouter && matchesCity && matchesDebt && matchesBillDay;
-  }), [rows, q, statusFilter, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay]);
+    const connStatus = getClientOnlineStatus(r);
+    const matchesOnline = onlineFilter === "all" || onlineFilter === connStatus;
+    return matchesQ && matchesStatus && matchesIp && matchesPppoe && matchesPlan && matchesRouter && matchesCity && matchesDebt && matchesBillDay && matchesOnline;
+  }), [rows, q, statusFilter, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, onlineFilter, onlineStatus]);
   const [sortKey, setSortKey] = useState<"id" | "name" | "plan" | "ip" | "status" | "balance" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const toggleSort = (k: typeof sortKey) => {
