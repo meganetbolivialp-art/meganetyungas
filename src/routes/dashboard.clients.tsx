@@ -749,20 +749,28 @@ function ClientsPage() {
                 ? { icon: WifiOff, cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", label: "Desconectado" }
                 : { icon: null, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200", label: "—" };
               const StatusIcon = statusBadge.icon;
+              const isExp = expanded.has(r.id);
               return (
-              <tr key={r.id} className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""}`}>
+              <>
+              <tr key={r.id} className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""} ${isExp ? "!bg-sky-50" : ""}`}>
                 <td className="px-2 py-1 text-center relative">
                   <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${stripe}`} />
                   <input type="checkbox" className="accent-primary" checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} disabled={busy} />
                 </td>
                 <td className="px-1 py-1 text-center">
-                  <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white transition" title="Ver detalle">
-                    <Plus className="w-3 h-3" strokeWidth={2.75} />
-                  </Link>
+                  <button
+                    onClick={() => toggleExpanded(r.id)}
+                    className={`inline-flex items-center justify-center w-5 h-5 rounded-full transition ${isExp ? "bg-primary text-white" : "bg-primary/10 text-primary hover:bg-primary hover:text-white"}`}
+                    title={isExp ? "Ocultar detalle" : "Ver detalle rápido"}
+                  >
+                    {isExp ? <Minus className="w-3 h-3" strokeWidth={2.75} /> : <Plus className="w-3 h-3" strokeWidth={2.75} />}
+                  </button>
                 </td>
                 <td className="px-2 py-1 text-slate-500 font-mono text-[11px] tabular-nums">{String((curPage - 1) * pageSize + i + 1).padStart(6, "0")}</td>
                 <td className="px-2 py-1">
-                  <div className="font-semibold uppercase text-slate-800 truncate leading-tight text-[12.5px]">{r.full_name}</div>
+                  <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="font-semibold uppercase text-slate-800 hover:text-primary hover:underline truncate leading-tight text-[12.5px] block" title="Abrir ficha completa">
+                    {r.full_name}
+                  </Link>
                 </td>
                 <td className="px-2 py-1 text-[11px] text-center">
                   <span
@@ -795,10 +803,55 @@ function ClientsPage() {
                     {st !== "cancelled" && (
                       <button disabled={busy} onClick={() => cancelClient(r.id, r.full_name)} className="w-6 h-6 rounded inline-flex items-center justify-center text-slate-600 hover:bg-slate-600 hover:text-white disabled:opacity-40 transition" title="Retirar"><UserX className="w-3.5 h-3.5" strokeWidth={2} /></button>
                     )}
-                    <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="w-6 h-6 rounded inline-flex items-center justify-center text-slate-600 hover:bg-slate-700 hover:text-white transition" title="Herramientas"><Wrench className="w-3.5 h-3.5" strokeWidth={2} /></Link>
+                    <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="w-6 h-6 rounded inline-flex items-center justify-center text-slate-600 hover:bg-slate-700 hover:text-white transition" title="Ficha completa"><ExternalLink className="w-3.5 h-3.5" strokeWidth={2} /></Link>
                   </div>
                 </td>
               </tr>
+              {isExp && (
+                <tr className="bg-gradient-to-b from-sky-50/80 to-white border-b-2 border-primary/30">
+                  <td colSpan={9} className="px-4 py-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[12px]">
+                      <div className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold flex items-center gap-1"><User className="w-3 h-3" /> Contacto</div>
+                        <div className="flex items-center gap-1 text-slate-700"><Phone className="w-3 h-3 text-slate-400" /> {r.phone || "—"}</div>
+                        <div className="flex items-center gap-1 text-slate-700 truncate"><Mail className="w-3 h-3 text-slate-400" /> {r.email || "—"}</div>
+                        <div className="flex items-center gap-1 text-slate-700"><CreditCard className="w-3 h-3 text-slate-400" /> {r.document || "—"}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold flex items-center gap-1"><MapPin className="w-3 h-3" /> Ubicación</div>
+                        <div className="text-slate-700 truncate">{r.address || "—"}</div>
+                        <div className="text-slate-500 text-[11px]">{r.city || ""} {r.zone ? `· ${r.zone}` : ""}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold flex items-center gap-1"><Wifi className="w-3 h-3" /> Servicio</div>
+                        <div className="text-slate-700 font-medium">{svc?.plans?.name ?? "Sin plan"}</div>
+                        <div className="text-slate-500 text-[11px]">{svc?.pppoe_user ? `PPPoE: ${svc.pppoe_user}` : "Sin PPPoE"}</div>
+                        <div className="text-slate-500 text-[11px] font-mono">{ip}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-500 font-semibold flex items-center gap-1"><DollarSign className="w-3 h-3" /> Cuenta</div>
+                        <div className={`text-[13px] font-bold ${bal > 0 ? "text-rose-600" : bal < 0 ? "text-emerald-600" : "text-slate-500"}`}>Bs {bal.toFixed(2)}</div>
+                        <div className="text-slate-500 text-[11px]">Corte día {r.billing_day ?? "—"}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+                      <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-white text-[11px] font-semibold hover:bg-primary/90 transition">
+                        <ExternalLink className="w-3 h-3" /> Abrir ficha completa
+                      </Link>
+                      <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} search={{ tab: "servicios" } as any} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 text-[11px] font-semibold hover:bg-slate-100 transition">
+                        <Wifi className="w-3 h-3" /> Servicios
+                      </Link>
+                      <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} search={{ tab: "facturas" } as any} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 text-[11px] font-semibold hover:bg-slate-100 transition">
+                        <DollarSign className="w-3 h-3" /> Facturas
+                      </Link>
+                      <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} search={{ tab: "mensajes" } as any} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-300 text-slate-700 text-[11px] font-semibold hover:bg-slate-100 transition">
+                        <Send className="w-3 h-3" /> Mensajes
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </>
               );
             })}
           </tbody>
