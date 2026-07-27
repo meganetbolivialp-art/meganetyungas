@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck } from "lucide-react";
+import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminLayout } from "@/components/admin-layout";
 import { provisionNewClient, suspendService, reactivateService, getNextAvailableIp, listRouterPools, poolIpUsage, deleteClientCascade } from "@/lib/isp.functions";
-import { listClientsData } from "@/lib/clients.functions";
+import { listClientsData, getClientsOnlineStatus } from "@/lib/clients.functions";
 import { listCutoffPolicies, type CutoffPolicy } from "@/lib/cutoff-policies.functions";
 import { toast } from "sonner";
 const LeafletPicker = lazy(() => import("@/components/leaflet-picker").then((m) => ({ default: m.LeafletPicker })));
