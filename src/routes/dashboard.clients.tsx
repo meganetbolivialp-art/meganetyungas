@@ -646,11 +646,14 @@ function ClientsPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Cargando...</td></tr>}
-            {!loading && paged.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Sin resultados</td></tr>}
+            {loading && <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">Cargando...</td></tr>}
+            {!loading && paged.length === 0 && <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">Sin resultados</td></tr>}
             {paged.map((r, i) => {
               const busy = busyIds.has(r.id);
               const st = r.status;
+              const connStatus = getClientOnlineStatus(r);
+              const onlinePppoe = r.services?.find((s: any) => onlineStatus[s.pppoe_user]);
+              const activeInfo = connStatus === "online" && onlinePppoe ? onlineStatus[onlinePppoe.pppoe_user] : null;
               const zebra = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
               const rowTint = st === "suspended" ? "!bg-amber-50/70"
                 : st === "cancelled" ? "!bg-rose-50/60"
@@ -664,6 +667,12 @@ function ClientsPage() {
               const routerName = routerObj?.name ?? "—";
               const ip = svc?.ip_address ?? "—";
               const bal = Number(r.balance ?? 0);
+              const statusBadge = connStatus === "online"
+                ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
+                : connStatus === "offline"
+                ? { icon: WifiOff, cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", label: "Desconectado" }
+                : { icon: null, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200", label: "—" };
+              const StatusIcon = statusBadge.icon;
               return (
               <tr key={r.id} className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""}`}>
                 <td className="px-2 py-1 text-center relative">
@@ -678,6 +687,15 @@ function ClientsPage() {
                 <td className="px-2 py-1 text-slate-500 font-mono text-[11px] tabular-nums">{String((curPage - 1) * pageSize + i + 1).padStart(6, "0")}</td>
                 <td className="px-2 py-1">
                   <div className="font-semibold uppercase text-slate-800 truncate leading-tight text-[12.5px]">{r.full_name}</div>
+                </td>
+                <td className="px-2 py-1 text-[11px] text-center">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusBadge.cls}`}
+                    title={activeInfo ? `${activeInfo.address} · uptime ${activeInfo.uptime}` : ""}
+                  >
+                    {StatusIcon && <StatusIcon className="w-3 h-3" />}
+                    {statusBadge.label}
+                  </span>
                 </td>
                 <td className="px-2 py-1 text-[11px]">
                   {routerName !== "—" ? (
