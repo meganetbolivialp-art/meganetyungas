@@ -252,26 +252,57 @@ async function withRouterLock<T>(routerId: string, fn: () => Promise<T>): Promis
   }
 }
 
-// Reintenta hasta 4 veces ante fallos transitorios de red / timeout / socket cerrado.
+// Circuit breaker por router: tras 2 fallos consecutivos, entra en "cooldown" de 15s
+// donde las llamadas fallan rápido sin martillar la API (evita el storm de retries visto
+// cuando el tunnel OVPN parpadea).
+type Breaker = { fails: number; openUntil: number };
+const routerBreakers = new Map<string, Breaker>();
+const BREAKER_THRESHOLD = 2;
+const BREAKER_COOLDOWN_MS = 15_000;
+
+function breakerFor(id: string): Breaker {
+  let b = routerBreakers.get(id);
+  if (!b) { b = { fails: 0, openUntil: 0 }; routerBreakers.set(id, b); }
+  return b;
+}
+
+// Reintenta hasta 3 veces ante fallos transitorios de red / timeout / socket cerrado.
 // No reintenta si el error es de login o de trap semántico (ej: "user not found").
 async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Promise<T>): Promise<T> {
   const transient = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|read ECONN|socket hang up)/i;
+  const br = breakerFor(router.id);
+  if (br.openUntil > Date.now()) {
+    throw new Error(`circuit open (router ${router.name} en cooldown ${Math.ceil((br.openUntil - Date.now())/1000)}s)`);
+  }
   return withRouterLock(router.id, async () => {
+    // Doble check dentro del lock por si otro caller ya abrió el circuito.
+    if (br.openUntil > Date.now()) {
+      throw new Error(`circuit open (router ${router.name} en cooldown)`);
+    }
     let lastErr: unknown;
-    for (let attempt = 1; attempt <= 4; attempt++) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        return await withSessionOnce(router, fn);
+        const out = await withSessionOnce(router, fn);
+        br.fails = 0;
+        br.openUntil = 0;
+        return out;
       } catch (e) {
         lastErr = e;
         const msg = (e as Error).message || "";
-        if (!transient.test(msg) || attempt === 4) break;
+        if (!transient.test(msg) || attempt === 3) break;
         console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
-        await new Promise((r) => setTimeout(r, 600 * attempt));
+        await new Promise((r) => setTimeout(r, 500 * attempt));
       }
+    }
+    br.fails += 1;
+    if (br.fails >= BREAKER_THRESHOLD) {
+      br.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
+      console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${BREAKER_COOLDOWN_MS/1000}s tras ${br.fails} fallos`);
     }
     throw lastErr;
   });
 }
+
 
 // ---------- simulation fallback ----------
 
