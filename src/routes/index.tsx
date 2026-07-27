@@ -7,7 +7,7 @@ export const Route = createFileRoute("/")({
       { title: "MikroSystem — Administra tu red ISP" },
       { name: "description", content: "Software de administración ISP para Mikrotik. Control PPPoE, PCQ, Colas simples, Radius, facturación electrónica, corte y activaciones automáticas." },
       { property: "og:title", content: "MikroSystem — Administra tu red ISP" },
-      { property: "og:description", content: "Software de administración ISP para Mikrotik. PPPoE, facturación, cortes automáticos." },
+      { property: "og:description", content: "Software de administración ISP para Mikrotik. Control PPPoE, PCQ, Colas simples, Radius, facturación electrónica, corte y activaciones automáticas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
