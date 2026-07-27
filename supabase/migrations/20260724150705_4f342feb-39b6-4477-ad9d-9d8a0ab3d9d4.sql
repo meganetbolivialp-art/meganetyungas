@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS billing_config JSONB NOT NULL DEFAULT '{}'::jsonb;

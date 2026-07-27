@@ -1,0 +1,1 @@
+UPDATE public.routers SET walled_garden_ip = '192.168.30.10' WHERE name = 'MERCEDES';

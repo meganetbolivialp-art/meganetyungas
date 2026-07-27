@@ -1,0 +1,2 @@
+ALTER TABLE public.routers ALTER COLUMN morosos_profile SET DEFAULT 'sistema_cortados';
+UPDATE public.routers SET morosos_profile = 'sistema_cortados' WHERE morosos_profile IS NULL OR morosos_profile IN ('morosos_lv','morosos');

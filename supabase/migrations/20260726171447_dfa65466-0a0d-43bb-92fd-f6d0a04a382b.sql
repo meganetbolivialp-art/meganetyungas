@@ -1,0 +1,1 @@
+UPDATE public.routers SET api_user = 'admin', api_password = 'mega1234', ip_address = '10.10.0.2', api_port = 8728, simulated = false, updated_at = now() WHERE id = 'eb79988b-9df8-4e0f-ba21-33bca4d4916a';
