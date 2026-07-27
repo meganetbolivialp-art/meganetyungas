@@ -584,6 +584,10 @@ function ClientsPage() {
                     </div>
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${badge}`}>{stLabel}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide inline-flex items-center gap-1 ${connBadge.cls}`} title={activeInfo ? `${activeInfo.address} · uptime ${activeInfo.uptime}` : ""}>
+                        {connBadge.icon && <connBadge.icon className="w-3 h-3" />}
+                        {connBadge.label}
+                      </span>
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 truncate max-w-[180px] font-medium">{planName}</span>
                     </div>
                     <div className="mt-2.5 -mr-1 flex items-center justify-end gap-0.5 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
