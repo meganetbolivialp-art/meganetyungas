@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { Toolbar, Badge, inputCls } from "@/components/ui-kit";
 import { RefreshCw, Download, CheckCircle2, AlertCircle, ArrowUpFromLine, Wand2, ShieldAlert, Zap, PowerOff } from "lucide-react";
-import { listRouterSecrets, importOrphanSecrets, listRouterProfiles, importRouterProfiles, getRouterDrift, pushMissingSecretsToRouter, updateRouterProfilesForServices, detectPppoeAnomalies, kickPPPoEByUser, listRouterImportPreview } from "@/lib/isp.functions";
+import { importOrphanSecrets, importRouterProfiles, getRouterDrift, pushMissingSecretsToRouter, updateRouterProfilesForServices, detectPppoeAnomalies, kickPPPoEByUser, listRouterImportPreview } from "@/lib/isp.functions";
 
 
 export const Route = createFileRoute("/dashboard/router-sync")({
@@ -22,9 +22,7 @@ export const Route = createFileRoute("/dashboard/router-sync")({
 });
 
 function RouterSyncPage() {
-  const listFn = useServerFn(listRouterSecrets);
   const importFn = useServerFn(importOrphanSecrets);
-  const listProfilesFn = useServerFn(listRouterProfiles);
   const listImportPreviewFn = useServerFn(listRouterImportPreview);
   const importProfilesFn = useServerFn(importRouterProfiles);
   const driftFn = useServerFn(getRouterDrift);
