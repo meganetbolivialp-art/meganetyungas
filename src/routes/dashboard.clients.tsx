@@ -128,7 +128,21 @@ function ClientsPage() {
     }
     setLoading(false);
   };
-  useEffect(() => { load(); loadPolicies({}).then(setPolicies).catch(() => {}); }, []);
+
+  const fetchOnlineStatus = async () => {
+    setOnlineStatusLoading(true);
+    try {
+      const res = await loadOnlineStatus() as any;
+      setOnlineStatus(res?.activeByUser ?? {});
+    } catch (e) {
+      // No bloquear la página; mostramos offline por defecto
+      // eslint-disable-next-line no-console
+      console.error("Error cargando estado online:", e);
+    }
+    setOnlineStatusLoading(false);
+  };
+
+  useEffect(() => { load(); loadPolicies({}).then(setPolicies).catch(() => {}); fetchOnlineStatus(); }, []);
 
   const genCreds = () => {
     const base = (form.full_name || "user").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "user";
