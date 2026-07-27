@@ -189,7 +189,7 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
   });
 }
 
-async function sendCommand(socket: net.Socket, words: string[], overallTimeoutMs = 8000): Promise<Sentence[]> {
+async function sendCommand(socket: net.Socket, words: string[], overallTimeoutMs = 15000): Promise<Sentence[]> {
   return new Promise((resolve, reject) => {
     const reader = new SentenceReader();
     const collected: Sentence[] = [];
