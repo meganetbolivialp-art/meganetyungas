@@ -595,19 +595,42 @@ export const mikrotik = {
 
 
   async ping(router: MtRouter) {
-    return real(
+    // Cache de ping: mantiene "último estado bueno" 45s.
+    // Deduplica llamadas concurrentes (varias vistas piden ping a la vez).
+    const cache = pingCache.get(router.id);
+    const now = Date.now();
+    if (cache?.inflight) return cache.inflight;
+    if (cache && cache.ok && (now - cache.at) < 45_000) {
+      return { ok: true as const, latency_ms: cache.latency_ms, cached: true as const };
+    }
+    const p = real(
       router,
       "ping",
       async () => withSession(router, async (s) => {
-        // Usamos /system/identity/print como "ping" API — responde instantáneo
-        // y confirma que la sesión + login funcionan, sin esperar el 1s+ de un ICMP real.
         const t0 = Date.now();
         await sendCommand(s, ["/system/identity/print"]);
         return { ok: true as const, latency_ms: Date.now() - t0 };
       }),
       () => simulate("ping", { host: router.ip_address }, { ok: true as const, latency_ms: Math.floor(5 + Math.random() * 30) }),
-    );
+    ).then((r) => {
+      pingCache.set(router.id, { ok: true, latency_ms: r.latency_ms, at: Date.now() });
+      return r;
+    }).catch((e) => {
+      // Si teníamos un OK reciente (<90s), toleramos el fallo y devolvemos cached.
+      const prev = pingCache.get(router.id);
+      if (prev?.ok && (Date.now() - prev.at) < 90_000) {
+        return { ok: true as const, latency_ms: prev.latency_ms, stale: true as const };
+      }
+      pingCache.set(router.id, { ok: false, latency_ms: 0, at: Date.now() });
+      throw e;
+    }).finally(() => {
+      const c = pingCache.get(router.id);
+      if (c) c.inflight = undefined;
+    });
+    pingCache.set(router.id, { ...(cache ?? { ok: false, latency_ms: 0, at: 0 }), inflight: p });
+    return p;
   },
+
 
   // -------- PPP Profile (rate-limit) --------
   async upsertPppProfile(router: MtRouter, args: { name: string; rateDown: number; rateUp: number; burst?: boolean; walledGardenIp?: string | null }) {
