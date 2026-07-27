@@ -537,6 +537,14 @@ function ClientsPage() {
               : st === "cancelled" ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
               : "bg-slate-50 text-slate-700 ring-1 ring-slate-200";
             const stLabel = st === "active" ? "Activo" : st === "suspended" ? "Suspendido" : st === "cancelled" ? "Cancelado" : st;
+            const connStatus = getClientOnlineStatus(r);
+            const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
+            const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+            const connBadge = connStatus === "online"
+              ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
+              : connStatus === "offline"
+              ? { icon: WifiOff, cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", label: "Desconectado" }
+              : { icon: null, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200", label: "Sin PPPoE" };
             const svc = r.services?.[0];
             const planName = svc?.plans?.name ?? "Sin plan";
             const bal = Number(r.balance ?? 0);
