@@ -32,6 +32,25 @@ const randomStr = (n: number) => {
   return Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 };
 
+const ROUTER_BADGE_PALETTE = [
+  "bg-sky-100 text-sky-700 border-sky-300",
+  "bg-emerald-100 text-emerald-700 border-emerald-300",
+  "bg-violet-100 text-violet-700 border-violet-300",
+  "bg-amber-100 text-amber-800 border-amber-300",
+  "bg-rose-100 text-rose-700 border-rose-300",
+  "bg-teal-100 text-teal-700 border-teal-300",
+  "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300",
+  "bg-indigo-100 text-indigo-700 border-indigo-300",
+  "bg-lime-100 text-lime-800 border-lime-300",
+  "bg-orange-100 text-orange-700 border-orange-300",
+];
+const routerBadgeClass = (name: string) => {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return ROUTER_BADGE_PALETTE[h % ROUTER_BADGE_PALETTE.length];
+};
+
+
 const initialForm = {
   // Paso 1 - Datos personales
   id_cliente: "", portal_password: "", document: "", full_name: "",
@@ -617,7 +636,13 @@ function ClientsPage() {
                 <td className="px-2 py-1">
                   <div className="font-semibold uppercase text-slate-800 truncate leading-tight text-[12.5px]">{r.full_name}</div>
                 </td>
-                <td className="px-2 py-1 text-slate-700 truncate text-[12px]">{routerName}</td>
+                <td className="px-2 py-1 text-[11px]">
+                  {routerName !== "—" ? (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border ${routerBadgeClass(routerName)}`}>
+                      {routerName}
+                    </span>
+                  ) : <span className="text-slate-400">—</span>}
+                </td>
                 <td className="px-2 py-1 font-mono text-[11.5px] text-slate-700 tabular-nums">{ip}</td>
                 <td className={`px-2 py-1 text-right font-semibold tabular-nums ${bal > 0 ? "text-rose-600" : bal < 0 ? "text-emerald-600" : "text-slate-400"}`}>{bal.toFixed(2)}</td>
                 <td className="px-2 py-1">
