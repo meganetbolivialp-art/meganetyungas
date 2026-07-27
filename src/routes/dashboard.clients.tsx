@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck } from "lucide-react";
+import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminLayout } from "@/components/admin-layout";
 import { provisionNewClient, suspendService, reactivateService, getNextAvailableIp, listRouterPools, poolIpUsage, deleteClientCascade } from "@/lib/isp.functions";
-import { listClientsData } from "@/lib/clients.functions";
+import { listClientsData, getClientsOnlineStatus } from "@/lib/clients.functions";
 import { listCutoffPolicies, type CutoffPolicy } from "@/lib/cutoff-policies.functions";
 import { toast } from "sonner";
 const LeafletPicker = lazy(() => import("@/components/leaflet-picker").then((m) => ({ default: m.LeafletPicker })));
@@ -79,6 +79,7 @@ function ClientsPage() {
   const doReactivate = useServerFn(reactivateService);
   const doDelete = useServerFn(deleteClientCascade);
   const loadClientData = useServerFn(listClientsData);
+  const loadOnlineStatus = useServerFn(getClientsOnlineStatus);
   const [rows, setRows] = useState<Client[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [routers, setRouters] = useState<Router[]>([]);
@@ -96,7 +97,10 @@ function ClientsPage() {
   const [fCity, setFCity] = useState("");
   const [fDebt, setFDebt] = useState<string>("all"); // all | with | without | promise | vip
   const [fBillDay, setFBillDay] = useState<string>("");
-  const clearFilters = () => { setFIp(""); setFPppoe(""); setFPlan("all"); setFRouter("all"); setFCity(""); setFDebt("all"); setFBillDay(""); setQ(""); setStatusFilter("all"); };
+  const [onlineFilter, setOnlineFilter] = useState<string>("all"); // all | online | offline | unknown
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, { router_id: string; router_name: string; address: string; uptime: string; bytes_in: number; bytes_out: number }>>({});
+  const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
+  const clearFilters = () => { setFIp(""); setFPppoe(""); setFPlan("all"); setFRouter("all"); setFCity(""); setFDebt("all"); setFBillDay(""); setQ(""); setStatusFilter("all"); setOnlineFilter("all"); };
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -124,7 +128,21 @@ function ClientsPage() {
     }
     setLoading(false);
   };
-  useEffect(() => { load(); loadPolicies({}).then(setPolicies).catch(() => {}); }, []);
+
+  const fetchOnlineStatus = async () => {
+    setOnlineStatusLoading(true);
+    try {
+      const res = await loadOnlineStatus() as any;
+      setOnlineStatus(res?.activeByUser ?? {});
+    } catch (e) {
+      // No bloquear la página; mostramos offline por defecto
+      // eslint-disable-next-line no-console
+      console.error("Error cargando estado online:", e);
+    }
+    setOnlineStatusLoading(false);
+  };
+
+  useEffect(() => { load(); loadPolicies({}).then(setPolicies).catch(() => {}); fetchOnlineStatus(); }, []);
 
   const genCreds = () => {
     const base = (form.full_name || "user").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "user";
@@ -245,6 +263,13 @@ function ClientsPage() {
   };
 
 
+  const getClientOnlineStatus = (r: Client): "online" | "offline" | "unknown" => {
+    const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
+    if (!users.length) return "unknown";
+    const anyOnline = users.some((u: string) => onlineStatus[u] != null);
+    return anyOnline ? "online" : "offline";
+  };
+
   const filtered = useMemo(() => rows.filter(r => {
     const ql = q.toLowerCase();
     const matchesQ = !q || r.full_name.toLowerCase().includes(ql) ||
@@ -267,8 +292,10 @@ function ClientsPage() {
       || (fDebt === "promise" && hasPromise)
       || (fDebt === "vip" && (r as any).dont_cut === true);
     const matchesBillDay = !fBillDay || String((r as any).billing_day ?? "") === fBillDay;
-    return matchesQ && matchesStatus && matchesIp && matchesPppoe && matchesPlan && matchesRouter && matchesCity && matchesDebt && matchesBillDay;
-  }), [rows, q, statusFilter, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay]);
+    const connStatus = getClientOnlineStatus(r);
+    const matchesOnline = onlineFilter === "all" || onlineFilter === connStatus;
+    return matchesQ && matchesStatus && matchesIp && matchesPppoe && matchesPlan && matchesRouter && matchesCity && matchesDebt && matchesBillDay && matchesOnline;
+  }), [rows, q, statusFilter, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, onlineFilter, onlineStatus]);
   const [sortKey, setSortKey] = useState<"id" | "name" | "plan" | "ip" | "status" | "balance" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const toggleSort = (k: typeof sortKey) => {
@@ -304,8 +331,8 @@ function ClientsPage() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const paged = useMemo(() => sorted.slice((curPage - 1) * pageSize, curPage * pageSize), [sorted, pageSize, curPage]);
-  useEffect(() => { setPage(1); }, [q, statusFilter, pageSize, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, sortKey, sortDir]);
-  const activeFilterCount = [fIp, fPppoe, fCity, fBillDay].filter(Boolean).length + [fPlan, fRouter, fDebt].filter(x => x !== "all").length;
+  useEffect(() => { setPage(1); }, [q, statusFilter, pageSize, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, onlineFilter, sortKey, sortDir]);
+  const activeFilterCount = [fIp, fPppoe, fCity, fBillDay].filter(Boolean).length + [fPlan, fRouter, fDebt, onlineFilter].filter(x => x !== "all").length;
   const sortIcon = (k: typeof sortKey) => sortKey !== k ? "↕" : sortDir === "asc" ? "▲" : "▼";
 
   const toggleAll = () => {
@@ -510,6 +537,14 @@ function ClientsPage() {
               : st === "cancelled" ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
               : "bg-slate-50 text-slate-700 ring-1 ring-slate-200";
             const stLabel = st === "active" ? "Activo" : st === "suspended" ? "Suspendido" : st === "cancelled" ? "Cancelado" : st;
+            const connStatus = getClientOnlineStatus(r);
+            const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
+            const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+            const connBadge = connStatus === "online"
+              ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
+              : connStatus === "offline"
+              ? { icon: WifiOff, cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", label: "Desconectado" }
+              : { icon: null, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200", label: "Sin PPPoE" };
             const svc = r.services?.[0];
             const planName = svc?.plans?.name ?? "Sin plan";
             const bal = Number(r.balance ?? 0);
@@ -549,6 +584,10 @@ function ClientsPage() {
                     </div>
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${badge}`}>{stLabel}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide inline-flex items-center gap-1 ${connBadge.cls}`} title={activeInfo ? `${activeInfo.address} · uptime ${activeInfo.uptime}` : ""}>
+                        {connBadge.icon && <connBadge.icon className="w-3 h-3" />}
+                        {connBadge.label}
+                      </span>
                       <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 truncate max-w-[180px] font-medium">{planName}</span>
                     </div>
                     <div className="mt-2.5 -mr-1 flex items-center justify-end gap-0.5 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
@@ -581,6 +620,14 @@ function ClientsPage() {
               <th className="px-2 py-1.5 w-8"></th>
               <th className="px-2 py-1.5 font-semibold w-20 cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("id")}>ID <span className="text-xs">{sortIcon("id")}</span></th>
               <th className="px-2 py-1.5 font-semibold cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("name")}>Nombre <span className="text-xs">{sortIcon("name")}</span></th>
+              <th className="px-2 py-1.5 font-semibold w-[110px] text-center">
+                <div className="flex items-center justify-center gap-1">
+                  Estado
+                  <button onClick={() => fetchOnlineStatus()} disabled={onlineStatusLoading} className="inline-flex items-center justify-center w-4 h-4 rounded hover:bg-slate-200 disabled:opacity-40" title="Refrescar estado">
+                    <RefreshCw className={`w-3 h-3 ${onlineStatusLoading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+              </th>
               <th className="px-2 py-1.5 font-semibold w-[170px] cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("plan")}>Router <span className="text-xs">{sortIcon("plan")}</span></th>
               <th className="px-2 py-1.5 font-semibold w-[120px]">IP</th>
               <th className="px-2 py-1.5 font-semibold w-[90px] text-right cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("balance")}>Saldo <span className="text-xs">{sortIcon("balance")}</span></th>
@@ -591,6 +638,14 @@ function ClientsPage() {
               <th className="px-1 py-1"></th>
               <th className="px-1 py-1"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary" /></th>
               <th className="px-1 py-1"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary" /></th>
+              <th className="px-1 py-1">
+                <select value={onlineFilter} onChange={(e) => setOnlineFilter(e.target.value)} className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary bg-white">
+                  <option value="all">Todos</option>
+                  <option value="online">En línea</option>
+                  <option value="offline">Desconectado</option>
+                  <option value="unknown">Sin PPPoE</option>
+                </select>
+              </th>
               <th className="px-1 py-1">
                 <select value={fRouter} onChange={(e) => setFRouter(e.target.value)} className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary bg-white">
                   <option value="all">Todos</option>
@@ -603,11 +658,14 @@ function ClientsPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Cargando...</td></tr>}
-            {!loading && paged.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Sin resultados</td></tr>}
+            {loading && <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">Cargando...</td></tr>}
+            {!loading && paged.length === 0 && <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-foreground">Sin resultados</td></tr>}
             {paged.map((r, i) => {
               const busy = busyIds.has(r.id);
               const st = r.status;
+              const connStatus = getClientOnlineStatus(r);
+              const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
+              const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
               const zebra = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
               const rowTint = st === "suspended" ? "!bg-amber-50/70"
                 : st === "cancelled" ? "!bg-rose-50/60"
@@ -621,6 +679,12 @@ function ClientsPage() {
               const routerName = routerObj?.name ?? "—";
               const ip = svc?.ip_address ?? "—";
               const bal = Number(r.balance ?? 0);
+              const statusBadge = connStatus === "online"
+                ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
+                : connStatus === "offline"
+                ? { icon: WifiOff, cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200", label: "Desconectado" }
+                : { icon: null, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200", label: "—" };
+              const StatusIcon = statusBadge.icon;
               return (
               <tr key={r.id} className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""}`}>
                 <td className="px-2 py-1 text-center relative">
@@ -635,6 +699,15 @@ function ClientsPage() {
                 <td className="px-2 py-1 text-slate-500 font-mono text-[11px] tabular-nums">{String((curPage - 1) * pageSize + i + 1).padStart(6, "0")}</td>
                 <td className="px-2 py-1">
                   <div className="font-semibold uppercase text-slate-800 truncate leading-tight text-[12.5px]">{r.full_name}</div>
+                </td>
+                <td className="px-2 py-1 text-[11px] text-center">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${statusBadge.cls}`}
+                    title={activeInfo ? `${activeInfo.address} · uptime ${activeInfo.uptime}` : ""}
+                  >
+                    {StatusIcon && <StatusIcon className="w-3 h-3" />}
+                    {statusBadge.label}
+                  </span>
                 </td>
                 <td className="px-2 py-1 text-[11px]">
                   {routerName !== "—" ? (

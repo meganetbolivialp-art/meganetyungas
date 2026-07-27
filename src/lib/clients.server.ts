@@ -116,3 +116,48 @@ export async function listClientManagementData(context: PermissionContext) {
     routers: routersResult.data ?? [],
   };
 }
+
+export async function getClientsOnlineStatus(context: PermissionContext) {
+  const access = await getClientAccess(context);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { mikrotik } = await import("@/lib/mikrotik.server");
+
+  let routersQuery = supabaseAdmin
+    .from("routers")
+    .select("id,name,ip_address,api_port,api_user,api_password,simulated")
+    .eq("status", "online");
+  if (!access.isAdmin && access.routerIds.length > 0) {
+    routersQuery = routersQuery.in("id", access.routerIds);
+  }
+
+  const { data: routers, error } = await routersQuery;
+  if (error) throw new Error(error.message);
+
+  const activeByUser = new Map<
+    string,
+    { router_id: string; router_name: string; address: string; uptime: string; bytes_in: number; bytes_out: number }
+  >();
+
+  for (const router of routers ?? []) {
+    if (router.simulated) continue;
+    try {
+      const res = await mikrotik.listActive(router as any);
+      for (const a of res.active ?? []) {
+        if (!a.name) continue;
+        activeByUser.set(a.name, {
+          router_id: router.id,
+          router_name: router.name,
+          address: a.address ?? "",
+          uptime: a.uptime ?? "",
+          bytes_in: a.bytes_in ?? 0,
+          bytes_out: a.bytes_out ?? 0,
+        });
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(`[online-status] failed router ${router.name}:`, (e as Error).message);
+    }
+  }
+
+  return { activeByUser: Object.fromEntries(activeByUser) };
+}
