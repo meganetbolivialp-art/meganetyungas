@@ -617,7 +617,13 @@ function ClientsPage() {
                 <td className="px-2 py-1">
                   <div className="font-semibold uppercase text-slate-800 truncate leading-tight text-[12.5px]">{r.full_name}</div>
                 </td>
-                <td className="px-2 py-1 text-slate-700 truncate text-[12px]">{routerName}</td>
+                <td className="px-2 py-1 text-[11px]">
+                  {routerName !== "—" ? (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide border ${routerBadgeClass(routerName)}`}>
+                      {routerName}
+                    </span>
+                  ) : <span className="text-slate-400">—</span>}
+                </td>
                 <td className="px-2 py-1 font-mono text-[11.5px] text-slate-700 tabular-nums">{ip}</td>
                 <td className={`px-2 py-1 text-right font-semibold tabular-nums ${bal > 0 ? "text-rose-600" : bal < 0 ? "text-emerald-600" : "text-slate-400"}`}>{bal.toFixed(2)}</td>
                 <td className="px-2 py-1">
