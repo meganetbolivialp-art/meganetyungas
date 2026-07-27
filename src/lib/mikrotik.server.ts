@@ -486,6 +486,57 @@ export const mikrotik = {
     );
   },
 
+  async listImportPreview(router: MtRouter) {
+    return real(
+      router,
+      "ppp/import-preview",
+      async () => withSession(router, async (s) => {
+        const secretRes = await sendCommand(s, ["/ppp/secret/print"]);
+        const secrets = secretRes
+          .filter((r) => r.reply === "!re")
+          .map((r) => ({
+            name: r.attrs.name,
+            password: r.attrs.password || null,
+            profile: r.attrs.profile,
+            service: r.attrs.service,
+            remote_address: r.attrs["remote-address"] || null,
+            disabled: r.attrs.disabled === "true",
+            comment: r.attrs.comment || null,
+          }));
+
+        const profileRes = await sendCommand(s, ["/ppp/profile/print"]);
+        const profiles = profileRes
+          .filter((r) => r.reply === "!re")
+          .map((r) => ({
+            name: r.attrs.name as string,
+            rate_limit: (r.attrs["rate-limit"] as string) || null,
+            local_address: (r.attrs["local-address"] as string) || null,
+            remote_address: (r.attrs["remote-address"] as string) || null,
+            only_one: (r.attrs["only-one"] as string) || null,
+          }));
+
+        return { ok: true as const, secrets, profiles };
+      }),
+      () => simulate("ppp/import-preview", { router: router.name }, {
+        ok: true as const,
+        secrets: Array.from({ length: 6 }).map((_, i) => ({
+          name: `sim_user${i + 1}`,
+          password: `sim_pass${i + 1}`,
+          profile: i % 2 === 0 ? "10M" : "20M",
+          service: "pppoe",
+          remote_address: `10.20.0.${20 + i}`,
+          disabled: false,
+          comment: null,
+        })),
+        profiles: [
+          { name: "30_MEGAS", rate_limit: "30M/30M", local_address: "10.10.10.1", remote_address: null, only_one: "yes" },
+          { name: "60_MEGAS", rate_limit: "60M/60M", local_address: "10.10.10.1", remote_address: null, only_one: "yes" },
+          { name: "100_MEGAS", rate_limit: "80M/100M", local_address: "10.10.11.1", remote_address: null, only_one: "yes" },
+        ],
+      }),
+    );
+  },
+
 
 
 
