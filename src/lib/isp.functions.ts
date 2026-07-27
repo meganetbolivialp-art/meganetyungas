@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { parseRouterProfileRate } from "./isp-sync.server";
 
 // ---------- Facturación masiva ----------
 export const generateMonthlyInvoices = createServerFn({ method: "POST" })
@@ -659,23 +660,6 @@ export const importOrphanSecrets = createServerFn({ method: "POST" })
 
 
 // ---------- Sync Router → Planes ----------
-function parseRate(rate: string | null): { up: number; down: number } {
-  if (!rate) return { up: 0, down: 0 };
-  const first = rate.trim().split(/\s+/)[0]; // "80M/100M" from "80M/100M 120M/150M 100M/125M 30"
-  const [u, d] = first.split("/");
-  const toM = (s: string) => {
-    if (!s) return 0;
-    const m = s.match(/^(\d+(?:\.\d+)?)([kKmMgG]?)/);
-    if (!m) return 0;
-    const n = parseFloat(m[1]);
-    const unit = m[2].toLowerCase();
-    if (unit === "k") return Math.max(1, Math.round(n / 1024));
-    if (unit === "g") return Math.round(n * 1024);
-    return Math.round(n); // M or none
-  };
-  return { up: toM(u), down: toM(d || u) };
-}
-
 export const listRouterProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { routerId: string }) => d)
@@ -696,7 +680,7 @@ export const listRouterProfiles = createServerFn({ method: "POST" })
     const systemNames = new Set(["default", "default-encryption", "morosos_lv", "lovable-vpn"]);
 
     const profiles = res.profiles.map((p) => {
-      const { up, down } = parseRate(p.rate_limit);
+      const { up, down } = parseRouterProfileRate(p.rate_limit);
       return {
         ...p,
         upload_mbps: up,
@@ -706,6 +690,46 @@ export const listRouterProfiles = createServerFn({ method: "POST" })
       };
     });
     return { profiles };
+  });
+
+export const listRouterImportPreview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { routerId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { data: r, error } = await context.supabase.from("routers").select("*").eq("id", data.routerId).single();
+    if (error || !r) throw new Error("Router no encontrado");
+    const { mikrotik } = await import("./mikrotik.server");
+    const res = await mikrotik.listImportPreview(r as any);
+
+    const [{ data: svcs }, { data: plans }] = await Promise.all([
+      context.supabase.from("services").select("id, pppoe_user, client_id, clients(full_name)").eq("router_id", data.routerId),
+      context.supabase.from("plans").select("id, name, mikrotik_profile_name"),
+    ]);
+
+    const dbUsers = new Set((svcs ?? []).map((s: any) => (s.pppoe_user || "").toLowerCase()).filter(Boolean));
+    const known = new Set<string>();
+    (plans ?? []).forEach((p: any) => {
+      if (p.mikrotik_profile_name) known.add(p.mikrotik_profile_name.toLowerCase());
+      if (p.name) known.add(p.name.toLowerCase());
+    });
+
+    const systemNames = new Set(["default", "default-encryption", "morosos_lv", "lovable-vpn"]);
+    const secrets = res.secrets.map((s) => ({
+      ...s,
+      in_db: dbUsers.has((s.name || "").toLowerCase()),
+    }));
+    const profiles = res.profiles.map((p) => {
+      const { up, down } = parseRouterProfileRate(p.rate_limit);
+      return {
+        ...p,
+        upload_mbps: up,
+        download_mbps: down,
+        in_db: known.has((p.name || "").toLowerCase()),
+        is_system: systemNames.has((p.name || "").toLowerCase()),
+      };
+    });
+
+    return { secrets, profiles, dbCount: dbUsers.size };
   });
 
 export const importRouterProfiles = createServerFn({ method: "POST" })

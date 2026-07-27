@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { Toolbar, Badge, inputCls } from "@/components/ui-kit";
 import { RefreshCw, Download, CheckCircle2, AlertCircle, ArrowUpFromLine, Wand2, ShieldAlert, Zap, PowerOff } from "lucide-react";
-import { listRouterSecrets, importOrphanSecrets, listRouterProfiles, importRouterProfiles, getRouterDrift, pushMissingSecretsToRouter, updateRouterProfilesForServices, detectPppoeAnomalies, kickPPPoEByUser } from "@/lib/isp.functions";
+import { listRouterSecrets, importOrphanSecrets, listRouterProfiles, importRouterProfiles, getRouterDrift, pushMissingSecretsToRouter, updateRouterProfilesForServices, detectPppoeAnomalies, kickPPPoEByUser, listRouterImportPreview } from "@/lib/isp.functions";
 
 
 export const Route = createFileRoute("/dashboard/router-sync")({
@@ -25,6 +25,7 @@ function RouterSyncPage() {
   const listFn = useServerFn(listRouterSecrets);
   const importFn = useServerFn(importOrphanSecrets);
   const listProfilesFn = useServerFn(listRouterProfiles);
+  const listImportPreviewFn = useServerFn(listRouterImportPreview);
   const importProfilesFn = useServerFn(importRouterProfiles);
   const driftFn = useServerFn(getRouterDrift);
   const pushFn = useServerFn(pushMissingSecretsToRouter);
@@ -86,12 +87,9 @@ function RouterSyncPage() {
     setDrift(null); setPushSel(new Set()); setDriftMsg("");
     setProfSyncSel(new Set()); setAnomalies(null); setAnomMsg("");
     try {
-      const [r, pr, dr, an] = await Promise.all([
-        listFn({ data: { routerId } }),
-        listProfilesFn({ data: { routerId } }),
-        driftFn({ data: { routerId } }),
-        anomaliesFn({ data: { routerId } }).catch(() => null),
-      ]);
+      const preview = await listImportPreviewFn({ data: { routerId } }) as any;
+      const r = { secrets: preview.secrets, dbCount: preview.dbCount };
+      const pr = { profiles: preview.profiles };
       setResult(r as any);
       const auto = new Set<string>((r as any).secrets.filter((s: any) => !s.in_db).map((s: any) => s.name));
       setSelected(auto);
@@ -101,13 +99,22 @@ function RouterSyncPage() {
       const prices: Record<string, number> = {};
       (pr as any).profiles.forEach((p: any) => { prices[p.name] = 0; });
       setProfPrices(prices);
-      setDrift(dr as any);
-      const autoPush = new Set<string>(((dr as any).missingOnRouter ?? []).map((m: any) => m.service_id));
-      setPushSel(autoPush);
-      const autoSync = new Set<string>(((dr as any).profileMismatch ?? []).map((m: any) => m.service_id));
-      setProfSyncSel(autoSync);
-      setAnomalies(an);
-    } catch (e: any) { setMsg("Error: " + e.message); } finally { setLoading(false); }
+      const [dr, an] = await Promise.allSettled([
+        driftFn({ data: { routerId } }),
+        anomaliesFn({ data: { routerId } }),
+      ]);
+      if (dr.status === "fulfilled") {
+        setDrift(dr.value as any);
+        const autoPush = new Set<string>(((dr.value as any).missingOnRouter ?? []).map((m: any) => m.service_id));
+        setPushSel(autoPush);
+        const autoSync = new Set<string>(((dr.value as any).profileMismatch ?? []).map((m: any) => m.service_id));
+        setProfSyncSel(autoSync);
+      }
+      if (an.status === "fulfilled") setAnomalies(an.value);
+    } catch (e: any) {
+      const router = routers.find((r) => r.id === routerId);
+      setMsg(readableRouterError(e, router));
+    } finally { setLoading(false); }
   };
 
   const toggleProfSync = (id: string) => {
@@ -676,6 +683,22 @@ function fmtBytes(n: number) {
   let v = n / 1024, i = 0;
   while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
   return `${v.toFixed(v >= 100 ? 0 : 1)} ${units[i]}`;
+}
+
+function readableRouterError(error: unknown, router?: any) {
+  const raw = error instanceof Error ? error.message : String(error ?? "Error desconocido");
+  const lower = raw.toLowerCase();
+  if (lower.includes("connect timeout") || lower.includes("etimedout")) {
+    const target = router ? `${router.ip_address}${router.api_port ? `:${router.api_port}` : ""}` : "el puerto configurado";
+    return `No se pudo conectar al router ${router?.name ?? "seleccionado"} (${target}). Revisá que el VPN esté conectado y que el puerto público/API esté abierto.`;
+  }
+  if (lower.includes("econnrefused")) {
+    return `El router ${router?.name ?? "seleccionado"} rechazó la conexión. Revisá que el servicio API esté habilitado en el MikroTik.`;
+  }
+  if (lower.includes("login failed")) {
+    return `Usuario o contraseña del router ${router?.name ?? "seleccionado"} incorrectos.`;
+  }
+  return `Error: ${raw}`;
 }
 
 function WizardSteps({ result, drift, anomalies, profOrphans }: { result: any; drift: any; anomalies: any; profOrphans: any[] }) {
