@@ -274,6 +274,12 @@ function RouterSyncPage() {
         </div>
       </div>
 
+      {msg && !result && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", padding: 14, borderRadius: 10, marginBottom: 12, color: "#991b1b", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+          <AlertCircle size={18} /> {msg}
+        </div>
+      )}
+
       {result && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
           <StatCard color="#3b82f6" label="Total secrets router" value={result.secrets.length} />
