@@ -331,8 +331,8 @@ function ClientsPage() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const curPage = Math.min(page, totalPages);
   const paged = useMemo(() => sorted.slice((curPage - 1) * pageSize, curPage * pageSize), [sorted, pageSize, curPage]);
-  useEffect(() => { setPage(1); }, [q, statusFilter, pageSize, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, sortKey, sortDir]);
-  const activeFilterCount = [fIp, fPppoe, fCity, fBillDay].filter(Boolean).length + [fPlan, fRouter, fDebt].filter(x => x !== "all").length;
+  useEffect(() => { setPage(1); }, [q, statusFilter, pageSize, fIp, fPppoe, fPlan, fRouter, fCity, fDebt, fBillDay, onlineFilter, sortKey, sortDir]);
+  const activeFilterCount = [fIp, fPppoe, fCity, fBillDay].filter(Boolean).length + [fPlan, fRouter, fDebt, onlineFilter].filter(x => x !== "all").length;
   const sortIcon = (k: typeof sortKey) => sortKey !== k ? "↕" : sortDir === "asc" ? "▲" : "▼";
 
   const toggleAll = () => {
