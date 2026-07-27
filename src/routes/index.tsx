@@ -4,9 +4,9 @@ import { Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon } from "lucide-re
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MikroSystem — Administra tu red ISP" },
+      { title: "MEGANET" },
       { name: "description", content: "Software de administración ISP para Mikrotik. Control PPPoE, PCQ, Colas simples, Radius, facturación electrónica, corte y activaciones automáticas." },
-      { property: "og:title", content: "MikroSystem — Administra tu red ISP" },
+      { property: "og:title", content: "MEGANET" },
       { property: "og:description", content: "Software de administración ISP para Mikrotik. Control PPPoE, PCQ, Colas simples, Radius, facturación electrónica, corte y activaciones automáticas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
