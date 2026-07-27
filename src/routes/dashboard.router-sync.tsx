@@ -15,6 +15,8 @@ export const Route = createFileRoute("/dashboard/router-sync")({
       { name: "description", content: "Detectar PPP secrets en Mikrotik que no están en la base de datos e importarlos." },
       { property: "og:title", content: "Sincronización router → DB" },
       { property: "og:description", content: "Sync bidireccional Mikrotik." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
