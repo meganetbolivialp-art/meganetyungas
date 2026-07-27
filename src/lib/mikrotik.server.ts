@@ -252,26 +252,64 @@ async function withRouterLock<T>(routerId: string, fn: () => Promise<T>): Promis
   }
 }
 
-// Reintenta hasta 4 veces ante fallos transitorios de red / timeout / socket cerrado.
+// Circuit breaker por router: tras 2 fallos consecutivos, entra en "cooldown" de 15s
+// donde las llamadas fallan rápido sin martillar la API (evita el storm de retries visto
+// cuando el tunnel OVPN parpadea).
+type Breaker = { fails: number; openUntil: number };
+const routerBreakers = new Map<string, Breaker>();
+const BREAKER_THRESHOLD = 2;
+const BREAKER_COOLDOWN_MS = 15_000;
+
+function breakerFor(id: string): Breaker {
+  let b = routerBreakers.get(id);
+  if (!b) { b = { fails: 0, openUntil: 0 }; routerBreakers.set(id, b); }
+  return b;
+}
+
+// Reintenta hasta 3 veces ante fallos transitorios de red / timeout / socket cerrado.
 // No reintenta si el error es de login o de trap semántico (ej: "user not found").
 async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Promise<T>): Promise<T> {
   const transient = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|read ECONN|socket hang up)/i;
+  const br = breakerFor(router.id);
+  if (br.openUntil > Date.now()) {
+    throw new Error(`circuit open (router ${router.name} en cooldown ${Math.ceil((br.openUntil - Date.now())/1000)}s)`);
+  }
   return withRouterLock(router.id, async () => {
+    // Doble check dentro del lock por si otro caller ya abrió el circuito.
+    if (br.openUntil > Date.now()) {
+      throw new Error(`circuit open (router ${router.name} en cooldown)`);
+    }
     let lastErr: unknown;
-    for (let attempt = 1; attempt <= 4; attempt++) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        return await withSessionOnce(router, fn);
+        const out = await withSessionOnce(router, fn);
+        br.fails = 0;
+        br.openUntil = 0;
+        return out;
       } catch (e) {
         lastErr = e;
         const msg = (e as Error).message || "";
-        if (!transient.test(msg) || attempt === 4) break;
+        if (!transient.test(msg) || attempt === 3) break;
         console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
-        await new Promise((r) => setTimeout(r, 600 * attempt));
+        await new Promise((r) => setTimeout(r, 500 * attempt));
       }
+    }
+    br.fails += 1;
+    if (br.fails >= BREAKER_THRESHOLD) {
+      br.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
+      console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${BREAKER_COOLDOWN_MS/1000}s tras ${br.fails} fallos`);
     }
     throw lastErr;
   });
 }
+
+// Cache de estado del ping por router — evita parpadeo de UI y dedupe concurrente.
+type PingResult = { ok: true; latency_ms: number; cached?: true; stale?: true };
+type PingCacheEntry = { ok: boolean; latency_ms: number; at: number; inflight?: Promise<PingResult> };
+const pingCache = new Map<string, PingCacheEntry>();
+
+
+
 
 // ---------- simulation fallback ----------
 
@@ -564,19 +602,42 @@ export const mikrotik = {
 
 
   async ping(router: MtRouter) {
-    return real(
+    // Cache de ping: mantiene "último estado bueno" 45s.
+    // Deduplica llamadas concurrentes (varias vistas piden ping a la vez).
+    const cache = pingCache.get(router.id);
+    const now = Date.now();
+    if (cache?.inflight) return cache.inflight;
+    if (cache && cache.ok && (now - cache.at) < 45_000) {
+      return { ok: true as const, latency_ms: cache.latency_ms, cached: true as const };
+    }
+    const p = real(
       router,
       "ping",
       async () => withSession(router, async (s) => {
-        // Usamos /system/identity/print como "ping" API — responde instantáneo
-        // y confirma que la sesión + login funcionan, sin esperar el 1s+ de un ICMP real.
         const t0 = Date.now();
         await sendCommand(s, ["/system/identity/print"]);
         return { ok: true as const, latency_ms: Date.now() - t0 };
       }),
       () => simulate("ping", { host: router.ip_address }, { ok: true as const, latency_ms: Math.floor(5 + Math.random() * 30) }),
-    );
+    ).then((r) => {
+      pingCache.set(router.id, { ok: true, latency_ms: r.latency_ms, at: Date.now() });
+      return r;
+    }).catch((e) => {
+      // Si teníamos un OK reciente (<90s), toleramos el fallo y devolvemos cached.
+      const prev = pingCache.get(router.id);
+      if (prev?.ok && (Date.now() - prev.at) < 90_000) {
+        return { ok: true as const, latency_ms: prev.latency_ms, stale: true as const };
+      }
+      pingCache.set(router.id, { ok: false, latency_ms: 0, at: Date.now() });
+      throw e;
+    }).finally(() => {
+      const c = pingCache.get(router.id);
+      if (c) c.inflight = undefined;
+    });
+    pingCache.set(router.id, { ...(cache ?? { ok: false, latency_ms: 0, at: 0 }), inflight: p });
+    return p;
   },
+
 
   // -------- PPP Profile (rate-limit) --------
   async upsertPppProfile(router: MtRouter, args: { name: string; rateDown: number; rateUp: number; burst?: boolean; walledGardenIp?: string | null }) {
