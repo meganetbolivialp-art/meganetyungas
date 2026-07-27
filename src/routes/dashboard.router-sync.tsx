@@ -204,6 +204,42 @@ function RouterSyncPage() {
     } catch (e: any) { setProfMsg("Error: " + e.message); } finally { setProfImporting(false); }
   };
 
+  // ==== IMPORTACIÓN FÁCIL (1 CLIC) ====
+  const [easyPrice, setEasyPrice] = useState<number>(0);
+  const [easyRunning, setEasyRunning] = useState(false);
+  const [easyMsg, setEasyMsg] = useState("");
+  const [easyStep, setEasyStep] = useState<string>("");
+  const doEasyImportAll = async () => {
+    if (!routerId) return;
+    setEasyRunning(true); setEasyMsg(""); setEasyStep("");
+    try {
+      // 1) Importar planes nuevos con precio base
+      const newProfs = (profResult?.profiles ?? []).filter((p: any) => !p.in_db && !p.is_system && (p.download_mbps > 0 || p.upload_mbps > 0));
+      let planCreated = 0;
+      if (newProfs.length > 0) {
+        setEasyStep(`Creando ${newProfs.length} plan(es)…`);
+        const profiles = newProfs.map((p: any) => ({ ...p, price: easyPrice || 0 }));
+        const res: any = await importProfilesFn({ data: { profiles, defaultPrice: easyPrice || 0 } });
+        planCreated = res.created ?? 0;
+        await reloadPlans();
+      }
+      // 2) Importar todos los secrets huérfanos (auto-match por perfil)
+      const orphList = (result?.secrets ?? []).filter((s: any) => !s.in_db);
+      let cliCreated = 0;
+      if (orphList.length > 0) {
+        setEasyStep(`Importando ${orphList.length} cliente(s)…`);
+        const res: any = await importFn({ data: { routerId, planId: null, clientId: null, secrets: orphList } });
+        cliCreated = res.created ?? 0;
+      }
+      setEasyStep("");
+      setEasyMsg(`✓ Listo — ${planCreated} plan(es) creados · ${cliCreated} cliente(s) importados`);
+      await scan();
+    } catch (e: any) {
+      setEasyStep("");
+      setEasyMsg("Error: " + e.message);
+    } finally { setEasyRunning(false); }
+  };
+
 
   const orphans = (result?.secrets ?? []).filter((s: any) => !s.in_db);
   const linked = (result?.secrets ?? []).filter((s: any) => s.in_db);
