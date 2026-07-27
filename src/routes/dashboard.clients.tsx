@@ -407,13 +407,53 @@ function ClientsPage() {
     setSelected(new Set()); load();
   };
 
+  // KPIs en vivo
+  const kpis = useMemo(() => {
+    const total = rows.length;
+    let active = 0, suspended = 0, cancelled = 0, debt = 0, online = 0, totalDebt = 0;
+    for (const r of rows) {
+      if (r.status === "active") active++;
+      else if (r.status === "suspended") suspended++;
+      else if (r.status === "cancelled") cancelled++;
+      const bal = Number((r as any).balance ?? 0);
+      if (bal > 0) { debt++; totalDebt += bal; }
+      const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
+      if (users.some((u: string) => onlineStatus[u] != null)) online++;
+    }
+    return { total, active, suspended, cancelled, debt, online, totalDebt };
+  }, [rows, onlineStatus]);
+
   return (
     <AdminLayout>
-      {/* Header cyan estilo Mikrowisp */}
-      <div className="rounded-t-md bg-cyan-500 text-white px-4 py-2 text-sm font-medium flex items-center justify-between">
-        <span>Lista Usuarios</span>
-        <div className="flex gap-2">
-          <button onClick={() => load()} className="p-1 hover:bg-white/20 rounded" title="Actualizar"><RefreshCw className="w-4 h-4" /></button>
+      {/* KPI Stats — profesional y compacto */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2 mb-2">
+        {[
+          { label: "Total", value: kpis.total, icon: User, cls: "from-slate-500 to-slate-700", ring: "ring-slate-200" },
+          { label: "Activos", value: kpis.active, icon: CheckCircle2, cls: "from-emerald-500 to-teal-600", ring: "ring-emerald-200" },
+          { label: "En línea", value: kpis.online, icon: Wifi, cls: "from-sky-500 to-blue-600", ring: "ring-sky-200", pulse: true },
+          { label: "Suspend.", value: kpis.suspended, icon: Power, cls: "from-amber-500 to-orange-600", ring: "ring-amber-200" },
+          { label: "Retirados", value: kpis.cancelled, icon: UserX, cls: "from-rose-500 to-red-600", ring: "ring-rose-200" },
+          { label: "Deuda", value: kpis.debt, icon: DollarSign, cls: "from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-200", sub: `Bs ${kpis.totalDebt.toFixed(0)}` },
+        ].map((k) => (
+          <div key={k.label} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${k.cls} text-white p-2.5 md:p-3 shadow-sm ring-1 ${k.ring} active:scale-[.98] transition`}>
+            <div className="flex items-center justify-between gap-1">
+              <div className="text-[10px] md:text-[11px] uppercase tracking-wider opacity-90 font-semibold truncate">{k.label}</div>
+              <k.icon className={`w-3.5 h-3.5 md:w-4 md:h-4 opacity-80 shrink-0 ${(k as any).pulse ? "animate-pulse" : ""}`} />
+            </div>
+            <div className="text-lg md:text-2xl font-bold tabular-nums leading-tight mt-0.5">{k.value}</div>
+            {(k as any).sub && <div className="text-[9px] md:text-[10px] opacity-90 truncate">{(k as any).sub}</div>}
+            <div className="absolute -right-3 -bottom-3 w-12 h-12 rounded-full bg-white/10" />
+          </div>
+        ))}
+      </div>
+
+      {/* Header cyan estilo Mikrowisp — sticky en mobile */}
+      <div className="rounded-t-md bg-gradient-to-r from-cyan-500 to-sky-500 text-white px-4 py-2.5 text-sm font-semibold flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        <span className="inline-flex items-center gap-2"><List className="w-4 h-4" /> Lista Usuarios <span className="hidden md:inline text-white/70 font-normal text-xs">· {filtered.length} de {rows.length}</span></span>
+        <div className="flex gap-1">
+          <button onClick={() => { load(); fetchOnlineStatus(); }} disabled={loading || onlineStatusLoading} className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-md transition disabled:opacity-60" title="Actualizar todo">
+            <RefreshCw className={`w-4 h-4 ${loading || onlineStatusLoading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
