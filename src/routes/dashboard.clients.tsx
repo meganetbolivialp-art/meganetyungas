@@ -96,7 +96,10 @@ function ClientsPage() {
   const [fCity, setFCity] = useState("");
   const [fDebt, setFDebt] = useState<string>("all"); // all | with | without | promise | vip
   const [fBillDay, setFBillDay] = useState<string>("");
-  const clearFilters = () => { setFIp(""); setFPppoe(""); setFPlan("all"); setFRouter("all"); setFCity(""); setFDebt("all"); setFBillDay(""); setQ(""); setStatusFilter("all"); };
+  const [onlineFilter, setOnlineFilter] = useState<string>("all"); // all | online | offline | unknown
+  const [onlineStatus, setOnlineStatus] = useState<Record<string, { router_id: string; router_name: string; address: string; uptime: string; bytes_in: number; bytes_out: number }>>({});
+  const [onlineStatusLoading, setOnlineStatusLoading] = useState(false);
+  const clearFilters = () => { setFIp(""); setFPppoe(""); setFPlan("all"); setFRouter("all"); setFCity(""); setFDebt("all"); setFBillDay(""); setQ(""); setStatusFilter("all"); setOnlineFilter("all"); };
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
