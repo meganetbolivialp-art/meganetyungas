@@ -291,6 +291,13 @@ export type Database = {
             foreignKeyName: "client_actions_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "client_actions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -367,6 +374,13 @@ export type Database = {
           username?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_portal_users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "client_portal_users_client_id_fkey"
             columns: ["client_id"]
@@ -540,6 +554,13 @@ export type Database = {
           traffic_bytes?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "cutoff_leaks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "cutoff_leaks_client_id_fkey"
             columns: ["client_id"]
@@ -887,6 +908,13 @@ export type Database = {
             foreignKeyName: "inventory_serials_assigned_client_id_fkey"
             columns: ["assigned_client_id"]
             isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "inventory_serials_assigned_client_id_fkey"
+            columns: ["assigned_client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -956,6 +984,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "invoices_client_id_fkey"
             columns: ["client_id"]
@@ -1061,6 +1096,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_converted_client_id_fkey"
+            columns: ["converted_client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "leads_converted_client_id_fkey"
             columns: ["converted_client_id"]
@@ -1427,6 +1469,13 @@ export type Database = {
             foreignKeyName: "payment_intents_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "payment_intents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -1477,6 +1526,13 @@ export type Database = {
           reference?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "payments_client_id_fkey"
             columns: ["client_id"]
@@ -1913,6 +1969,13 @@ export type Database = {
             foreignKeyName: "services_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "services_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -1961,6 +2024,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "subscriptions_client_id_fkey"
             columns: ["client_id"]
@@ -2059,6 +2129,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "tickets_client_id_fkey"
             columns: ["client_id"]
@@ -2279,6 +2356,13 @@ export type Database = {
             foreignKeyName: "work_orders_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "work_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
@@ -2293,7 +2377,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      client_cutoff_history: {
+        Row: {
+          classification: string | null
+          client_id: string | null
+          full_name: string | null
+          last_cut_at: string | null
+          last_reactivation_at: string | null
+          total_cuts: number | null
+          total_reactivations: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cutoff_daily_series: {
