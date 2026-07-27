@@ -23,7 +23,7 @@ export const Route = createFileRoute("/dashboard/clients")({
   component: ClientsPage,
 });
 
-type Client = { id: string; full_name: string; document: string | null; email: string | null; phone: string | null; city: string | null; status: string; created_at: string; balance?: number | null; services?: { id: string; ip_address: string | null; pppoe_user: string | null; status: string; plans: { name: string } | null }[] };
+type Client = { id: string; full_name: string; document: string | null; email: string | null; phone: string | null; city: string | null; address?: string | null; zone?: string | null; billing_day?: number | null; status: string; created_at: string; balance?: number | null; services?: { id: string; ip_address: string | null; pppoe_user: string | null; status: string; plans: { name: string } | null }[] };
 type Plan = { id: string; name: string; price: number; download_mbps: number; upload_mbps: number };
 type Router = { id: string; name: string; ip_address: string | null };
 
