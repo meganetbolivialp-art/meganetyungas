@@ -204,6 +204,42 @@ function RouterSyncPage() {
     } catch (e: any) { setProfMsg("Error: " + e.message); } finally { setProfImporting(false); }
   };
 
+  // ==== IMPORTACIÓN FÁCIL (1 CLIC) ====
+  const [easyPrice, setEasyPrice] = useState<number>(0);
+  const [easyRunning, setEasyRunning] = useState(false);
+  const [easyMsg, setEasyMsg] = useState("");
+  const [easyStep, setEasyStep] = useState<string>("");
+  const doEasyImportAll = async () => {
+    if (!routerId) return;
+    setEasyRunning(true); setEasyMsg(""); setEasyStep("");
+    try {
+      // 1) Importar planes nuevos con precio base
+      const newProfs = (profResult?.profiles ?? []).filter((p: any) => !p.in_db && !p.is_system && (p.download_mbps > 0 || p.upload_mbps > 0));
+      let planCreated = 0;
+      if (newProfs.length > 0) {
+        setEasyStep(`Creando ${newProfs.length} plan(es)…`);
+        const profiles = newProfs.map((p: any) => ({ ...p, price: easyPrice || 0 }));
+        const res: any = await importProfilesFn({ data: { profiles, defaultPrice: easyPrice || 0 } });
+        planCreated = res.created ?? 0;
+        await reloadPlans();
+      }
+      // 2) Importar todos los secrets huérfanos (auto-match por perfil)
+      const orphList = (result?.secrets ?? []).filter((s: any) => !s.in_db);
+      let cliCreated = 0;
+      if (orphList.length > 0) {
+        setEasyStep(`Importando ${orphList.length} cliente(s)…`);
+        const res: any = await importFn({ data: { routerId, planId: null, clientId: null, secrets: orphList } });
+        cliCreated = res.created ?? 0;
+      }
+      setEasyStep("");
+      setEasyMsg(`✓ Listo — ${planCreated} plan(es) creados · ${cliCreated} cliente(s) importados`);
+      await scan();
+    } catch (e: any) {
+      setEasyStep("");
+      setEasyMsg("Error: " + e.message);
+    } finally { setEasyRunning(false); }
+  };
+
 
   const orphans = (result?.secrets ?? []).filter((s: any) => !s.in_db);
   const linked = (result?.secrets ?? []).filter((s: any) => s.in_db);
@@ -238,6 +274,69 @@ function RouterSyncPage() {
           <StatCard color="#f59e0b" label="Huérfanos (no en DB)" value={orphans.length} icon={<AlertCircle size={16} />} />
         </div>
       )}
+
+      {result && (orphans.length > 0 || profOrphans.length > 0) && (
+        <div style={{
+          background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
+          padding: 18, borderRadius: 12, marginBottom: 12, color: "#fff",
+          boxShadow: "0 4px 12px rgba(8,145,178,0.25)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <Zap size={22} />
+            <div style={{ fontSize: 18, fontWeight: 800 }}>Importación fácil · 1 clic</div>
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.95, marginBottom: 14, lineHeight: 1.5 }}>
+            El sistema va a crear automáticamente:
+            <ul style={{ margin: "6px 0 0 20px", padding: 0 }}>
+              {profOrphans.length > 0 && <li><b>{profOrphans.length} plan(es) nuevo(s)</b> con el precio base que elijas abajo.</li>}
+              {orphans.length > 0 && <li><b>{orphans.length} cliente(s)</b> nuevos, cada uno vinculado a su plan por el nombre del perfil PPPoE.</li>}
+              <li>No se toca nada del router — solo se copia a la base de datos.</li>
+            </ul>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            {profOrphans.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.15)", padding: "6px 12px", borderRadius: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>Precio base por plan (Bs)</label>
+                <input
+                  type="number" min={0}
+                  value={easyPrice}
+                  onChange={(e) => setEasyPrice(parseFloat(e.target.value) || 0)}
+                  style={{ width: 90, padding: "6px 10px", border: "none", borderRadius: 6, fontSize: 14, fontWeight: 700, color: "#0f172a" }}
+                />
+              </div>
+            )}
+            <button
+              onClick={doEasyImportAll}
+              disabled={easyRunning}
+              style={{
+                background: "#fff", color: "#0e7490", border: "none",
+                padding: "10px 20px", borderRadius: 8, fontWeight: 800, fontSize: 14,
+                cursor: easyRunning ? "wait" : "pointer",
+                display: "flex", alignItems: "center", gap: 8,
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+              }}
+            >
+              <Download size={16} />
+              {easyRunning ? (easyStep || "Importando…") : `Importar todo (${profOrphans.length} planes + ${orphans.length} clientes)`}
+            </button>
+            {easyMsg && (
+              <div style={{ fontSize: 13, fontWeight: 600, color: easyMsg.startsWith("✓") ? "#a7f3d0" : "#fecaca" }}>
+                {easyMsg}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 10 }}>
+            ¿Necesitás afinar precios o elegir qué importar? Usá las pestañas de abajo (<b>Planes / Perfiles</b> y <b>Clientes huérfanos</b>).
+          </div>
+        </div>
+      )}
+
+      {result && orphans.length === 0 && profOrphans.length === 0 && (
+        <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", padding: 14, borderRadius: 10, marginBottom: 12, color: "#065f46", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+          <CheckCircle2 size={18} /> Todo está sincronizado — no hay planes ni clientes por importar.
+        </div>
+      )}
+
 
       {(result || drift || anomalies) && (
         <WizardSteps result={result} drift={drift} anomalies={anomalies} profOrphans={profOrphans} />
