@@ -954,6 +954,34 @@ function ClientsPage() {
           </div>
         </div>
       )}
+      {/* FAB — Nuevo cliente (solo mobile, respeta safe-area Android) */}
+      <button
+        onClick={openForm}
+        aria-label="Nuevo cliente"
+        className="md:hidden fixed right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40 active:scale-95 transition flex items-center justify-center ring-4 ring-white/60"
+        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <Plus className="w-7 h-7" strokeWidth={2.5} />
+      </button>
+
+      {/* Barra flotante de acciones bulk (mobile) */}
+      {selected.size > 0 && (
+        <div
+          className="md:hidden fixed left-2 right-2 z-40 bg-slate-900/95 backdrop-blur text-white rounded-2xl shadow-2xl px-3 py-2 flex items-center gap-2 animate-in slide-in-from-bottom-4"
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="text-xs font-semibold px-2">{selected.size} sel.</div>
+          <div className="flex-1 flex items-center justify-end gap-1">
+            <button onClick={() => bulkAction("suspend")} className="h-10 px-3 rounded-lg bg-amber-500/20 text-amber-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-amber-500/40"><Power className="w-4 h-4" /> Suspender</button>
+            <button onClick={() => bulkAction("reactivate")} className="h-10 px-3 rounded-lg bg-emerald-500/20 text-emerald-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-emerald-500/40"><UserCheck className="w-4 h-4" /> Activar</button>
+            <button onClick={() => bulkAction("delete")} className="h-10 px-3 rounded-lg bg-rose-500/20 text-rose-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-rose-500/40"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={() => setSelected(new Set())} className="h-10 w-10 rounded-lg bg-white/10 inline-flex items-center justify-center active:bg-white/20"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Espacio inferior mobile para no tapar contenido con FAB */}
+      <div className="md:hidden h-24" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} />
     </AdminLayout>
 
   );
