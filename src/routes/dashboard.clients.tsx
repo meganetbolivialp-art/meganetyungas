@@ -79,6 +79,7 @@ function ClientsPage() {
   const doReactivate = useServerFn(reactivateService);
   const doDelete = useServerFn(deleteClientCascade);
   const loadClientData = useServerFn(listClientsData);
+  const loadOnlineStatus = useServerFn(getClientsOnlineStatus);
   const [rows, setRows] = useState<Client[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [routers, setRouters] = useState<Router[]>([]);
