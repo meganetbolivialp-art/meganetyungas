@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff } from "lucide-react";
+import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff, ChevronDown, ChevronUp, Minus, Phone, Mail, CreditCard, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminLayout } from "@/components/admin-layout";
