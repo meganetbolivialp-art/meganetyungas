@@ -1,0 +1,1 @@
+ALTER TABLE public.services ADD COLUMN IF NOT EXISTS mikrotik_synced_at TIMESTAMPTZ;

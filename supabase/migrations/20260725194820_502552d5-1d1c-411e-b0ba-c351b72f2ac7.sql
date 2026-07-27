@@ -1,0 +1,1 @@
+ALTER TABLE public.portal_settings ADD COLUMN IF NOT EXISTS template_base_url text;

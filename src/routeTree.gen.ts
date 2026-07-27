@@ -9,38 +9,755 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SuspendidoRouteImport } from './routes/suspendido'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PortalRouteImport } from './routes/portal'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardWorkOrdersRouteImport } from './routes/dashboard.work-orders'
+import { Route as DashboardVouchersRouteImport } from './routes/dashboard.vouchers'
+import { Route as DashboardTicketsRouteImport } from './routes/dashboard.tickets'
+import { Route as DashboardTemplatesRouteImport } from './routes/dashboard.templates'
+import { Route as DashboardSettingsPortalRouteImport } from './routes/dashboard.settings-portal'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardServicesRouteImport } from './routes/dashboard.services'
+import { Route as DashboardSerialsRouteImport } from './routes/dashboard.serials'
+import { Route as DashboardRoutersRouteImport } from './routes/dashboard.routers'
+import { Route as DashboardRouterSyncRouteImport } from './routes/dashboard.router-sync'
+import { Route as DashboardReportesCortesRouteImport } from './routes/dashboard.reportes-cortes'
+import { Route as DashboardPromisesRouteImport } from './routes/dashboard.promises'
+import { Route as DashboardPortalUsersRouteImport } from './routes/dashboard.portal-users'
+import { Route as DashboardPlansRouteImport } from './routes/dashboard.plans'
+import { Route as DashboardPayrollRouteImport } from './routes/dashboard.payroll'
+import { Route as DashboardPaymentsRouteImport } from './routes/dashboard.payments'
+import { Route as DashboardNetworkMapRouteImport } from './routes/dashboard.network-map'
+import { Route as DashboardMessagingRouteImport } from './routes/dashboard.messaging'
+import { Route as DashboardLicensesRouteImport } from './routes/dashboard.licenses'
+import { Route as DashboardLeadsRouteImport } from './routes/dashboard.leads'
+import { Route as DashboardKpisRouteImport } from './routes/dashboard.kpis'
+import { Route as DashboardJobsRouteImport } from './routes/dashboard.jobs'
+import { Route as DashboardInvoicesRouteImport } from './routes/dashboard.invoices'
+import { Route as DashboardInventoryRouteImport } from './routes/dashboard.inventory'
+import { Route as DashboardGatewaysRouteImport } from './routes/dashboard.gateways'
+import { Route as DashboardFinanzasRouteImport } from './routes/dashboard.finanzas'
+import { Route as DashboardEmployeesRouteImport } from './routes/dashboard.employees'
+import { Route as DashboardCutoffsRouteImport } from './routes/dashboard.cutoffs'
+import { Route as DashboardCutoffPoliciesRouteImport } from './routes/dashboard.cutoff-policies'
+import { Route as DashboardCortesMonitorRouteImport } from './routes/dashboard.cortes-monitor'
+import { Route as DashboardCobrarRouteImport } from './routes/dashboard.cobrar'
+import { Route as DashboardClientsRouteImport } from './routes/dashboard.clients'
+import { Route as DashboardCashRouteImport } from './routes/dashboard.cash'
+import { Route as DashboardBulkTemplatesRouteImport } from './routes/dashboard.bulk-templates'
+import { Route as DashboardBulkRouterRouteImport } from './routes/dashboard.bulk-router'
+import { Route as DashboardBranchesRouteImport } from './routes/dashboard.branches'
+import { Route as DashboardAuditRouteImport } from './routes/dashboard.audit'
+import { Route as DashboardAccountingRouteImport } from './routes/dashboard.accounting'
+import { Route as Dashboard2faRouteImport } from './routes/dashboard.2fa'
+import { Route as DashboardInvoicesInvoiceIdRouteImport } from './routes/dashboard.invoices_.$invoiceId'
+import { Route as DashboardClientsClientIdRouteImport } from './routes/dashboard.clients_.$clientId'
+import { Route as DashboardRoutersRouterIdMonitorRouteImport } from './routes/dashboard.routers_.$routerId.monitor'
+import { Route as ApiPublicLicenseHeartbeatRouteImport } from './routes/api/public/license.heartbeat'
+import { Route as ApiPublicLicenseActivateRouteImport } from './routes/api/public/license.activate'
+import { Route as ApiPublicHooksSyncMikrotikRouteImport } from './routes/api/public/hooks/sync-mikrotik'
+import { Route as ApiPublicHooksStripeRouteImport } from './routes/api/public/hooks/stripe'
+import { Route as ApiPublicHooksMercadopagoRouteImport } from './routes/api/public/hooks/mercadopago'
+import { Route as ApiPublicHooksDetectCutoffLeaksRouteImport } from './routes/api/public/hooks/detect-cutoff-leaks'
+import { Route as ApiPublicHooksBillingRouteImport } from './routes/api/public/hooks/billing'
 
+const SuspendidoRoute = SuspendidoRouteImport.update({
+  id: '/suspendido',
+  path: '/suspendido',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardWorkOrdersRoute = DashboardWorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardVouchersRoute = DashboardVouchersRouteImport.update({
+  id: '/vouchers',
+  path: '/vouchers',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTicketsRoute = DashboardTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTemplatesRoute = DashboardTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsPortalRoute = DashboardSettingsPortalRouteImport.update({
+  id: '/settings-portal',
+  path: '/settings-portal',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardServicesRoute = DashboardServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSerialsRoute = DashboardSerialsRouteImport.update({
+  id: '/serials',
+  path: '/serials',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRoutersRoute = DashboardRoutersRouteImport.update({
+  id: '/routers',
+  path: '/routers',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRouterSyncRoute = DashboardRouterSyncRouteImport.update({
+  id: '/router-sync',
+  path: '/router-sync',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportesCortesRoute = DashboardReportesCortesRouteImport.update({
+  id: '/reportes-cortes',
+  path: '/reportes-cortes',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPromisesRoute = DashboardPromisesRouteImport.update({
+  id: '/promises',
+  path: '/promises',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPortalUsersRoute = DashboardPortalUsersRouteImport.update({
+  id: '/portal-users',
+  path: '/portal-users',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPlansRoute = DashboardPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPayrollRoute = DashboardPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPaymentsRoute = DashboardPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardNetworkMapRoute = DashboardNetworkMapRouteImport.update({
+  id: '/network-map',
+  path: '/network-map',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMessagingRoute = DashboardMessagingRouteImport.update({
+  id: '/messaging',
+  path: '/messaging',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLicensesRoute = DashboardLicensesRouteImport.update({
+  id: '/licenses',
+  path: '/licenses',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardLeadsRoute = DashboardLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardKpisRoute = DashboardKpisRouteImport.update({
+  id: '/kpis',
+  path: '/kpis',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardJobsRoute = DashboardJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardInvoicesRoute = DashboardInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardInventoryRoute = DashboardInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardGatewaysRoute = DashboardGatewaysRouteImport.update({
+  id: '/gateways',
+  path: '/gateways',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardFinanzasRoute = DashboardFinanzasRouteImport.update({
+  id: '/finanzas',
+  path: '/finanzas',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardEmployeesRoute = DashboardEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCutoffsRoute = DashboardCutoffsRouteImport.update({
+  id: '/cutoffs',
+  path: '/cutoffs',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCutoffPoliciesRoute = DashboardCutoffPoliciesRouteImport.update({
+  id: '/cutoff-policies',
+  path: '/cutoff-policies',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCortesMonitorRoute = DashboardCortesMonitorRouteImport.update({
+  id: '/cortes-monitor',
+  path: '/cortes-monitor',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCobrarRoute = DashboardCobrarRouteImport.update({
+  id: '/cobrar',
+  path: '/cobrar',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientsRoute = DashboardClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardCashRoute = DashboardCashRouteImport.update({
+  id: '/cash',
+  path: '/cash',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBulkTemplatesRoute = DashboardBulkTemplatesRouteImport.update({
+  id: '/bulk-templates',
+  path: '/bulk-templates',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBulkRouterRoute = DashboardBulkRouterRouteImport.update({
+  id: '/bulk-router',
+  path: '/bulk-router',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardBranchesRoute = DashboardBranchesRouteImport.update({
+  id: '/branches',
+  path: '/branches',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAuditRoute = DashboardAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardAccountingRoute = DashboardAccountingRouteImport.update({
+  id: '/accounting',
+  path: '/accounting',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const Dashboard2faRoute = Dashboard2faRouteImport.update({
+  id: '/2fa',
+  path: '/2fa',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardInvoicesInvoiceIdRoute =
+  DashboardInvoicesInvoiceIdRouteImport.update({
+    id: '/invoices_/$invoiceId',
+    path: '/invoices/$invoiceId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardClientsClientIdRoute =
+  DashboardClientsClientIdRouteImport.update({
+    id: '/clients_/$clientId',
+    path: '/clients/$clientId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardRoutersRouterIdMonitorRoute =
+  DashboardRoutersRouterIdMonitorRouteImport.update({
+    id: '/routers_/$routerId/monitor',
+    path: '/routers/$routerId/monitor',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const ApiPublicLicenseHeartbeatRoute =
+  ApiPublicLicenseHeartbeatRouteImport.update({
+    id: '/api/public/license/heartbeat',
+    path: '/api/public/license/heartbeat',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicLicenseActivateRoute =
+  ApiPublicLicenseActivateRouteImport.update({
+    id: '/api/public/license/activate',
+    path: '/api/public/license/activate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksSyncMikrotikRoute =
+  ApiPublicHooksSyncMikrotikRouteImport.update({
+    id: '/api/public/hooks/sync-mikrotik',
+    path: '/api/public/hooks/sync-mikrotik',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksStripeRoute = ApiPublicHooksStripeRouteImport.update({
+  id: '/api/public/hooks/stripe',
+  path: '/api/public/hooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksMercadopagoRoute =
+  ApiPublicHooksMercadopagoRouteImport.update({
+    id: '/api/public/hooks/mercadopago',
+    path: '/api/public/hooks/mercadopago',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDetectCutoffLeaksRoute =
+  ApiPublicHooksDetectCutoffLeaksRouteImport.update({
+    id: '/api/public/hooks/detect-cutoff-leaks',
+    path: '/api/public/hooks/detect-cutoff-leaks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBillingRoute = ApiPublicHooksBillingRouteImport.update({
+  id: '/api/public/hooks/billing',
+  path: '/api/public/hooks/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/portal': typeof PortalRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/suspendido': typeof SuspendidoRoute
+  '/dashboard/2fa': typeof Dashboard2faRoute
+  '/dashboard/accounting': typeof DashboardAccountingRoute
+  '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/branches': typeof DashboardBranchesRoute
+  '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
+  '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
+  '/dashboard/cash': typeof DashboardCashRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
+  '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
+  '/dashboard/cutoffs': typeof DashboardCutoffsRoute
+  '/dashboard/employees': typeof DashboardEmployeesRoute
+  '/dashboard/finanzas': typeof DashboardFinanzasRoute
+  '/dashboard/gateways': typeof DashboardGatewaysRoute
+  '/dashboard/inventory': typeof DashboardInventoryRoute
+  '/dashboard/invoices': typeof DashboardInvoicesRoute
+  '/dashboard/jobs': typeof DashboardJobsRoute
+  '/dashboard/kpis': typeof DashboardKpisRoute
+  '/dashboard/leads': typeof DashboardLeadsRoute
+  '/dashboard/licenses': typeof DashboardLicensesRoute
+  '/dashboard/messaging': typeof DashboardMessagingRoute
+  '/dashboard/network-map': typeof DashboardNetworkMapRoute
+  '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/payroll': typeof DashboardPayrollRoute
+  '/dashboard/plans': typeof DashboardPlansRoute
+  '/dashboard/portal-users': typeof DashboardPortalUsersRoute
+  '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
+  '/dashboard/router-sync': typeof DashboardRouterSyncRoute
+  '/dashboard/routers': typeof DashboardRoutersRoute
+  '/dashboard/serials': typeof DashboardSerialsRoute
+  '/dashboard/services': typeof DashboardServicesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/templates': typeof DashboardTemplatesRoute
+  '/dashboard/tickets': typeof DashboardTicketsRoute
+  '/dashboard/vouchers': typeof DashboardVouchersRoute
+  '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
+  '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
+  '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
+  '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
+  '/api/public/hooks/sync-mikrotik': typeof ApiPublicHooksSyncMikrotikRoute
+  '/api/public/license/activate': typeof ApiPublicLicenseActivateRoute
+  '/api/public/license/heartbeat': typeof ApiPublicLicenseHeartbeatRoute
+  '/dashboard/routers/$routerId/monitor': typeof DashboardRoutersRouterIdMonitorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/portal': typeof PortalRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/suspendido': typeof SuspendidoRoute
+  '/dashboard/2fa': typeof Dashboard2faRoute
+  '/dashboard/accounting': typeof DashboardAccountingRoute
+  '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/branches': typeof DashboardBranchesRoute
+  '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
+  '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
+  '/dashboard/cash': typeof DashboardCashRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
+  '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
+  '/dashboard/cutoffs': typeof DashboardCutoffsRoute
+  '/dashboard/employees': typeof DashboardEmployeesRoute
+  '/dashboard/finanzas': typeof DashboardFinanzasRoute
+  '/dashboard/gateways': typeof DashboardGatewaysRoute
+  '/dashboard/inventory': typeof DashboardInventoryRoute
+  '/dashboard/invoices': typeof DashboardInvoicesRoute
+  '/dashboard/jobs': typeof DashboardJobsRoute
+  '/dashboard/kpis': typeof DashboardKpisRoute
+  '/dashboard/leads': typeof DashboardLeadsRoute
+  '/dashboard/licenses': typeof DashboardLicensesRoute
+  '/dashboard/messaging': typeof DashboardMessagingRoute
+  '/dashboard/network-map': typeof DashboardNetworkMapRoute
+  '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/payroll': typeof DashboardPayrollRoute
+  '/dashboard/plans': typeof DashboardPlansRoute
+  '/dashboard/portal-users': typeof DashboardPortalUsersRoute
+  '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
+  '/dashboard/router-sync': typeof DashboardRouterSyncRoute
+  '/dashboard/routers': typeof DashboardRoutersRoute
+  '/dashboard/serials': typeof DashboardSerialsRoute
+  '/dashboard/services': typeof DashboardServicesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/templates': typeof DashboardTemplatesRoute
+  '/dashboard/tickets': typeof DashboardTicketsRoute
+  '/dashboard/vouchers': typeof DashboardVouchersRoute
+  '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
+  '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
+  '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
+  '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
+  '/api/public/hooks/sync-mikrotik': typeof ApiPublicHooksSyncMikrotikRoute
+  '/api/public/license/activate': typeof ApiPublicLicenseActivateRoute
+  '/api/public/license/heartbeat': typeof ApiPublicLicenseHeartbeatRoute
+  '/dashboard/routers/$routerId/monitor': typeof DashboardRoutersRouterIdMonitorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/portal': typeof PortalRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/suspendido': typeof SuspendidoRoute
+  '/dashboard/2fa': typeof Dashboard2faRoute
+  '/dashboard/accounting': typeof DashboardAccountingRoute
+  '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/branches': typeof DashboardBranchesRoute
+  '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
+  '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
+  '/dashboard/cash': typeof DashboardCashRoute
+  '/dashboard/clients': typeof DashboardClientsRoute
+  '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
+  '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
+  '/dashboard/cutoffs': typeof DashboardCutoffsRoute
+  '/dashboard/employees': typeof DashboardEmployeesRoute
+  '/dashboard/finanzas': typeof DashboardFinanzasRoute
+  '/dashboard/gateways': typeof DashboardGatewaysRoute
+  '/dashboard/inventory': typeof DashboardInventoryRoute
+  '/dashboard/invoices': typeof DashboardInvoicesRoute
+  '/dashboard/jobs': typeof DashboardJobsRoute
+  '/dashboard/kpis': typeof DashboardKpisRoute
+  '/dashboard/leads': typeof DashboardLeadsRoute
+  '/dashboard/licenses': typeof DashboardLicensesRoute
+  '/dashboard/messaging': typeof DashboardMessagingRoute
+  '/dashboard/network-map': typeof DashboardNetworkMapRoute
+  '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/payroll': typeof DashboardPayrollRoute
+  '/dashboard/plans': typeof DashboardPlansRoute
+  '/dashboard/portal-users': typeof DashboardPortalUsersRoute
+  '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
+  '/dashboard/router-sync': typeof DashboardRouterSyncRoute
+  '/dashboard/routers': typeof DashboardRoutersRoute
+  '/dashboard/serials': typeof DashboardSerialsRoute
+  '/dashboard/services': typeof DashboardServicesRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/templates': typeof DashboardTemplatesRoute
+  '/dashboard/tickets': typeof DashboardTicketsRoute
+  '/dashboard/vouchers': typeof DashboardVouchersRoute
+  '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/clients_/$clientId': typeof DashboardClientsClientIdRoute
+  '/dashboard/invoices_/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
+  '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
+  '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
+  '/api/public/hooks/sync-mikrotik': typeof ApiPublicHooksSyncMikrotikRoute
+  '/api/public/license/activate': typeof ApiPublicLicenseActivateRoute
+  '/api/public/license/heartbeat': typeof ApiPublicLicenseHeartbeatRoute
+  '/dashboard/routers_/$routerId/monitor': typeof DashboardRoutersRouterIdMonitorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/portal'
+    | '/reset-password'
+    | '/suspendido'
+    | '/dashboard/2fa'
+    | '/dashboard/accounting'
+    | '/dashboard/audit'
+    | '/dashboard/branches'
+    | '/dashboard/bulk-router'
+    | '/dashboard/bulk-templates'
+    | '/dashboard/cash'
+    | '/dashboard/clients'
+    | '/dashboard/cobrar'
+    | '/dashboard/cortes-monitor'
+    | '/dashboard/cutoff-policies'
+    | '/dashboard/cutoffs'
+    | '/dashboard/employees'
+    | '/dashboard/finanzas'
+    | '/dashboard/gateways'
+    | '/dashboard/inventory'
+    | '/dashboard/invoices'
+    | '/dashboard/jobs'
+    | '/dashboard/kpis'
+    | '/dashboard/leads'
+    | '/dashboard/licenses'
+    | '/dashboard/messaging'
+    | '/dashboard/network-map'
+    | '/dashboard/payments'
+    | '/dashboard/payroll'
+    | '/dashboard/plans'
+    | '/dashboard/portal-users'
+    | '/dashboard/promises'
+    | '/dashboard/reportes-cortes'
+    | '/dashboard/router-sync'
+    | '/dashboard/routers'
+    | '/dashboard/serials'
+    | '/dashboard/services'
+    | '/dashboard/settings'
+    | '/dashboard/settings-portal'
+    | '/dashboard/templates'
+    | '/dashboard/tickets'
+    | '/dashboard/vouchers'
+    | '/dashboard/work-orders'
+    | '/dashboard/'
+    | '/dashboard/clients/$clientId'
+    | '/dashboard/invoices/$invoiceId'
+    | '/api/public/hooks/billing'
+    | '/api/public/hooks/detect-cutoff-leaks'
+    | '/api/public/hooks/mercadopago'
+    | '/api/public/hooks/stripe'
+    | '/api/public/hooks/sync-mikrotik'
+    | '/api/public/license/activate'
+    | '/api/public/license/heartbeat'
+    | '/dashboard/routers/$routerId/monitor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/portal'
+    | '/reset-password'
+    | '/suspendido'
+    | '/dashboard/2fa'
+    | '/dashboard/accounting'
+    | '/dashboard/audit'
+    | '/dashboard/branches'
+    | '/dashboard/bulk-router'
+    | '/dashboard/bulk-templates'
+    | '/dashboard/cash'
+    | '/dashboard/clients'
+    | '/dashboard/cobrar'
+    | '/dashboard/cortes-monitor'
+    | '/dashboard/cutoff-policies'
+    | '/dashboard/cutoffs'
+    | '/dashboard/employees'
+    | '/dashboard/finanzas'
+    | '/dashboard/gateways'
+    | '/dashboard/inventory'
+    | '/dashboard/invoices'
+    | '/dashboard/jobs'
+    | '/dashboard/kpis'
+    | '/dashboard/leads'
+    | '/dashboard/licenses'
+    | '/dashboard/messaging'
+    | '/dashboard/network-map'
+    | '/dashboard/payments'
+    | '/dashboard/payroll'
+    | '/dashboard/plans'
+    | '/dashboard/portal-users'
+    | '/dashboard/promises'
+    | '/dashboard/reportes-cortes'
+    | '/dashboard/router-sync'
+    | '/dashboard/routers'
+    | '/dashboard/serials'
+    | '/dashboard/services'
+    | '/dashboard/settings'
+    | '/dashboard/settings-portal'
+    | '/dashboard/templates'
+    | '/dashboard/tickets'
+    | '/dashboard/vouchers'
+    | '/dashboard/work-orders'
+    | '/dashboard'
+    | '/dashboard/clients/$clientId'
+    | '/dashboard/invoices/$invoiceId'
+    | '/api/public/hooks/billing'
+    | '/api/public/hooks/detect-cutoff-leaks'
+    | '/api/public/hooks/mercadopago'
+    | '/api/public/hooks/stripe'
+    | '/api/public/hooks/sync-mikrotik'
+    | '/api/public/license/activate'
+    | '/api/public/license/heartbeat'
+    | '/dashboard/routers/$routerId/monitor'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/portal'
+    | '/reset-password'
+    | '/suspendido'
+    | '/dashboard/2fa'
+    | '/dashboard/accounting'
+    | '/dashboard/audit'
+    | '/dashboard/branches'
+    | '/dashboard/bulk-router'
+    | '/dashboard/bulk-templates'
+    | '/dashboard/cash'
+    | '/dashboard/clients'
+    | '/dashboard/cobrar'
+    | '/dashboard/cortes-monitor'
+    | '/dashboard/cutoff-policies'
+    | '/dashboard/cutoffs'
+    | '/dashboard/employees'
+    | '/dashboard/finanzas'
+    | '/dashboard/gateways'
+    | '/dashboard/inventory'
+    | '/dashboard/invoices'
+    | '/dashboard/jobs'
+    | '/dashboard/kpis'
+    | '/dashboard/leads'
+    | '/dashboard/licenses'
+    | '/dashboard/messaging'
+    | '/dashboard/network-map'
+    | '/dashboard/payments'
+    | '/dashboard/payroll'
+    | '/dashboard/plans'
+    | '/dashboard/portal-users'
+    | '/dashboard/promises'
+    | '/dashboard/reportes-cortes'
+    | '/dashboard/router-sync'
+    | '/dashboard/routers'
+    | '/dashboard/serials'
+    | '/dashboard/services'
+    | '/dashboard/settings'
+    | '/dashboard/settings-portal'
+    | '/dashboard/templates'
+    | '/dashboard/tickets'
+    | '/dashboard/vouchers'
+    | '/dashboard/work-orders'
+    | '/dashboard/'
+    | '/dashboard/clients_/$clientId'
+    | '/dashboard/invoices_/$invoiceId'
+    | '/api/public/hooks/billing'
+    | '/api/public/hooks/detect-cutoff-leaks'
+    | '/api/public/hooks/mercadopago'
+    | '/api/public/hooks/stripe'
+    | '/api/public/hooks/sync-mikrotik'
+    | '/api/public/license/activate'
+    | '/api/public/license/heartbeat'
+    | '/dashboard/routers_/$routerId/monitor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
+  PortalRoute: typeof PortalRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SuspendidoRoute: typeof SuspendidoRoute
+  ApiPublicHooksBillingRoute: typeof ApiPublicHooksBillingRoute
+  ApiPublicHooksDetectCutoffLeaksRoute: typeof ApiPublicHooksDetectCutoffLeaksRoute
+  ApiPublicHooksMercadopagoRoute: typeof ApiPublicHooksMercadopagoRoute
+  ApiPublicHooksStripeRoute: typeof ApiPublicHooksStripeRoute
+  ApiPublicHooksSyncMikrotikRoute: typeof ApiPublicHooksSyncMikrotikRoute
+  ApiPublicLicenseActivateRoute: typeof ApiPublicLicenseActivateRoute
+  ApiPublicLicenseHeartbeatRoute: typeof ApiPublicLicenseHeartbeatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/suspendido': {
+      id: '/suspendido'
+      path: '/suspendido'
+      fullPath: '/suspendido'
+      preLoaderRoute: typeof SuspendidoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +765,470 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/work-orders': {
+      id: '/dashboard/work-orders'
+      path: '/work-orders'
+      fullPath: '/dashboard/work-orders'
+      preLoaderRoute: typeof DashboardWorkOrdersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/vouchers': {
+      id: '/dashboard/vouchers'
+      path: '/vouchers'
+      fullPath: '/dashboard/vouchers'
+      preLoaderRoute: typeof DashboardVouchersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tickets': {
+      id: '/dashboard/tickets'
+      path: '/tickets'
+      fullPath: '/dashboard/tickets'
+      preLoaderRoute: typeof DashboardTicketsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/templates': {
+      id: '/dashboard/templates'
+      path: '/templates'
+      fullPath: '/dashboard/templates'
+      preLoaderRoute: typeof DashboardTemplatesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings-portal': {
+      id: '/dashboard/settings-portal'
+      path: '/settings-portal'
+      fullPath: '/dashboard/settings-portal'
+      preLoaderRoute: typeof DashboardSettingsPortalRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/services': {
+      id: '/dashboard/services'
+      path: '/services'
+      fullPath: '/dashboard/services'
+      preLoaderRoute: typeof DashboardServicesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/serials': {
+      id: '/dashboard/serials'
+      path: '/serials'
+      fullPath: '/dashboard/serials'
+      preLoaderRoute: typeof DashboardSerialsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/routers': {
+      id: '/dashboard/routers'
+      path: '/routers'
+      fullPath: '/dashboard/routers'
+      preLoaderRoute: typeof DashboardRoutersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/router-sync': {
+      id: '/dashboard/router-sync'
+      path: '/router-sync'
+      fullPath: '/dashboard/router-sync'
+      preLoaderRoute: typeof DashboardRouterSyncRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reportes-cortes': {
+      id: '/dashboard/reportes-cortes'
+      path: '/reportes-cortes'
+      fullPath: '/dashboard/reportes-cortes'
+      preLoaderRoute: typeof DashboardReportesCortesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/promises': {
+      id: '/dashboard/promises'
+      path: '/promises'
+      fullPath: '/dashboard/promises'
+      preLoaderRoute: typeof DashboardPromisesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/portal-users': {
+      id: '/dashboard/portal-users'
+      path: '/portal-users'
+      fullPath: '/dashboard/portal-users'
+      preLoaderRoute: typeof DashboardPortalUsersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/plans': {
+      id: '/dashboard/plans'
+      path: '/plans'
+      fullPath: '/dashboard/plans'
+      preLoaderRoute: typeof DashboardPlansRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/payroll': {
+      id: '/dashboard/payroll'
+      path: '/payroll'
+      fullPath: '/dashboard/payroll'
+      preLoaderRoute: typeof DashboardPayrollRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/payments': {
+      id: '/dashboard/payments'
+      path: '/payments'
+      fullPath: '/dashboard/payments'
+      preLoaderRoute: typeof DashboardPaymentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/network-map': {
+      id: '/dashboard/network-map'
+      path: '/network-map'
+      fullPath: '/dashboard/network-map'
+      preLoaderRoute: typeof DashboardNetworkMapRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/messaging': {
+      id: '/dashboard/messaging'
+      path: '/messaging'
+      fullPath: '/dashboard/messaging'
+      preLoaderRoute: typeof DashboardMessagingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/licenses': {
+      id: '/dashboard/licenses'
+      path: '/licenses'
+      fullPath: '/dashboard/licenses'
+      preLoaderRoute: typeof DashboardLicensesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/leads': {
+      id: '/dashboard/leads'
+      path: '/leads'
+      fullPath: '/dashboard/leads'
+      preLoaderRoute: typeof DashboardLeadsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/kpis': {
+      id: '/dashboard/kpis'
+      path: '/kpis'
+      fullPath: '/dashboard/kpis'
+      preLoaderRoute: typeof DashboardKpisRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/jobs': {
+      id: '/dashboard/jobs'
+      path: '/jobs'
+      fullPath: '/dashboard/jobs'
+      preLoaderRoute: typeof DashboardJobsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/invoices': {
+      id: '/dashboard/invoices'
+      path: '/invoices'
+      fullPath: '/dashboard/invoices'
+      preLoaderRoute: typeof DashboardInvoicesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/inventory': {
+      id: '/dashboard/inventory'
+      path: '/inventory'
+      fullPath: '/dashboard/inventory'
+      preLoaderRoute: typeof DashboardInventoryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/gateways': {
+      id: '/dashboard/gateways'
+      path: '/gateways'
+      fullPath: '/dashboard/gateways'
+      preLoaderRoute: typeof DashboardGatewaysRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/finanzas': {
+      id: '/dashboard/finanzas'
+      path: '/finanzas'
+      fullPath: '/dashboard/finanzas'
+      preLoaderRoute: typeof DashboardFinanzasRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/employees': {
+      id: '/dashboard/employees'
+      path: '/employees'
+      fullPath: '/dashboard/employees'
+      preLoaderRoute: typeof DashboardEmployeesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cutoffs': {
+      id: '/dashboard/cutoffs'
+      path: '/cutoffs'
+      fullPath: '/dashboard/cutoffs'
+      preLoaderRoute: typeof DashboardCutoffsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cutoff-policies': {
+      id: '/dashboard/cutoff-policies'
+      path: '/cutoff-policies'
+      fullPath: '/dashboard/cutoff-policies'
+      preLoaderRoute: typeof DashboardCutoffPoliciesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cortes-monitor': {
+      id: '/dashboard/cortes-monitor'
+      path: '/cortes-monitor'
+      fullPath: '/dashboard/cortes-monitor'
+      preLoaderRoute: typeof DashboardCortesMonitorRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cobrar': {
+      id: '/dashboard/cobrar'
+      path: '/cobrar'
+      fullPath: '/dashboard/cobrar'
+      preLoaderRoute: typeof DashboardCobrarRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clients': {
+      id: '/dashboard/clients'
+      path: '/clients'
+      fullPath: '/dashboard/clients'
+      preLoaderRoute: typeof DashboardClientsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/cash': {
+      id: '/dashboard/cash'
+      path: '/cash'
+      fullPath: '/dashboard/cash'
+      preLoaderRoute: typeof DashboardCashRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/bulk-templates': {
+      id: '/dashboard/bulk-templates'
+      path: '/bulk-templates'
+      fullPath: '/dashboard/bulk-templates'
+      preLoaderRoute: typeof DashboardBulkTemplatesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/bulk-router': {
+      id: '/dashboard/bulk-router'
+      path: '/bulk-router'
+      fullPath: '/dashboard/bulk-router'
+      preLoaderRoute: typeof DashboardBulkRouterRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/branches': {
+      id: '/dashboard/branches'
+      path: '/branches'
+      fullPath: '/dashboard/branches'
+      preLoaderRoute: typeof DashboardBranchesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/audit': {
+      id: '/dashboard/audit'
+      path: '/audit'
+      fullPath: '/dashboard/audit'
+      preLoaderRoute: typeof DashboardAuditRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/accounting': {
+      id: '/dashboard/accounting'
+      path: '/accounting'
+      fullPath: '/dashboard/accounting'
+      preLoaderRoute: typeof DashboardAccountingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/2fa': {
+      id: '/dashboard/2fa'
+      path: '/2fa'
+      fullPath: '/dashboard/2fa'
+      preLoaderRoute: typeof Dashboard2faRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/invoices_/$invoiceId': {
+      id: '/dashboard/invoices_/$invoiceId'
+      path: '/invoices/$invoiceId'
+      fullPath: '/dashboard/invoices/$invoiceId'
+      preLoaderRoute: typeof DashboardInvoicesInvoiceIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clients_/$clientId': {
+      id: '/dashboard/clients_/$clientId'
+      path: '/clients/$clientId'
+      fullPath: '/dashboard/clients/$clientId'
+      preLoaderRoute: typeof DashboardClientsClientIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/routers_/$routerId/monitor': {
+      id: '/dashboard/routers_/$routerId/monitor'
+      path: '/routers/$routerId/monitor'
+      fullPath: '/dashboard/routers/$routerId/monitor'
+      preLoaderRoute: typeof DashboardRoutersRouterIdMonitorRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/api/public/license/heartbeat': {
+      id: '/api/public/license/heartbeat'
+      path: '/api/public/license/heartbeat'
+      fullPath: '/api/public/license/heartbeat'
+      preLoaderRoute: typeof ApiPublicLicenseHeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/license/activate': {
+      id: '/api/public/license/activate'
+      path: '/api/public/license/activate'
+      fullPath: '/api/public/license/activate'
+      preLoaderRoute: typeof ApiPublicLicenseActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/sync-mikrotik': {
+      id: '/api/public/hooks/sync-mikrotik'
+      path: '/api/public/hooks/sync-mikrotik'
+      fullPath: '/api/public/hooks/sync-mikrotik'
+      preLoaderRoute: typeof ApiPublicHooksSyncMikrotikRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/stripe': {
+      id: '/api/public/hooks/stripe'
+      path: '/api/public/hooks/stripe'
+      fullPath: '/api/public/hooks/stripe'
+      preLoaderRoute: typeof ApiPublicHooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/mercadopago': {
+      id: '/api/public/hooks/mercadopago'
+      path: '/api/public/hooks/mercadopago'
+      fullPath: '/api/public/hooks/mercadopago'
+      preLoaderRoute: typeof ApiPublicHooksMercadopagoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/detect-cutoff-leaks': {
+      id: '/api/public/hooks/detect-cutoff-leaks'
+      path: '/api/public/hooks/detect-cutoff-leaks'
+      fullPath: '/api/public/hooks/detect-cutoff-leaks'
+      preLoaderRoute: typeof ApiPublicHooksDetectCutoffLeaksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/billing': {
+      id: '/api/public/hooks/billing'
+      path: '/api/public/hooks/billing'
+      fullPath: '/api/public/hooks/billing'
+      preLoaderRoute: typeof ApiPublicHooksBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface DashboardRouteChildren {
+  Dashboard2faRoute: typeof Dashboard2faRoute
+  DashboardAccountingRoute: typeof DashboardAccountingRoute
+  DashboardAuditRoute: typeof DashboardAuditRoute
+  DashboardBranchesRoute: typeof DashboardBranchesRoute
+  DashboardBulkRouterRoute: typeof DashboardBulkRouterRoute
+  DashboardBulkTemplatesRoute: typeof DashboardBulkTemplatesRoute
+  DashboardCashRoute: typeof DashboardCashRoute
+  DashboardClientsRoute: typeof DashboardClientsRoute
+  DashboardCobrarRoute: typeof DashboardCobrarRoute
+  DashboardCortesMonitorRoute: typeof DashboardCortesMonitorRoute
+  DashboardCutoffPoliciesRoute: typeof DashboardCutoffPoliciesRoute
+  DashboardCutoffsRoute: typeof DashboardCutoffsRoute
+  DashboardEmployeesRoute: typeof DashboardEmployeesRoute
+  DashboardFinanzasRoute: typeof DashboardFinanzasRoute
+  DashboardGatewaysRoute: typeof DashboardGatewaysRoute
+  DashboardInventoryRoute: typeof DashboardInventoryRoute
+  DashboardInvoicesRoute: typeof DashboardInvoicesRoute
+  DashboardJobsRoute: typeof DashboardJobsRoute
+  DashboardKpisRoute: typeof DashboardKpisRoute
+  DashboardLeadsRoute: typeof DashboardLeadsRoute
+  DashboardLicensesRoute: typeof DashboardLicensesRoute
+  DashboardMessagingRoute: typeof DashboardMessagingRoute
+  DashboardNetworkMapRoute: typeof DashboardNetworkMapRoute
+  DashboardPaymentsRoute: typeof DashboardPaymentsRoute
+  DashboardPayrollRoute: typeof DashboardPayrollRoute
+  DashboardPlansRoute: typeof DashboardPlansRoute
+  DashboardPortalUsersRoute: typeof DashboardPortalUsersRoute
+  DashboardPromisesRoute: typeof DashboardPromisesRoute
+  DashboardReportesCortesRoute: typeof DashboardReportesCortesRoute
+  DashboardRouterSyncRoute: typeof DashboardRouterSyncRoute
+  DashboardRoutersRoute: typeof DashboardRoutersRoute
+  DashboardSerialsRoute: typeof DashboardSerialsRoute
+  DashboardServicesRoute: typeof DashboardServicesRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardSettingsPortalRoute: typeof DashboardSettingsPortalRoute
+  DashboardTemplatesRoute: typeof DashboardTemplatesRoute
+  DashboardTicketsRoute: typeof DashboardTicketsRoute
+  DashboardVouchersRoute: typeof DashboardVouchersRoute
+  DashboardWorkOrdersRoute: typeof DashboardWorkOrdersRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardClientsClientIdRoute: typeof DashboardClientsClientIdRoute
+  DashboardInvoicesInvoiceIdRoute: typeof DashboardInvoicesInvoiceIdRoute
+  DashboardRoutersRouterIdMonitorRoute: typeof DashboardRoutersRouterIdMonitorRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  Dashboard2faRoute: Dashboard2faRoute,
+  DashboardAccountingRoute: DashboardAccountingRoute,
+  DashboardAuditRoute: DashboardAuditRoute,
+  DashboardBranchesRoute: DashboardBranchesRoute,
+  DashboardBulkRouterRoute: DashboardBulkRouterRoute,
+  DashboardBulkTemplatesRoute: DashboardBulkTemplatesRoute,
+  DashboardCashRoute: DashboardCashRoute,
+  DashboardClientsRoute: DashboardClientsRoute,
+  DashboardCobrarRoute: DashboardCobrarRoute,
+  DashboardCortesMonitorRoute: DashboardCortesMonitorRoute,
+  DashboardCutoffPoliciesRoute: DashboardCutoffPoliciesRoute,
+  DashboardCutoffsRoute: DashboardCutoffsRoute,
+  DashboardEmployeesRoute: DashboardEmployeesRoute,
+  DashboardFinanzasRoute: DashboardFinanzasRoute,
+  DashboardGatewaysRoute: DashboardGatewaysRoute,
+  DashboardInventoryRoute: DashboardInventoryRoute,
+  DashboardInvoicesRoute: DashboardInvoicesRoute,
+  DashboardJobsRoute: DashboardJobsRoute,
+  DashboardKpisRoute: DashboardKpisRoute,
+  DashboardLeadsRoute: DashboardLeadsRoute,
+  DashboardLicensesRoute: DashboardLicensesRoute,
+  DashboardMessagingRoute: DashboardMessagingRoute,
+  DashboardNetworkMapRoute: DashboardNetworkMapRoute,
+  DashboardPaymentsRoute: DashboardPaymentsRoute,
+  DashboardPayrollRoute: DashboardPayrollRoute,
+  DashboardPlansRoute: DashboardPlansRoute,
+  DashboardPortalUsersRoute: DashboardPortalUsersRoute,
+  DashboardPromisesRoute: DashboardPromisesRoute,
+  DashboardReportesCortesRoute: DashboardReportesCortesRoute,
+  DashboardRouterSyncRoute: DashboardRouterSyncRoute,
+  DashboardRoutersRoute: DashboardRoutersRoute,
+  DashboardSerialsRoute: DashboardSerialsRoute,
+  DashboardServicesRoute: DashboardServicesRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardSettingsPortalRoute: DashboardSettingsPortalRoute,
+  DashboardTemplatesRoute: DashboardTemplatesRoute,
+  DashboardTicketsRoute: DashboardTicketsRoute,
+  DashboardVouchersRoute: DashboardVouchersRoute,
+  DashboardWorkOrdersRoute: DashboardWorkOrdersRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  DashboardClientsClientIdRoute: DashboardClientsClientIdRoute,
+  DashboardInvoicesInvoiceIdRoute: DashboardInvoicesInvoiceIdRoute,
+  DashboardRoutersRouterIdMonitorRoute: DashboardRoutersRouterIdMonitorRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  DashboardRoute: DashboardRouteWithChildren,
+  PortalRoute: PortalRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SuspendidoRoute: SuspendidoRoute,
+  ApiPublicHooksBillingRoute: ApiPublicHooksBillingRoute,
+  ApiPublicHooksDetectCutoffLeaksRoute: ApiPublicHooksDetectCutoffLeaksRoute,
+  ApiPublicHooksMercadopagoRoute: ApiPublicHooksMercadopagoRoute,
+  ApiPublicHooksStripeRoute: ApiPublicHooksStripeRoute,
+  ApiPublicHooksSyncMikrotikRoute: ApiPublicHooksSyncMikrotikRoute,
+  ApiPublicLicenseActivateRoute: ApiPublicLicenseActivateRoute,
+  ApiPublicLicenseHeartbeatRoute: ApiPublicLicenseHeartbeatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

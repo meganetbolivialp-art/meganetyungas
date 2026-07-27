@@ -1,0 +1,1 @@
+ALTER TABLE public.portal_settings ADD COLUMN IF NOT EXISTS custom_html text, ADD COLUMN IF NOT EXISTS use_custom_html boolean NOT NULL DEFAULT false;
