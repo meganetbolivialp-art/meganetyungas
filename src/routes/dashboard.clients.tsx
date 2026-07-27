@@ -608,6 +608,14 @@ function ClientsPage() {
               <th className="px-2 py-1.5 w-8"></th>
               <th className="px-2 py-1.5 font-semibold w-20 cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("id")}>ID <span className="text-xs">{sortIcon("id")}</span></th>
               <th className="px-2 py-1.5 font-semibold cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("name")}>Nombre <span className="text-xs">{sortIcon("name")}</span></th>
+              <th className="px-2 py-1.5 font-semibold w-[110px] text-center">
+                <div className="flex items-center justify-center gap-1">
+                  Estado
+                  <button onClick={() => fetchOnlineStatus()} disabled={onlineStatusLoading} className="inline-flex items-center justify-center w-4 h-4 rounded hover:bg-slate-200 disabled:opacity-40" title="Refrescar estado">
+                    <RefreshCw className={`w-3 h-3 ${onlineStatusLoading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+              </th>
               <th className="px-2 py-1.5 font-semibold w-[170px] cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("plan")}>Router <span className="text-xs">{sortIcon("plan")}</span></th>
               <th className="px-2 py-1.5 font-semibold w-[120px]">IP</th>
               <th className="px-2 py-1.5 font-semibold w-[90px] text-right cursor-pointer select-none hover:text-slate-900" onClick={() => toggleSort("balance")}>Saldo <span className="text-xs">{sortIcon("balance")}</span></th>
@@ -618,6 +626,14 @@ function ClientsPage() {
               <th className="px-1 py-1"></th>
               <th className="px-1 py-1"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary" /></th>
               <th className="px-1 py-1"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary" /></th>
+              <th className="px-1 py-1">
+                <select value={onlineFilter} onChange={(e) => setOnlineFilter(e.target.value)} className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary bg-white">
+                  <option value="all">Todos</option>
+                  <option value="online">En línea</option>
+                  <option value="offline">Desconectado</option>
+                  <option value="unknown">Sin PPPoE</option>
+                </select>
+              </th>
               <th className="px-1 py-1">
                 <select value={fRouter} onChange={(e) => setFRouter(e.target.value)} className="w-full px-1.5 py-0.5 border border-slate-200 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-primary bg-white">
                   <option value="all">Todos</option>
