@@ -568,10 +568,11 @@ export const mikrotik = {
       router,
       "ping",
       async () => withSession(router, async (s) => {
-        const res = await sendCommand(s, ["/ping", `=address=${router.ip_address}`, "=count=1"]);
-        const re = res.find((r) => r.reply === "!re");
-        const latency = re?.attrs.time ? parseInt(re.attrs.time.replace(/\D/g, ""), 10) || 0 : 0;
-        return { ok: true as const, latency_ms: latency };
+        // Usamos /system/identity/print como "ping" API — responde instantáneo
+        // y confirma que la sesión + login funcionan, sin esperar el 1s+ de un ICMP real.
+        const t0 = Date.now();
+        await sendCommand(s, ["/system/identity/print"]);
+        return { ok: true as const, latency_ms: Date.now() - t0 };
       }),
       () => simulate("ping", { host: router.ip_address }, { ok: true as const, latency_ms: Math.floor(5 + Math.random() * 30) }),
     );
