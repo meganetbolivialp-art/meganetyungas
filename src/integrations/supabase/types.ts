@@ -815,7 +815,14 @@ export type Database = {
       mark_overdue_invoices: { Args: { p_grace_days?: number }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "supervisor"
+        | "cajero"
+        | "tecnico"
+        | "vendedor"
+        | "soporte"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -943,7 +950,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "supervisor",
+        "cajero",
+        "tecnico",
+        "vendedor",
+        "soporte",
+      ],
     },
   },
 } as const
