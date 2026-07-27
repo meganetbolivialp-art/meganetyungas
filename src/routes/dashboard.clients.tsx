@@ -407,13 +407,53 @@ function ClientsPage() {
     setSelected(new Set()); load();
   };
 
+  // KPIs en vivo
+  const kpis = useMemo(() => {
+    const total = rows.length;
+    let active = 0, suspended = 0, cancelled = 0, debt = 0, online = 0, totalDebt = 0;
+    for (const r of rows) {
+      if (r.status === "active") active++;
+      else if (r.status === "suspended") suspended++;
+      else if (r.status === "cancelled") cancelled++;
+      const bal = Number((r as any).balance ?? 0);
+      if (bal > 0) { debt++; totalDebt += bal; }
+      const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
+      if (users.some((u: string) => onlineStatus[u] != null)) online++;
+    }
+    return { total, active, suspended, cancelled, debt, online, totalDebt };
+  }, [rows, onlineStatus]);
+
   return (
     <AdminLayout>
-      {/* Header cyan estilo Mikrowisp */}
-      <div className="rounded-t-md bg-cyan-500 text-white px-4 py-2 text-sm font-medium flex items-center justify-between">
-        <span>Lista Usuarios</span>
-        <div className="flex gap-2">
-          <button onClick={() => load()} className="p-1 hover:bg-white/20 rounded" title="Actualizar"><RefreshCw className="w-4 h-4" /></button>
+      {/* KPI Stats — profesional y compacto */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2 mb-2">
+        {[
+          { label: "Total", value: kpis.total, icon: User, cls: "from-slate-500 to-slate-700", ring: "ring-slate-200" },
+          { label: "Activos", value: kpis.active, icon: CheckCircle2, cls: "from-emerald-500 to-teal-600", ring: "ring-emerald-200" },
+          { label: "En línea", value: kpis.online, icon: Wifi, cls: "from-sky-500 to-blue-600", ring: "ring-sky-200", pulse: true },
+          { label: "Suspend.", value: kpis.suspended, icon: Power, cls: "from-amber-500 to-orange-600", ring: "ring-amber-200" },
+          { label: "Retirados", value: kpis.cancelled, icon: UserX, cls: "from-rose-500 to-red-600", ring: "ring-rose-200" },
+          { label: "Deuda", value: kpis.debt, icon: DollarSign, cls: "from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-200", sub: `Bs ${kpis.totalDebt.toFixed(0)}` },
+        ].map((k) => (
+          <div key={k.label} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${k.cls} text-white p-2.5 md:p-3 shadow-sm ring-1 ${k.ring} active:scale-[.98] transition`}>
+            <div className="flex items-center justify-between gap-1">
+              <div className="text-[10px] md:text-[11px] uppercase tracking-wider opacity-90 font-semibold truncate">{k.label}</div>
+              <k.icon className={`w-3.5 h-3.5 md:w-4 md:h-4 opacity-80 shrink-0 ${(k as any).pulse ? "animate-pulse" : ""}`} />
+            </div>
+            <div className="text-lg md:text-2xl font-bold tabular-nums leading-tight mt-0.5">{k.value}</div>
+            {(k as any).sub && <div className="text-[9px] md:text-[10px] opacity-90 truncate">{(k as any).sub}</div>}
+            <div className="absolute -right-3 -bottom-3 w-12 h-12 rounded-full bg-white/10" />
+          </div>
+        ))}
+      </div>
+
+      {/* Header cyan estilo Mikrowisp — sticky en mobile */}
+      <div className="rounded-t-md bg-gradient-to-r from-cyan-500 to-sky-500 text-white px-4 py-2.5 text-sm font-semibold flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        <span className="inline-flex items-center gap-2"><List className="w-4 h-4" /> Lista Usuarios <span className="hidden md:inline text-white/70 font-normal text-xs">· {filtered.length} de {rows.length}</span></span>
+        <div className="flex gap-1">
+          <button onClick={() => { load(); fetchOnlineStatus(); }} disabled={loading || onlineStatusLoading} className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-md transition disabled:opacity-60" title="Actualizar todo">
+            <RefreshCw className={`w-4 h-4 ${loading || onlineStatusLoading ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
@@ -519,8 +559,30 @@ function ClientsPage() {
       <div className="border border-t-0 bg-card rounded-b-md">
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-slate-200/70">
-          {loading && <div className="px-4 py-8 text-center text-muted-foreground text-sm">Cargando...</div>}
-          {!loading && paged.length === 0 && <div className="px-4 py-8 text-center text-muted-foreground text-sm">Sin resultados</div>}
+          {loading && Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-3.5 animate-pulse">
+              <div className="w-11 h-11 rounded-full bg-slate-200" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-slate-200 rounded w-2/3" />
+                <div className="h-2.5 bg-slate-100 rounded w-1/2" />
+                <div className="flex gap-1.5">
+                  <div className="h-4 w-14 rounded-full bg-slate-200" />
+                  <div className="h-4 w-16 rounded-full bg-slate-100" />
+                </div>
+              </div>
+              <div className="w-14 h-6 bg-slate-200 rounded" />
+            </div>
+          ))}
+          {!loading && paged.length === 0 && (
+            <div className="px-4 py-16 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <Search className="w-7 h-7 text-slate-400" />
+              </div>
+              <div className="text-sm font-semibold text-slate-700">Sin resultados</div>
+              <div className="text-xs text-muted-foreground mt-1">Probá cambiar los filtros o crear un nuevo cliente.</div>
+              <button onClick={clearFilters} className="mt-4 inline-flex items-center gap-1 px-3 py-2 rounded-md border text-xs hover:bg-muted"><X className="w-3.5 h-3.5" /> Limpiar filtros</button>
+            </div>
+          )}
           {paged.map((r, i) => {
             const busy = busyIds.has(r.id);
             const st = r.status;
@@ -892,6 +954,34 @@ function ClientsPage() {
           </div>
         </div>
       )}
+      {/* FAB — Nuevo cliente (solo mobile, respeta safe-area Android) */}
+      <button
+        onClick={openForm}
+        aria-label="Nuevo cliente"
+        className="md:hidden fixed right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40 active:scale-95 transition flex items-center justify-center ring-4 ring-white/60"
+        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <Plus className="w-7 h-7" strokeWidth={2.5} />
+      </button>
+
+      {/* Barra flotante de acciones bulk (mobile) */}
+      {selected.size > 0 && (
+        <div
+          className="md:hidden fixed left-2 right-2 z-40 bg-slate-900/95 backdrop-blur text-white rounded-2xl shadow-2xl px-3 py-2 flex items-center gap-2 animate-in slide-in-from-bottom-4"
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="text-xs font-semibold px-2">{selected.size} sel.</div>
+          <div className="flex-1 flex items-center justify-end gap-1">
+            <button onClick={() => bulkAction("suspend")} className="h-10 px-3 rounded-lg bg-amber-500/20 text-amber-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-amber-500/40"><Power className="w-4 h-4" /> Suspender</button>
+            <button onClick={() => bulkAction("reactivate")} className="h-10 px-3 rounded-lg bg-emerald-500/20 text-emerald-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-emerald-500/40"><UserCheck className="w-4 h-4" /> Activar</button>
+            <button onClick={() => bulkAction("delete")} className="h-10 px-3 rounded-lg bg-rose-500/20 text-rose-200 inline-flex items-center gap-1 text-xs font-semibold active:bg-rose-500/40"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={() => setSelected(new Set())} className="h-10 w-10 rounded-lg bg-white/10 inline-flex items-center justify-center active:bg-white/20"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Espacio inferior mobile para no tapar contenido con FAB */}
+      <div className="md:hidden h-24" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} />
     </AdminLayout>
 
   );
