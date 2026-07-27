@@ -233,23 +233,44 @@ async function withSessionOnce<T>(router: MtRouter, fn: (socket: net.Socket) => 
   }
 }
 
-// Reintenta hasta 3 veces ante fallos transitorios de red / timeout / socket cerrado.
+// Serialización por router: una única sesión API activa a la vez por router.
+// Evita que auto-ping + estado de clientes + acción manual saturen la API MikroTik
+// (que por defecto encola muy pocas conexiones concurrentes y termina en timeout).
+const routerLocks = new Map<string, Promise<unknown>>();
+
+async function withRouterLock<T>(routerId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = routerLocks.get(routerId) ?? Promise.resolve();
+  let release!: () => void;
+  const next = new Promise<void>((r) => (release = r));
+  routerLocks.set(routerId, prev.then(() => next));
+  try {
+    await prev.catch(() => {});
+    return await fn();
+  } finally {
+    release();
+    if (routerLocks.get(routerId) === prev.then(() => next)) routerLocks.delete(routerId);
+  }
+}
+
+// Reintenta hasta 4 veces ante fallos transitorios de red / timeout / socket cerrado.
 // No reintenta si el error es de login o de trap semántico (ej: "user not found").
 async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Promise<T>): Promise<T> {
-  const transient = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|read ECONN)/i;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      return await withSessionOnce(router, fn);
-    } catch (e) {
-      lastErr = e;
-      const msg = (e as Error).message || "";
-      if (!transient.test(msg) || attempt === 3) break;
-      console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
-      await new Promise((r) => setTimeout(r, 400 * attempt));
+  const transient = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|read ECONN|socket hang up)/i;
+  return withRouterLock(router.id, async () => {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        return await withSessionOnce(router, fn);
+      } catch (e) {
+        lastErr = e;
+        const msg = (e as Error).message || "";
+        if (!transient.test(msg) || attempt === 4) break;
+        console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
+        await new Promise((r) => setTimeout(r, 600 * attempt));
+      }
     }
-  }
-  throw lastErr;
+    throw lastErr;
+  });
 }
 
 // ---------- simulation fallback ----------
