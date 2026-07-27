@@ -120,7 +120,7 @@ function parseSentence(words: string[]): Sentence {
   return { reply, attrs, tag };
 }
 
-async function connect(router: MtRouter, timeoutMs = 8000): Promise<net.Socket> {
+async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket> {
   const agentHost = process.env.MIKROTIK_AGENT_HOST;
   const agentPort = process.env.MIKROTIK_AGENT_PORT ? Number(process.env.MIKROTIK_AGENT_PORT) : 8729;
   const agentToken = process.env.MIKROTIK_AGENT_TOKEN;
@@ -150,6 +150,8 @@ async function connect(router: MtRouter, timeoutMs = 8000): Promise<net.Socket> 
       resolve(socket);
     };
     const socket = net.createConnection({ host: targetHost, port: targetPort });
+    socket.setKeepAlive(true, 5000);
+    socket.setNoDelay(true);
     const t = setTimeout(() => {
       socket.destroy();
       fail(new Error("connect timeout"));
