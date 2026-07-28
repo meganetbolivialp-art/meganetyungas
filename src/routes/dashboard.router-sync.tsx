@@ -660,7 +660,7 @@ function RouterSyncPage() {
 
       {tab === "todos" && result && (
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", padding: 14 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>PPP Secrets en el router</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Todos los clientes PPPoE en el router</div>
           <table className="tbl">
             <thead>
               <tr><th style={{ width: 30 }}></th><th>Usuario</th><th>Perfil</th><th>IP remota</th><th>Estado</th><th>DB</th></tr>
