@@ -543,7 +543,7 @@ function RouterSyncPage() {
           {anomalies.stalled.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.stalled.length}</b> conectado(s) <b>sin tráfico</b> (uptime ≥ {anomalies.thresholds.minUptimeMin}m con &lt; {Math.round(anomalies.thresholds.minBytes / 1024)} KB):
+                <b>{anomalies.stalled.length}</b> conectado(s) <b>sin usar internet</b> (más de {anomalies.thresholds.minUptimeMin}m online con menos de {Math.round(anomalies.thresholds.minBytes / 1024)} KB de tráfico). Puede ser un router del cliente encendido sin nadie navegando, o una sesión colgada:
               </div>
               <table className="tbl">
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>IP</th><th>Uptime</th><th>RX / TX</th><th></th></tr></thead>
