@@ -177,7 +177,11 @@ function AdminRescueModal({
       return;
     }
     const row = rows[0];
-    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const updates: {
+      active?: boolean;
+      expires_at?: string;
+      updated_at: string;
+    } = { updated_at: new Date().toISOString() };
     if (patch.active !== undefined) updates.active = patch.active;
     if (patch.days !== undefined) {
       const base = new Date(row.expires_at);
