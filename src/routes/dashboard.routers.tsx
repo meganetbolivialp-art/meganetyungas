@@ -302,6 +302,11 @@ function RoutersPage() {
               Auto-ping 30s
               {lastPoll && <span className="text-emerald-600 font-medium">· {new Date(lastPoll).toLocaleTimeString()}</span>}
             </label>
+            {pending.total > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 text-[11px] font-semibold" title="Operaciones en cola esperando a que el router vuelva online">
+                <Clock className="w-3 h-3" /> {pending.total} en cola
+              </span>
+            )}
           </div>
           <div className="relative w-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
