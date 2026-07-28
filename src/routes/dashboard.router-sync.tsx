@@ -180,7 +180,7 @@ function RouterSyncPage() {
   };
 
   const doImport = async () => {
-    if (selected.size === 0) { setMsg("Elegí al menos un secret"); return; }
+    if (selected.size === 0) { setMsg("Elegí al menos un cliente"); return; }
     setImporting(true); setMsg("");
     try {
       const secrets = (result?.secrets ?? []).filter((s: any) => selected.has(s.name));
@@ -255,12 +255,24 @@ function RouterSyncPage() {
 
   return (
     <AdminLayout>
-      <Toolbar><span style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>Sincronización router → base de datos</span></Toolbar>
+      <div style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0891b2 100%)",
+        padding: "18px 20px", borderRadius: 14, marginBottom: 14, color: "#fff",
+        boxShadow: "0 8px 24px -8px rgba(8,145,178,0.4)",
+      }}>
+        <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+          Sincronización router ↔ sistema
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>Traer clientes y planes del MikroTik</div>
+        <div style={{ fontSize: 13, opacity: 0.85 }}>
+          Elegí un router, escaneá, y el sistema te muestra qué clientes están registrados, cuáles faltan traer y cuáles están conectados sin usar internet.
+        </div>
+      </div>
 
       <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
           <div>
-            <label style={{ fontSize: 12, color: "#64748b" }}>Router</label>
+            <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Router MikroTik</label>
             <select className={inputCls} value={routerId} onChange={(e) => setRouterId(e.target.value)}>
               <option value="">— Elegí router —</option>
               {routers.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.ip_address}{r.simulated ? " (sim)" : ""}</option>)}
@@ -268,7 +280,7 @@ function RouterSyncPage() {
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
             <button className="btn primary" disabled={!routerId || loading} onClick={scan}>
-              <RefreshCw size={14} className={loading ? "spin" : ""} /> {loading ? "Escaneando…" : "Escanear router"}
+              <RefreshCw size={14} className={loading ? "spin" : ""} /> {loading ? "Escaneando router…" : "Escanear router"}
             </button>
           </div>
         </div>
@@ -282,9 +294,9 @@ function RouterSyncPage() {
 
       {result && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
-          <StatCard color="#3b82f6" label="Total secrets router" value={result.secrets.length} />
-          <StatCard color="#10b981" label="Ya en DB" value={linked.length} icon={<CheckCircle2 size={16} />} />
-          <StatCard color="#f59e0b" label="Huérfanos (no en DB)" value={orphans.length} icon={<AlertCircle size={16} />} />
+          <StatCard color="#3b82f6" label="Clientes en el router" value={result.secrets.length} />
+          <StatCard color="#10b981" label="Ya registrados en el sistema" value={linked.length} icon={<CheckCircle2 size={16} />} />
+          <StatCard color="#f59e0b" label="Falta traer al sistema" value={orphans.length} icon={<AlertCircle size={16} />} />
         </div>
       )}
 
@@ -339,7 +351,7 @@ function RouterSyncPage() {
             )}
           </div>
           <div style={{ fontSize: 11, opacity: 0.8, marginTop: 10 }}>
-            ¿Necesitás afinar precios o elegir qué importar? Usá las pestañas de abajo (<b>Planes / Perfiles</b> y <b>Clientes huérfanos</b>).
+            ¿Necesitás afinar precios o elegir qué traer? Usá las pestañas de abajo (<b>Planes por traer</b> y <b>Clientes por traer</b>).
           </div>
         </div>
       )}
@@ -360,11 +372,11 @@ function RouterSyncPage() {
         const anomCount = (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0);
         const tabs: { id: typeof tab; label: string; count?: number; tone?: "warn" | "danger" }[] = [
           { id: "resumen", label: "Resumen" },
-          { id: "diferencias", label: "Diferencias DB↔Router", count: driftCount, tone: driftCount ? "warn" : undefined },
-          { id: "anomalias", label: "Anomalías PPPoE", count: anomCount, tone: anomCount ? "danger" : undefined },
-          { id: "planes", label: "Planes / Perfiles", count: profOrphans.length, tone: profOrphans.length ? "warn" : undefined },
-          { id: "clientes", label: "Clientes huérfanos", count: orphans.length, tone: orphans.length ? "warn" : undefined },
-          { id: "todos", label: "Todos los secrets", count: result?.secrets.length ?? 0 },
+          { id: "diferencias", label: "Diferencias sistema ↔ router", count: driftCount, tone: driftCount ? "warn" : undefined },
+          { id: "anomalias", label: "Conectados sin usar internet", count: anomCount, tone: anomCount ? "danger" : undefined },
+          { id: "planes", label: "Planes por traer", count: profOrphans.length, tone: profOrphans.length ? "warn" : undefined },
+          { id: "clientes", label: "Clientes por traer", count: orphans.length, tone: orphans.length ? "warn" : undefined },
+          { id: "todos", label: "Todos los clientes del router", count: result?.secrets.length ?? 0 },
         ];
         return (
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 0 }}>
@@ -410,10 +422,10 @@ function RouterSyncPage() {
       {tab === "diferencias" && drift && (drift.missingOnRouter.length > 0 || drift.statusMismatch.length > 0 || (drift.profileMismatch?.length ?? 0) > 0) && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>⚠ Diferencias DB ↔ Router</span>
+            <span>⚠ Diferencias sistema ↔ router</span>
             {drift.missingOnRouter.length > 0 && (
               <button className="btn primary" onClick={doPush} disabled={pushing || pushSel.size === 0}>
-                <ArrowUpFromLine size={14} /> {pushing ? "Empujando…" : `Empujar ${pushSel.size} secret(s) al router`}
+                <ArrowUpFromLine size={14} /> {pushing ? "Subiendo al router…" : `Subir ${pushSel.size} cliente(s) al router`}
               </button>
             )}
           </div>
@@ -422,7 +434,7 @@ function RouterSyncPage() {
           {drift.missingOnRouter.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{drift.missingOnRouter.length}</b> servicio(s) en la base que <b>faltan crear en el router</b>:
+                <b>{drift.missingOnRouter.length}</b> cliente(s) del sistema que <b>faltan crear en el router</b>:
               </div>
               <table className="tbl" style={{ marginBottom: 12 }}>
                 <thead><tr><th style={{ width: 30 }}></th><th>PPPoE</th><th>Cliente</th><th>Perfil destino</th><th>IP</th><th>Estado</th></tr></thead>
@@ -445,7 +457,7 @@ function RouterSyncPage() {
           {drift.statusMismatch.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{drift.statusMismatch.length}</b> servicio(s) con <b>estado desalineado</b> (habilitado en uno pero no en el otro):
+                <b>{drift.statusMismatch.length}</b> cliente(s) con <b>estado desalineado</b> (habilitado en uno pero no en el otro):
               </div>
               <table className="tbl">
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>DB</th><th>Router</th></tr></thead>
@@ -466,9 +478,9 @@ function RouterSyncPage() {
           {(drift.profileMismatch?.length ?? 0) > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "10px 0 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span><b>{drift.profileMismatch.length}</b> servicio(s) con <b>perfil desalineado</b> (plan cambió en la base):</span>
+                <span><b>{drift.profileMismatch.length}</b> cliente(s) con <b>plan desalineado</b> (el plan cambió en el sistema pero no en el router):</span>
                 <button className="btn primary" onClick={doSyncProfiles} disabled={syncingProfiles || profSyncSel.size === 0}>
-                  <Wand2 size={14} /> {syncingProfiles ? "Sincronizando…" : `Aplicar ${profSyncSel.size} perfil(es) al router`}
+                  <Wand2 size={14} /> {syncingProfiles ? "Aplicando…" : `Aplicar ${profSyncSel.size} plan(es) al router`}
                 </button>
               </div>
               <table className="tbl">
@@ -494,7 +506,7 @@ function RouterSyncPage() {
       {tab === "anomalias" && anomalies && (anomalies.duplicates.length > 0 || anomalies.stalled.length > 0) && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span><ShieldAlert size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />Anomalías PPPoE ({anomalies.total_active} activos)</span>
+            <span><ShieldAlert size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />Clientes conectados sin usar internet ({anomalies.total_active} activos en total)</span>
             <button className="btn" onClick={refreshAnomalies}><RefreshCw size={14} /> Refrescar</button>
           </div>
           {anomMsg && <div style={{ marginBottom: 8, fontSize: 13, color: anomMsg.startsWith("✓") ? "#059669" : "#dc2626" }}>{anomMsg}</div>}
@@ -502,7 +514,7 @@ function RouterSyncPage() {
           {anomalies.duplicates.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.duplicates.length}</b> usuario(s) con <b>doble sesión</b> (posible clon o secret compartido):
+                <b>{anomalies.duplicates.length}</b> cliente(s) con <b>doble sesión abierta</b> (posible clon o contraseña compartida):
               </div>
               <table className="tbl" style={{ marginBottom: 12 }}>
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>Sesiones</th><th></th></tr></thead>
@@ -531,7 +543,7 @@ function RouterSyncPage() {
           {anomalies.stalled.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.stalled.length}</b> conectado(s) <b>sin tráfico</b> (uptime ≥ {anomalies.thresholds.minUptimeMin}m con &lt; {Math.round(anomalies.thresholds.minBytes / 1024)} KB):
+                <b>{anomalies.stalled.length}</b> conectado(s) <b>sin usar internet</b> (más de {anomalies.thresholds.minUptimeMin}m online con menos de {Math.round(anomalies.thresholds.minBytes / 1024)} KB de tráfico). Puede ser un router del cliente encendido sin nadie navegando, o una sesión colgada:
               </div>
               <table className="tbl">
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>IP</th><th>Uptime</th><th>RX / TX</th><th></th></tr></thead>
@@ -563,7 +575,7 @@ function RouterSyncPage() {
       {tab === "planes" && profResult && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>Planes (PPP profiles) en el router · {profResult.profiles.length} encontrados · {profOrphans.length} sin importar</span>
+            <span>Planes del router · {profResult.profiles.length} encontrados · {profOrphans.length} por traer al sistema</span>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <label style={{ fontSize: 12, color: "#64748b" }}>Precio base $</label>
               <input type="number" min={0} className={inputCls} style={{ width: 100 }} value={profPrice} onChange={(e) => {
@@ -617,7 +629,7 @@ function RouterSyncPage() {
 
       {tab === "clientes" && orphans.length > 0 && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Importar {selected.size} secret(s) huérfano(s)</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Traer {selected.size} cliente(s) al sistema</div>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
             Cada cliente se importa con el plan que coincida con su <b>perfil PPP</b> (auto-match por nombre).
             Si algún perfil no tiene plan en la DB, importalo primero desde la tabla de arriba.
@@ -648,7 +660,7 @@ function RouterSyncPage() {
 
       {tab === "todos" && result && (
         <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", padding: 14 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>PPP Secrets en el router</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Todos los clientes PPPoE en el router</div>
           <table className="tbl">
             <thead>
               <tr><th style={{ width: 30 }}></th><th>Usuario</th><th>Perfil</th><th>IP remota</th><th>Estado</th><th>DB</th></tr>
@@ -661,7 +673,7 @@ function RouterSyncPage() {
                   <td>{s.profile || "—"}</td>
                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.remote_address || "—"}</td>
                   <td>{s.disabled ? <Badge tone="danger">Deshabilitado</Badge> : <Badge tone="success">Habilitado</Badge>}</td>
-                  <td>{s.in_db ? <Badge tone="success">En DB</Badge> : <Badge tone="warning">Huérfano</Badge>}</td>
+                  <td>{s.in_db ? <Badge tone="success">En el sistema</Badge> : <Badge tone="warning">Falta traer</Badge>}</td>
                 </tr>
               ))}
             </tbody>
@@ -709,11 +721,11 @@ function readableRouterError(error: unknown, router?: any) {
 
 function WizardSteps({ result, drift, anomalies, profOrphans }: { result: any; drift: any; anomalies: any; profOrphans: any[] }) {
   const steps = [
-    { label: "Escanear", done: !!result, count: result?.secrets.length ?? 0, hint: "secrets" },
-    { label: "Planes", done: !!result, count: profOrphans.length, hint: "nuevos", warn: profOrphans.length > 0 },
-    { label: "Clientes", done: !!result, count: (result?.secrets ?? []).filter((s: any) => !s.in_db).length, hint: "huérfanos", warn: (result?.secrets ?? []).filter((s: any) => !s.in_db).length > 0 },
-    { label: "Diferencias", done: !!drift, count: (drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0), hint: "drift", warn: !!drift && ((drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0)) > 0 },
-    { label: "Anomalías", done: !!anomalies, count: (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0), hint: "alertas", warn: !!anomalies && ((anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0)) > 0 },
+    { label: "Escanear", done: !!result, count: result?.secrets.length ?? 0, hint: "clientes en router" },
+    { label: "Planes", done: !!result, count: profOrphans.length, hint: "por traer", warn: profOrphans.length > 0 },
+    { label: "Clientes", done: !!result, count: (result?.secrets ?? []).filter((s: any) => !s.in_db).length, hint: "por traer", warn: (result?.secrets ?? []).filter((s: any) => !s.in_db).length > 0 },
+    { label: "Diferencias", done: !!drift, count: (drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0), hint: "desalineadas", warn: !!drift && ((drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0)) > 0 },
+    { label: "Sin internet", done: !!anomalies, count: (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0), hint: "conectados sin tráfico", warn: !!anomalies && ((anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0)) > 0 },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(${steps.length}, 1fr)`, gap: 8, marginBottom: 12 }}>
