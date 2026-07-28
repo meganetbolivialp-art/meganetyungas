@@ -673,7 +673,7 @@ function RouterSyncPage() {
                   <td>{s.profile || "—"}</td>
                   <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.remote_address || "—"}</td>
                   <td>{s.disabled ? <Badge tone="danger">Deshabilitado</Badge> : <Badge tone="success">Habilitado</Badge>}</td>
-                  <td>{s.in_db ? <Badge tone="success">En DB</Badge> : <Badge tone="warning">Huérfano</Badge>}</td>
+                  <td>{s.in_db ? <Badge tone="success">En el sistema</Badge> : <Badge tone="warning">Falta traer</Badge>}</td>
                 </tr>
               ))}
             </tbody>
