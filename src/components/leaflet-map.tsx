@@ -142,5 +142,16 @@ export function LeafletMap({ points, lines = [], height = 560, center }: { point
     if (bounds.length > 1) map.fitBounds(bounds as any, { padding: [30, 30] });
   }, [points, lines]);
 
-  return <div ref={ref} style={{ height, width: "100%", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }} />;
+  return (
+    <>
+      <style>{`
+        .mn-popup .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 20px 45px -15px rgba(15,23,42,.35), 0 4px 10px -4px rgba(15,23,42,.15); padding: 14px 16px; border: 1px solid rgba(226,232,240,.9); }
+        .mn-popup .leaflet-popup-content { margin: 0; }
+        .mn-popup .leaflet-popup-tip { box-shadow: 0 4px 10px -4px rgba(15,23,42,.3); }
+        .mn-popup .leaflet-popup-close-button { color: #94a3b8 !important; font-size: 20px !important; padding: 6px 8px 0 0 !important; }
+        .mn-popup .leaflet-popup-close-button:hover { color: #0f172a !important; }
+      `}</style>
+      <div ref={ref} style={{ height, width: "100%", borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb" }} />
+    </>
+  );
 }
