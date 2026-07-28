@@ -51,6 +51,14 @@ function CutoffsPage() {
   const runSched = useServerFn(runScheduledSuspensions);
   const listPolicies = useServerFn(listCutoffPolicies);
   const applyPolicy = useServerFn(applyCutoffPolicy);
+  const atRiskFn = useServerFn(listAtRisk);
+  const notifyFn = useServerFn(notifyPreCutoff);
+  const [riskOpen, setRiskOpen] = useState(false);
+  const riskQ = useQuery({
+    queryKey: ["at-risk", 24],
+    queryFn: () => atRiskFn({ data: { hours: 24 } }),
+    enabled: riskOpen,
+  });
 
   const listQ = useQuery({ queryKey: ["cutoffs"], queryFn: () => list() });
   const kpiQ = useQuery({ queryKey: ["cutoff-kpis"], queryFn: () => kpis() });
