@@ -268,3 +268,132 @@ export const runScheduledSuspensions = createServerFn({ method: "POST" })
     }
     return { ok: true, executed: n };
   });
+
+// ---------- Clientes en riesgo (van a caer en corte pronto) ----------
+export const listAtRisk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { hours?: number }) => d)
+  .handler(async ({ data, context }) => {
+    const hours = data.hours ?? 24;
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: invs, error } = await context.supabase
+      .from("invoices")
+      .select("id, amount, due_date, client_id, service_id, clients(id, full_name, phone, email, dont_cut, payment_promise_until, grace_days_override, branch_id, branches(default_grace_days))")
+      .in("status", ["pending", "overdue"])
+      .lte("due_date", today);
+    if (error) throw new Error(error.message);
+
+    const now = Date.now();
+    const horizon = now + hours * 3600 * 1000;
+    const rows: any[] = [];
+    for (const inv of (invs ?? []) as any[]) {
+      const c = inv.clients;
+      if (!c || c.dont_cut) continue;
+      if (c.payment_promise_until && c.payment_promise_until >= today) continue;
+      const grace = c.grace_days_override ?? c.branches?.default_grace_days ?? 5;
+      const cutDate = new Date(inv.due_date);
+      cutDate.setDate(cutDate.getDate() + grace + 1);
+      const cutTs = cutDate.getTime();
+      if (cutTs <= horizon && cutTs >= now - 3600_000) {
+        rows.push({
+          invoice_id: inv.id,
+          client_id: c.id,
+          full_name: c.full_name,
+          phone: c.phone,
+          email: c.email,
+          amount: inv.amount,
+          due_date: inv.due_date,
+          cut_at: cutDate.toISOString(),
+          hours_left: Math.max(0, Math.round((cutTs - now) / 3600_000)),
+        });
+      }
+    }
+    rows.sort((a, b) => a.hours_left - b.hours_left);
+    return rows;
+  });
+
+// ---------- Enviar aviso previo al corte (registra en messages) ----------
+export const notifyPreCutoff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { hours?: number; channel?: "whatsapp" | "sms" | "email" }) => d)
+  .handler(async ({ data, context }) => {
+    const hours = data.hours ?? 24;
+    const channel = data.channel ?? "whatsapp";
+    const atRisk = await listAtRisk({ data: { hours } });
+    if (!atRisk.length) return { ok: true, notified: 0 };
+
+    // Buscar template por código pre_cutoff_<channel>, fallback genérico
+    const { data: tpl } = await context.supabase
+      .from("message_templates").select("subject, body")
+      .eq("code", `pre_cutoff_${channel}`).eq("is_active", true).maybeSingle();
+
+    const subject = tpl?.subject ?? "Aviso de corte próximo";
+    const bodyTpl = tpl?.body ??
+      "Hola {{nombre}}, tu servicio será suspendido el {{fecha_corte}} por deuda de ${{monto}}. Regularizá para evitar el corte.";
+
+    const content = atRisk.map((r: any) =>
+      bodyTpl
+        .replace(/\{\{nombre\}\}/g, r.full_name)
+        .replace(/\{\{fecha_corte\}\}/g, new Date(r.cut_at).toLocaleString())
+        .replace(/\{\{monto\}\}/g, String(r.amount))
+    ).join("\n---\n");
+
+    await context.supabase.from("messages").insert({
+      channel, subject, content,
+      recipients_count: atRisk.length,
+      target: "at_risk",
+      status: "sent",
+      sent_at: new Date().toISOString(),
+    });
+
+    for (const r of atRisk as any[]) {
+      await context.supabase.from("client_actions").insert({
+        client_id: r.client_id,
+        action: "pre_cutoff_notice",
+        detail: `Aviso previo (${channel}) — corte en ~${r.hours_left}h por $${r.amount}`,
+        performed_by: context.userId,
+      });
+    }
+
+    return { ok: true, notified: atRisk.length, channel };
+  });
+
+// ---------- Aplicar cargo de reconexión según política ----------
+export const applyReconnectFee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { serviceId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { data: svc } = await context.supabase
+      .from("services")
+      .select("id, client_id, clients(cutoff_policy_id)")
+      .eq("id", data.serviceId).single();
+    if (!svc) throw new Error("Servicio no encontrado");
+    const policyId = (svc as any).clients?.cutoff_policy_id;
+    let fee = 0;
+    if (policyId) {
+      const { data: pol } = await context.supabase
+        .from("cutoff_policies").select("reconnect_fee").eq("id", policyId).single();
+      fee = Number(pol?.reconnect_fee ?? 0);
+    }
+    if (!fee) {
+      const { data: def } = await context.supabase
+        .from("cutoff_policies").select("reconnect_fee").eq("is_default", true).maybeSingle();
+      fee = Number(def?.reconnect_fee ?? 0);
+    }
+    if (!fee || fee <= 0) return { ok: true, fee: 0, invoice_id: null };
+
+    const today = new Date();
+    const due = new Date(today); due.setDate(due.getDate() + 3);
+    const { data: inv, error } = await context.supabase.from("invoices").insert({
+      client_id: svc.client_id,
+      service_id: svc.id,
+      amount: fee,
+      due_date: due.toISOString().slice(0, 10),
+      status: "pending",
+      concept: "Cargo de reconexión",
+      period_month: today.getMonth() + 1,
+      period_year: today.getFullYear(),
+    }).select("id").single();
+    if (error) throw new Error(error.message);
+    return { ok: true, fee, invoice_id: inv.id };
+  });

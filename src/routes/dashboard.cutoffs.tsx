@@ -7,10 +7,11 @@ import { AdminLayout } from "@/components/admin-layout";
 import {
   listCutoffs, cutoffKpis, bulkReactivate,
   setPaymentPromise, setDontCut, runScheduledSuspensions,
+  listAtRisk, notifyPreCutoff,
 } from "@/lib/cutoffs.functions";
 import { listCutoffPolicies, applyCutoffPolicy } from "@/lib/cutoff-policies.functions";
 import { reactivateService } from "@/lib/isp.functions";
-import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText } from "lucide-react";
+import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText, AlertTriangle, Send } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/cutoffs")({
   head: () => ({
@@ -50,6 +51,14 @@ function CutoffsPage() {
   const runSched = useServerFn(runScheduledSuspensions);
   const listPolicies = useServerFn(listCutoffPolicies);
   const applyPolicy = useServerFn(applyCutoffPolicy);
+  const atRiskFn = useServerFn(listAtRisk);
+  const notifyFn = useServerFn(notifyPreCutoff);
+  const [riskOpen, setRiskOpen] = useState(false);
+  const riskQ = useQuery({
+    queryKey: ["at-risk", 24],
+    queryFn: () => atRiskFn({ data: { hours: 24 } }),
+    enabled: riskOpen,
+  });
 
   const listQ = useQuery({ queryKey: ["cutoffs"], queryFn: () => list() });
   const kpiQ = useQuery({ queryKey: ["cutoff-kpis"], queryFn: () => kpis() });
@@ -157,12 +166,32 @@ function CutoffsPage() {
           <h1 className="text-xl font-semibold">Cortes / Morosos</h1>
           <p className="text-sm text-muted-foreground">Clientes suspendidos por deuda o corte manual</p>
         </div>
-        <button
-          onClick={runScheduledNow}
-          className="inline-flex items-center gap-2 bg-[#ff5722] hover:bg-[#e64a19] text-white px-4 py-2 rounded-md text-sm font-semibold"
-        >
-          <PlayCircle className="w-4 h-4" /> Ejecutar cortes programados
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setRiskOpen(true)}
+            className="inline-flex items-center gap-2 bg-[#f59e0b] hover:bg-[#d97706] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <AlertTriangle className="w-4 h-4" /> En riesgo (24h)
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm("¿Enviar aviso previo a todos los clientes en riesgo (24h)?")) return;
+              try {
+                const r = await notifyFn({ data: { hours: 24, channel: "whatsapp" } });
+                toast.success(`Avisos enviados: ${r.notified}`);
+              } catch (e) { toast.error((e as Error).message); }
+            }}
+            className="inline-flex items-center gap-2 bg-[#2e9cd6] hover:bg-[#1e7bb0] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <Send className="w-4 h-4" /> Avisar previo
+          </button>
+          <button
+            onClick={runScheduledNow}
+            className="inline-flex items-center gap-2 bg-[#ff5722] hover:bg-[#e64a19] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <PlayCircle className="w-4 h-4" /> Ejecutar cortes programados
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -329,6 +358,38 @@ function CutoffsPage() {
               <button onClick={() => savePromise(true)} className="px-3 py-2 text-sm border rounded">Quitar promesa</button>
               <button onClick={() => savePromise(false)} disabled={!promiseDate} className="px-3 py-2 text-sm bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white rounded font-semibold">Guardar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {riskOpen && (
+        <div className="fixed inset-0 bg-black/60 grid place-items-center z-50 p-4" onClick={() => setRiskOpen(false)}>
+          <div className="bg-card border rounded-lg p-4 w-full max-w-3xl max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Clientes en riesgo de corte (próx. 24h)</h2>
+              <button onClick={() => setRiskOpen(false)} className="text-sm text-muted-foreground">Cerrar</button>
+            </div>
+            {riskQ.isLoading ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">Cargando…</div>
+            ) : !riskQ.data?.length ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">No hay clientes en riesgo en las próximas 24h.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground border-b">
+                  <tr><th className="text-left py-2">Cliente</th><th className="text-left">Teléfono</th><th className="text-right">Deuda</th><th className="text-right">Horas</th></tr>
+                </thead>
+                <tbody>
+                  {(riskQ.data as any[]).map((r: any) => (
+                    <tr key={r.invoice_id} className="border-b last:border-0">
+                      <td className="py-2">{r.full_name}</td>
+                      <td>{r.phone ?? "—"}</td>
+                      <td className="text-right">Bs {Number(r.amount).toFixed(2)}</td>
+                      <td className="text-right"><span className={`px-2 py-0.5 rounded text-xs ${r.hours_left <= 6 ? "bg-red-500 text-white" : "bg-amber-500 text-white"}`}>{r.hours_left}h</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
