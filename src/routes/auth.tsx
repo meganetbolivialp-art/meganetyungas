@@ -25,16 +25,25 @@ function AuthPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const resolveLogin = useServerFn(resolveLoginIdentifier);
+  const check2fa = useServerFn(check2faRequired);
+  const verify2fa = useServerFn(verify2faLogin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showRescue, setShowRescue] = useState(false);
+  const [twofa, setTwofa] = useState(false);
+  const [twofaCode, setTwofaCode] = useState("");
 
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      try {
+        const r = await check2fa();
+        if (r.required) { setTwofa(true); return; }
+      } catch {}
+      navigate({ to: "/dashboard" });
     });
   }, [navigate]);
 
@@ -56,6 +65,12 @@ function AuthPage() {
       for (const loginEmail of candidates) {
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (!error) {
+          const r = await check2fa().catch(() => ({ required: false }));
+          if (r.required) {
+            setTwofa(true);
+            setLoading(false);
+            return;
+          }
           queryClient.clear();
           navigate({ to: "/dashboard", replace: true });
           return;
@@ -70,6 +85,29 @@ function AuthPage() {
       setLoading(false);
     }
   };
+
+  const submitTwofa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    setLoading(true);
+    try {
+      await verify2fa({ data: { code: twofaCode.trim() } });
+      queryClient.clear();
+      navigate({ to: "/dashboard", replace: true });
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Código inválido");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cancelTwofa = async () => {
+    await supabase.auth.signOut();
+    setTwofa(false);
+    setTwofaCode("");
+    setPassword("");
+  };
+
 
   const recover = async () => {
     if (!email) {
