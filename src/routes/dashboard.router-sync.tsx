@@ -721,10 +721,10 @@ function readableRouterError(error: unknown, router?: any) {
 
 function WizardSteps({ result, drift, anomalies, profOrphans }: { result: any; drift: any; anomalies: any; profOrphans: any[] }) {
   const steps = [
-    { label: "Escanear", done: !!result, count: result?.secrets.length ?? 0, hint: "secrets" },
-    { label: "Planes", done: !!result, count: profOrphans.length, hint: "nuevos", warn: profOrphans.length > 0 },
-    { label: "Clientes", done: !!result, count: (result?.secrets ?? []).filter((s: any) => !s.in_db).length, hint: "huérfanos", warn: (result?.secrets ?? []).filter((s: any) => !s.in_db).length > 0 },
-    { label: "Diferencias", done: !!drift, count: (drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0), hint: "drift", warn: !!drift && ((drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0)) > 0 },
+    { label: "Escanear", done: !!result, count: result?.secrets.length ?? 0, hint: "clientes en router" },
+    { label: "Planes", done: !!result, count: profOrphans.length, hint: "por traer", warn: profOrphans.length > 0 },
+    { label: "Clientes", done: !!result, count: (result?.secrets ?? []).filter((s: any) => !s.in_db).length, hint: "por traer", warn: (result?.secrets ?? []).filter((s: any) => !s.in_db).length > 0 },
+    { label: "Diferencias", done: !!drift, count: (drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0), hint: "desalineadas", warn: !!drift && ((drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0)) > 0 },
     { label: "Sin internet", done: !!anomalies, count: (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0), hint: "conectados sin tráfico", warn: !!anomalies && ((anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0)) > 0 },
   ];
   return (
