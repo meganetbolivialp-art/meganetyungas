@@ -27,9 +27,7 @@ const GROUPS: NavGroup[] = [
   ]},
 
   { label: "Cortes", icon: TicketIcon, mod: "cortes", items: [
-    { to: "/dashboard/cutoffs", label: "Cortes / Morosos", mod: "cortes", action: "view" },
-    { to: "/dashboard/cortes-monitor", label: "Monitor en vivo", mod: "cortes", action: "view" },
-    { to: "/dashboard/reportes-cortes", label: "Reportes de cortes", mod: "cortes", action: "view" },
+    { to: "/dashboard/cortes", label: "Panel de cortes", mod: "cortes", action: "view" },
     { to: "/dashboard/promises", label: "Promesas de pago", mod: "cortes", action: "promise" },
   ]},
 
