@@ -372,11 +372,11 @@ function RouterSyncPage() {
         const anomCount = (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0);
         const tabs: { id: typeof tab; label: string; count?: number; tone?: "warn" | "danger" }[] = [
           { id: "resumen", label: "Resumen" },
-          { id: "diferencias", label: "Diferencias DB↔Router", count: driftCount, tone: driftCount ? "warn" : undefined },
-          { id: "anomalias", label: "Anomalías PPPoE", count: anomCount, tone: anomCount ? "danger" : undefined },
-          { id: "planes", label: "Planes / Perfiles", count: profOrphans.length, tone: profOrphans.length ? "warn" : undefined },
-          { id: "clientes", label: "Clientes huérfanos", count: orphans.length, tone: orphans.length ? "warn" : undefined },
-          { id: "todos", label: "Todos los secrets", count: result?.secrets.length ?? 0 },
+          { id: "diferencias", label: "Diferencias sistema ↔ router", count: driftCount, tone: driftCount ? "warn" : undefined },
+          { id: "anomalias", label: "Conectados sin usar internet", count: anomCount, tone: anomCount ? "danger" : undefined },
+          { id: "planes", label: "Planes por traer", count: profOrphans.length, tone: profOrphans.length ? "warn" : undefined },
+          { id: "clientes", label: "Clientes por traer", count: orphans.length, tone: orphans.length ? "warn" : undefined },
+          { id: "todos", label: "Todos los clientes del router", count: result?.secrets.length ?? 0 },
         ];
         return (
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 0 }}>
