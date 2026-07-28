@@ -928,8 +928,11 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
     address: client.address ?? "", phone: client.phone ?? "", email: client.email ?? "",
     city: client.city ?? "", billing_day: client.billing_day ?? 1,
     notes: client.notes ?? "", dont_cut: !!client.dont_cut,
+    latitude: client.latitude != null ? Number(client.latitude) : null as number | null,
+    longitude: client.longitude != null ? Number(client.longitude) : null as number | null,
   });
   const [saving, setSaving] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -937,6 +940,8 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
       address: client.address ?? "", phone: client.phone ?? "", email: client.email ?? "",
       city: client.city ?? "", billing_day: client.billing_day ?? 1,
       notes: client.notes ?? "", dont_cut: !!client.dont_cut,
+      latitude: client.latitude != null ? Number(client.latitude) : null,
+      longitude: client.longitude != null ? Number(client.longitude) : null,
     });
   }, [client.id]);
 
@@ -949,6 +954,7 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
       address: form.address || null, phone: form.phone || null, email: form.email || null,
       city: form.city || null, billing_day: Number(form.billing_day) || 1,
       notes: form.notes || null, dont_cut: form.dont_cut,
+      latitude: form.latitude, longitude: form.longitude,
     }).eq("id", client.id);
     toast.dismiss(tId);
     if (error) toast.error(error.message);
