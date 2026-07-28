@@ -28,6 +28,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [showRescue, setShowRescue] = useState(false);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
