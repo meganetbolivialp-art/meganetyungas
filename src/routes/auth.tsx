@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginIdentifier } from "@/lib/operators.functions";
-import { check2faRequired, verify2faLogin } from "@/lib/twofa.functions";
 import loginBg from "@/assets/login-bg.jpg";
 
 export const Route = createFileRoute("/auth")({
@@ -25,25 +24,16 @@ function AuthPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const resolveLogin = useServerFn(resolveLoginIdentifier);
-  const check2fa = useServerFn(check2faRequired);
-  const verify2fa = useServerFn(verify2faLogin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showRescue, setShowRescue] = useState(false);
-  const [twofa, setTwofa] = useState(false);
-  const [twofaCode, setTwofaCode] = useState("");
 
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return;
-      try {
-        const r = await check2fa();
-        if (r.required) { setTwofa(true); return; }
-      } catch {}
-      navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/dashboard" });
     });
   }, [navigate]);
 
@@ -65,12 +55,6 @@ function AuthPage() {
       for (const loginEmail of candidates) {
         const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (!error) {
-          const r = await check2fa().catch(() => ({ required: false }));
-          if (r.required) {
-            setTwofa(true);
-            setLoading(false);
-            return;
-          }
           queryClient.clear();
           navigate({ to: "/dashboard", replace: true });
           return;
@@ -85,29 +69,6 @@ function AuthPage() {
       setLoading(false);
     }
   };
-
-  const submitTwofa = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMsg(null);
-    setLoading(true);
-    try {
-      await verify2fa({ data: { code: twofaCode.trim() } });
-      queryClient.clear();
-      navigate({ to: "/dashboard", replace: true });
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Código inválido");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelTwofa = async () => {
-    await supabase.auth.signOut();
-    setTwofa(false);
-    setTwofaCode("");
-    setPassword("");
-  };
-
 
   const recover = async () => {
     if (!email) {
@@ -126,7 +87,6 @@ function AuthPage() {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center px-4 py-10 text-white overflow-hidden bg-[#04101f]">
-      {/* Animated background image (slow ken-burns) */}
       <div
         className="absolute inset-0 animate-[bgZoom_30s_ease-in-out_infinite_alternate]"
         style={{
@@ -135,9 +95,7 @@ function AuthPage() {
           backgroundPosition: "center",
         }}
       />
-      {/* Blue tint overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#031a3a]/80 via-[#052248]/75 to-[#020b1c]/90" />
-      {/* Animated blue glow blobs */}
       <div className="pointer-events-none absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full bg-[#1e6fff]/25 blur-3xl animate-[blob_18s_ease-in-out_infinite]" />
       <div className="pointer-events-none absolute -bottom-40 -right-20 w-[560px] h-[560px] rounded-full bg-[#00c2ff]/20 blur-3xl animate-[blob_22s_ease-in-out_infinite_reverse]" />
       <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 w-[420px] h-[420px] rounded-full bg-[#3b82f6]/15 blur-3xl animate-[blob_26s_ease-in-out_infinite]" />
@@ -155,7 +113,6 @@ function AuthPage() {
       `}</style>
 
       <div className="relative z-10 w-full max-w-[380px] flex flex-col items-center">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-10 select-none">
           <MeganetMark size={78} />
           <div className="mt-4 text-[34px] font-black tracking-tight leading-none">
@@ -166,8 +123,6 @@ function AuthPage() {
           </div>
         </div>
 
-        {/* Form */}
-        {!twofa ? (
         <form onSubmit={submit} className="w-full space-y-4">
           <input
             type="text"
@@ -209,43 +164,6 @@ function AuthPage() {
             )}
           </button>
         </form>
-        ) : (
-        <form onSubmit={submitTwofa} className="w-full space-y-4">
-          <div className="text-center">
-            <div className="text-white/90 font-semibold text-lg">Verificación 2FA</div>
-            <div className="text-white/60 text-xs mt-1">Ingresá el código de 6 dígitos de tu app autenticadora (o un código de recuperación).</div>
-          </div>
-          <input
-            type="text"
-            required
-            autoFocus
-            placeholder="000000"
-            value={twofaCode}
-            onChange={(e) => setTwofaCode(e.target.value.slice(0, 20))}
-            className="w-full bg-white/[0.06] border border-white/15 rounded-md px-4 py-3.5 text-center font-mono text-2xl tracking-[0.4em] text-white placeholder-white/40 outline-none focus:border-white/40 focus:bg-white/[0.09] transition"
-          />
-          {msg && (
-            <div className="text-xs rounded-md px-3 py-2.5 bg-[#ff5722]/10 border border-[#ff5722]/30 text-white/90">
-              {msg}
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={loading || twofaCode.length < 6}
-            className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-md text-sm font-semibold text-white bg-[#2196f3] hover:bg-[#1e88e5] disabled:opacity-60 transition"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verificar y entrar"}
-          </button>
-          <button
-            type="button"
-            onClick={cancelTwofa}
-            className="w-full text-xs text-white/60 hover:text-white/90 py-2"
-          >
-            Cancelar y volver
-          </button>
-        </form>
-        )}
-
 
         <p className="mt-6 text-[13px] text-white/70 text-center">
           ¿Olvidaste tu contraseña? Click{" "}
@@ -267,9 +185,7 @@ function AuthPage() {
         </p>
       </div>
 
-      {/* Invisible license-admin trigger (top-left corner) — double tap/click to open */}
       <InvisibleRescueTrigger onOpen={() => setShowRescue(true)} />
-
 
       {showRescue && <LicenseRescueModal onClose={() => setShowRescue(false)} />}
     </div>
