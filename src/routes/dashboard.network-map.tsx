@@ -35,7 +35,7 @@ function NetworkMapPage() {
   const load = async () => {
     const [n, c, l] = await Promise.all([
       supabase.from("network_nodes").select("*").order("name"),
-      supabase.from("clients").select("id, full_name, latitude, longitude, status, phone, address, code, zone").not("latitude", "is", null),
+      supabase.from("clients").select("id, full_name, latitude, longitude, status, phone, address, city").not("latitude", "is", null),
       supabase.from("fiber_links").select("*"),
     ]);
     setNodes(n.data ?? []); setClients(c.data ?? []); setLinks(l.data ?? []);
