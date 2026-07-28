@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.finance_operators() TO authenticated;
