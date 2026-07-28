@@ -478,9 +478,9 @@ function RouterSyncPage() {
           {(drift.profileMismatch?.length ?? 0) > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "10px 0 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span><b>{drift.profileMismatch.length}</b> servicio(s) con <b>perfil desalineado</b> (plan cambió en la base):</span>
+                <span><b>{drift.profileMismatch.length}</b> cliente(s) con <b>plan desalineado</b> (el plan cambió en el sistema pero no en el router):</span>
                 <button className="btn primary" onClick={doSyncProfiles} disabled={syncingProfiles || profSyncSel.size === 0}>
-                  <Wand2 size={14} /> {syncingProfiles ? "Sincronizando…" : `Aplicar ${profSyncSel.size} perfil(es) al router`}
+                  <Wand2 size={14} /> {syncingProfiles ? "Aplicando…" : `Aplicar ${profSyncSel.size} plan(es) al router`}
                 </button>
               </div>
               <table className="tbl">
