@@ -179,6 +179,13 @@ function AuthPage() {
           </button>{" "}
           para recuperar.
         </p>
+
+        <p className="mt-2 text-[13px] text-white/70 text-center">
+          ¿No tienes cuenta?{" "}
+          <a href="/#precios" className="text-[#2b5cff] hover:underline font-medium">
+            Contratar
+          </a>
+        </p>
       </div>
     </div>
   );
