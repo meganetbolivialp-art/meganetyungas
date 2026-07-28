@@ -15,7 +15,7 @@ export function LicenseGate({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
+  
 
   const loadLicense = async () => {
     const { data, error } = await supabase.rpc("check_app_license");
