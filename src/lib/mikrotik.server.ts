@@ -782,16 +782,14 @@ export const mikrotik = {
       router,
       "hotspot/user/profile/upsert",
       async () => withSession(router, async (s) => {
-        const rate = `${args.rateUp}M/${args.rateDown}M`;
+        // Política: no sobreescribir rate-limit. Si ya existe, no tocar.
         const found = await sendCommand(s, ["/ip/hotspot/user/profile/print", `?name=${args.name}`, "=.proplist=.id"]);
         const id = found.find((r) => r.reply === "!re")?.attrs[".id"];
-        const words = id
-          ? ["/ip/hotspot/user/profile/set", `=.id=${id}`, `=rate-limit=${rate}`]
-          : ["/ip/hotspot/user/profile/add", `=name=${args.name}`, `=rate-limit=${rate}`];
-        const res = await sendCommand(s, words);
+        if (id) return { ok: true as const, updated: false };
+        const res = await sendCommand(s, ["/ip/hotspot/user/profile/add", `=name=${args.name}`]);
         const trap = res.find((r) => r.reply === "!trap");
         if (trap) throw new Error(trap.attrs.message || "hotspot profile failed");
-        return { ok: true as const, updated: !!id };
+        return { ok: true as const, updated: false };
       }),
       () => simulate("hotspot/user/profile/upsert", { router: router.name, ...args }, { ok: true as const, updated: false }),
     );
