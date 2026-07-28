@@ -44,11 +44,18 @@ function NetworkMapPage() {
 
   const points = useMemo(() => {
     const list: any[] = [];
+    const esc = (s: string) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
     if (filter.clients) {
       for (const c of clients) {
         const st = (c.status || "active") as string;
         if (!(filter as any)[st]) continue;
-        list.push({ id: `c-${c.id}`, lat: +c.latitude, lng: +c.longitude, kind: "client", label: c.full_name, status: st });
+        const rows: string[] = [];
+        if (c.code) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Código</span><b style="color:#0f172a">${esc(c.code)}</b></div>`);
+        if (c.address) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Dirección</span><span style="color:#0f172a">${esc(c.address)}</span></div>`);
+        if (c.zone) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Zona</span><span style="color:#0f172a">${esc(c.zone)}</span></div>`);
+        if (c.phone) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Tel</span><a href="tel:${esc(c.phone)}" style="color:#2563eb;text-decoration:none;font-weight:500">${esc(c.phone)}</a></div>`);
+        const popup = rows.length ? `<div style="display:flex;flex-direction:column;gap:4px">${rows.join("")}</div>` : "";
+        list.push({ id: `c-${c.id}`, lat: +c.latitude, lng: +c.longitude, kind: "client", label: c.full_name, status: st, popup });
       }
     }
     for (const n of nodes) {
