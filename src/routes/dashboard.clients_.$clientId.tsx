@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Radio, DollarSign, Repeat, FileText, Mail, MessageSquare, User, Wifi, Receipt, ListChecks, Send, Copy, Pencil, Check as CheckIcon, X as XIcon, Trash2, Plus, ChevronRight, Home, Eye, EyeOff, Lock, Calendar, MailOpen, Monitor, MessagesSquare, Ban, Wallet, ReceiptText, LifeBuoy, BarChart3, FileStack, Wrench, Save } from "lucide-react";
+import { useEffect, useState, lazy, Suspense } from "react";
+import { ArrowLeft, Radio, DollarSign, Repeat, FileText, Mail, MessageSquare, User, Wifi, Receipt, ListChecks, Send, Copy, Pencil, Check as CheckIcon, X as XIcon, Trash2, Plus, ChevronRight, Home, Eye, EyeOff, Lock, Calendar, MailOpen, Monitor, MessagesSquare, Ban, Wallet, ReceiptText, LifeBuoy, BarChart3, FileStack, Wrench, Save, MapPin } from "lucide-react";
+const LeafletPicker = lazy(() => import("@/components/leaflet-picker").then((m) => ({ default: m.LeafletPicker })));
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { useServerFn } from "@tanstack/react-start";
@@ -927,8 +928,11 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
     address: client.address ?? "", phone: client.phone ?? "", email: client.email ?? "",
     city: client.city ?? "", billing_day: client.billing_day ?? 1,
     notes: client.notes ?? "", dont_cut: !!client.dont_cut,
+    latitude: client.latitude != null ? Number(client.latitude) : null as number | null,
+    longitude: client.longitude != null ? Number(client.longitude) : null as number | null,
   });
   const [saving, setSaving] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -936,6 +940,8 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
       address: client.address ?? "", phone: client.phone ?? "", email: client.email ?? "",
       city: client.city ?? "", billing_day: client.billing_day ?? 1,
       notes: client.notes ?? "", dont_cut: !!client.dont_cut,
+      latitude: client.latitude != null ? Number(client.latitude) : null,
+      longitude: client.longitude != null ? Number(client.longitude) : null,
     });
   }, [client.id]);
 
@@ -948,6 +954,7 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
       address: form.address || null, phone: form.phone || null, email: form.email || null,
       city: form.city || null, billing_day: Number(form.billing_day) || 1,
       notes: form.notes || null, dont_cut: form.dont_cut,
+      latitude: form.latitude, longitude: form.longitude,
     }).eq("id", client.id);
     toast.dismiss(tId);
     if (error) toast.error(error.message);
@@ -993,6 +1000,33 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
           </MwField>
           <MwField label="Dirección Principal">
             <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="mw-input" />
+          </MwField>
+          <MwField label="Ubicación (mapa)">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button type="button" onClick={() => setShowMap(v => !v)} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-[#3498db] text-[#3498db] text-[12px] font-semibold hover:bg-[#3498db] hover:text-white transition-colors">
+                <MapPin className="w-3.5 h-3.5" /> {showMap ? "Ocultar mapa" : (form.latitude != null ? "Editar en mapa" : "Agregar en mapa")}
+              </button>
+              {form.latitude != null && form.longitude != null && (
+                <>
+                  <span className="text-[11px] font-mono text-slate-600">{Number(form.latitude).toFixed(6)}, {Number(form.longitude).toFixed(6)}</span>
+                  <a href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 underline">Ver en Google Maps</a>
+                  <button type="button" onClick={() => setForm({ ...form, latitude: null, longitude: null })} className="text-[11px] text-red-500 underline">Quitar</button>
+                </>
+              )}
+              {form.latitude == null && <span className="text-[11px] text-slate-500">Sin ubicación</span>}
+            </div>
+            {showMap && (
+              <div className="mt-2">
+                <Suspense fallback={<div style={{ padding: 20, textAlign: "center", color: "#64748b" }}>Cargando mapa…</div>}>
+                  <LeafletPicker
+                    lat={form.latitude ?? undefined}
+                    lng={form.longitude ?? undefined}
+                    onChange={(la, ln) => setForm({ ...form, latitude: la, longitude: ln })}
+                    height={300}
+                  />
+                </Suspense>
+              </div>
+            )}
           </MwField>
           <MwField label="Teléfono fijo">
             <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} className="mw-input" />
