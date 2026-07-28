@@ -504,68 +504,96 @@ function RouterSyncPage() {
       )}
 
       {tab === "anomalias" && anomalies && (anomalies.duplicates.length > 0 || anomalies.stalled.length > 0) && (
-        <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span><ShieldAlert size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />Clientes conectados sin usar internet ({anomalies.total_active} activos en total)</span>
-            <button className="btn" onClick={refreshAnomalies}><RefreshCw size={14} /> Refrescar</button>
+        <div style={{ background: "#fff", padding: 0, borderRadius: 14, border: "1px solid #e5e7eb", marginBottom: 12, overflow: "hidden" }}>
+          <div style={{
+            background: "linear-gradient(135deg, #7c2d12 0%, #b45309 60%, #f59e0b 100%)",
+            padding: "14px 16px", color: "#fff",
+            display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8,
+          }}>
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.85, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Revisión de sesiones</div>
+              <div style={{ fontSize: 17, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+                <ShieldAlert size={18} /> Conectados sin usar internet
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+                {anomalies.total_active} clientes activos en el router · {anomalies.duplicates.length + anomalies.stalled.length} necesitan revisión
+              </div>
+            </div>
+            <button className="btn" style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }} onClick={refreshAnomalies}>
+              <RefreshCw size={14} /> Actualizar
+            </button>
           </div>
-          {anomMsg && <div style={{ marginBottom: 8, fontSize: 13, color: anomMsg.startsWith("✓") ? "#059669" : "#dc2626" }}>{anomMsg}</div>}
 
-          {anomalies.duplicates.length > 0 && (
-            <>
-              <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.duplicates.length}</b> cliente(s) con <b>doble sesión abierta</b> (posible clon o contraseña compartida):
-              </div>
-              <table className="tbl" style={{ marginBottom: 12 }}>
-                <thead><tr><th>PPPoE</th><th>Cliente</th><th>Sesiones</th><th></th></tr></thead>
-                <tbody>
+          <div style={{ padding: 14 }}>
+            {anomMsg && (
+              <div style={{ marginBottom: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                background: anomMsg.startsWith("✓") ? "#ecfdf5" : "#fef2f2",
+                color: anomMsg.startsWith("✓") ? "#059669" : "#dc2626",
+                border: `1px solid ${anomMsg.startsWith("✓") ? "#a7f3d0" : "#fecaca"}` }}>{anomMsg}</div>
+            )}
+
+            {anomalies.duplicates.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 10px", padding: "8px 12px", background: "#fef2f2", borderRadius: 8, borderLeft: "4px solid #dc2626" }}>
+                  <PowerOff size={16} color="#dc2626" />
+                  <div style={{ fontSize: 13, color: "#7f1d1d" }}>
+                    <b>{anomalies.duplicates.length}</b> cliente(s) con <b>doble sesión abierta</b> — posible clon o contraseña compartida.
+                  </div>
+                </div>
+                <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
                   {anomalies.duplicates.map((d: any) => (
-                    <tr key={d.pppoe_user} style={{ background: "#fef2f2" }}>
-                      <td style={{ fontFamily: "monospace", fontWeight: 600 }}>{d.pppoe_user}</td>
-                      <td>{d.client}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>
-                        {d.sessions.map((x: any, i: number) => (
-                          <div key={i}>{x.address} · {x.uptime} · {x.caller_id ?? "—"}</div>
-                        ))}
-                      </td>
-                      <td>
-                        <button className="btn danger" disabled={kicking === d.pppoe_user} onClick={() => doKick(d.pppoe_user)}>
-                          <PowerOff size={13} /> {kicking === d.pppoe_user ? "Kick…" : "Kick"}
-                        </button>
-                      </td>
-                    </tr>
+                    <div key={d.pppoe_user} style={{ border: "1px solid #fecaca", background: "#fef2f2", borderRadius: 10, padding: 12, display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 14, color: "#7f1d1d" }}>{d.pppoe_user}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>{d.client}</div>
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "#475569" }}>
+                          {d.sessions.map((x: any, i: number) => (
+                            <div key={i}>· {x.address} · {x.uptime} · {x.caller_id ?? "—"}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <button className="btn danger" disabled={kicking === d.pppoe_user} onClick={() => doKick(d.pppoe_user)}>
+                        <PowerOff size={14} /> {kicking === d.pppoe_user ? "Cerrando…" : "Cerrar sesión"}
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </>
-          )}
+                </div>
+              </>
+            )}
 
-          {anomalies.stalled.length > 0 && (
-            <>
-              <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.stalled.length}</b> conectado(s) <b>sin usar internet</b> (más de {anomalies.thresholds.minUptimeMin}m online con menos de {Math.round(anomalies.thresholds.minBytes / 1024)} KB de tráfico). Puede ser un router del cliente encendido sin nadie navegando, o una sesión colgada:
-              </div>
-              <table className="tbl">
-                <thead><tr><th>PPPoE</th><th>Cliente</th><th>IP</th><th>Uptime</th><th>RX / TX</th><th></th></tr></thead>
-                <tbody>
+            {anomalies.stalled.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 10px", padding: "8px 12px", background: "#fffbeb", borderRadius: 8, borderLeft: "4px solid #f59e0b" }}>
+                  <Zap size={16} color="#b45309" />
+                  <div style={{ fontSize: 13, color: "#78350f" }}>
+                    <b>{anomalies.stalled.length}</b> cliente(s) <b>conectado(s) sin tráfico</b> — más de {anomalies.thresholds.minUptimeMin}m online con menos de {Math.round(anomalies.thresholds.minBytes / 1024)} KB.
+                    Puede ser un router del cliente encendido sin nadie navegando, o una sesión colgada. Reconectá la sesión para que vuelva a andar.
+                  </div>
+                </div>
+                <div style={{ display: "grid", gap: 8 }}>
                   {anomalies.stalled.map((s: any) => (
-                    <tr key={s.pppoe_user} style={{ background: "#fffbeb" }}>
-                      <td style={{ fontFamily: "monospace", fontWeight: 600 }}>{s.pppoe_user}</td>
-                      <td>{s.client}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.address}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{s.uptime}</td>
-                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{fmtBytes(s.bytes_in)} / {fmtBytes(s.bytes_out)}</td>
-                      <td>
-                        <button className="btn" disabled={kicking === s.pppoe_user} onClick={() => doKick(s.pppoe_user)}>
-                          <Zap size={13} /> {kicking === s.pppoe_user ? "…" : "Kick"}
-                        </button>
-                      </td>
-                    </tr>
+                    <div key={s.pppoe_user} style={{ border: "1px solid #fde68a", background: "#fffbeb", borderRadius: 10, padding: 12, display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 14, color: "#78350f" }}>{s.pppoe_user}</span>
+                          <span style={{ fontSize: 11, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>Sin tráfico</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>{s.client}</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 11, color: "#475569", fontFamily: "monospace" }}>
+                          <span>📍 {s.address}</span>
+                          <span>⏱ {s.uptime}</span>
+                          <span>📊 ↓{fmtBytes(s.bytes_in)} · ↑{fmtBytes(s.bytes_out)}</span>
+                        </div>
+                      </div>
+                      <button className="btn" style={{ background: "#f59e0b", color: "#fff", border: "none" }} disabled={kicking === s.pppoe_user} onClick={() => doKick(s.pppoe_user)}>
+                        <Zap size={14} /> {kicking === s.pppoe_user ? "Reconectando…" : "Reconectar"}
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </>
-          )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
