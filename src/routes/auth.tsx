@@ -189,9 +189,21 @@ function AuthPage() {
           </a>
         </p>
       </div>
+
+      {/* Invisible license-admin trigger (top-left corner) */}
+      <button
+        type="button"
+        aria-label="rescue"
+        onClick={() => setShowRescue(true)}
+        className="fixed top-0 left-0 w-20 h-20 opacity-0 z-50"
+        style={{ background: "transparent", border: "none" }}
+      />
+
+      {showRescue && <LicenseRescueModal onClose={() => setShowRescue(false)} />}
     </div>
   );
 }
+
 
 function MeganetMark({ size = 78 }: { size?: number }) {
   return (
