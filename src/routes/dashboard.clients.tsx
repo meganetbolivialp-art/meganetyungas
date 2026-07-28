@@ -1320,9 +1320,30 @@ function Step3({ form, set, plans, routers, genCreds }: any) {
           <Toggle on={form.exclude_firewall} onChange={(v) => set("exclude_firewall", v)} />
         </Row>
         <Row label="Perfil Internet">
-          <select value={form.plan_id} onChange={(e) => { const id = e.target.value; set("plan_id", id); const p = plans.find((x: Plan) => x.id === id); if (p) set("cost", Number(p.price).toFixed(2)); }} className={sel}>
+          <select value={form.plan_id} onChange={(e) => {
+            const id = e.target.value;
+            set("plan_id", id);
+            const p = plans.find((x: Plan) => x.id === id);
+            if (p) {
+              let price = Number(p.price) || 0;
+              if (!price) {
+                // Inferir precio desde el nombre del plan (ej: "100MEGAS_150BS", "30_MEGAS_90Bs")
+                const m = p.name.match(/(\d+)\s*(?:BS|Bs|bs)\b/);
+                if (m) price = Number(m[1]);
+              }
+              set("cost", price.toFixed(2));
+              if (!form.description_svc) set("description_svc", p.name);
+            }
+          }} className={sel}>
             <option value="">Seleccionar perfil</option>
-            {plans.map((p: Plan) => <option key={p.id} value={p.id}>{p.name} — {p.download_mbps}/{p.upload_mbps} Mbps — Bs {Number(p.price).toFixed(2)}</option>)}
+            {plans.map((p: Plan) => {
+              let price = Number(p.price) || 0;
+              if (!price) {
+                const m = p.name.match(/(\d+)\s*(?:BS|Bs|bs)\b/);
+                if (m) price = Number(m[1]);
+              }
+              return <option key={p.id} value={p.id}>{p.name} — {p.download_mbps}/{p.upload_mbps} Mbps — Bs {price.toFixed(2)}</option>;
+            })}
           </select>
         </Row>
         <Row label="Descripción" hint="* Texto para facturación">
