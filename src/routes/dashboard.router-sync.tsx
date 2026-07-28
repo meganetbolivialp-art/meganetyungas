@@ -457,7 +457,7 @@ function RouterSyncPage() {
           {drift.statusMismatch.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{drift.statusMismatch.length}</b> servicio(s) con <b>estado desalineado</b> (habilitado en uno pero no en el otro):
+                <b>{drift.statusMismatch.length}</b> cliente(s) con <b>estado desalineado</b> (habilitado en uno pero no en el otro):
               </div>
               <table className="tbl">
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>DB</th><th>Router</th></tr></thead>
