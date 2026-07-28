@@ -351,7 +351,7 @@ function RouterSyncPage() {
             )}
           </div>
           <div style={{ fontSize: 11, opacity: 0.8, marginTop: 10 }}>
-            ¿Necesitás afinar precios o elegir qué importar? Usá las pestañas de abajo (<b>Planes / Perfiles</b> y <b>Clientes huérfanos</b>).
+            ¿Necesitás afinar precios o elegir qué traer? Usá las pestañas de abajo (<b>Planes por traer</b> y <b>Clientes por traer</b>).
           </div>
         </div>
       )}
