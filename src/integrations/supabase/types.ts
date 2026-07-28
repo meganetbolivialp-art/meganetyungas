@@ -1331,6 +1331,80 @@ export type Database = {
         }
         Relationships: []
       }
+      mikrotik_pending_ops: {
+        Row: {
+          attempts: number
+          client_id: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          op: string
+          payload: Json
+          router_id: string
+          service_id: string | null
+          status: string
+          synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          op: string
+          payload?: Json
+          router_id: string
+          service_id?: string | null
+          status?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          op?: string
+          payload?: Json
+          router_id?: string
+          service_id?: string | null
+          status?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mikrotik_pending_ops_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_cutoff_history"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "mikrotik_pending_ops_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mikrotik_pending_ops_router_id_fkey"
+            columns: ["router_id"]
+            isOneToOne: false
+            referencedRelation: "routers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mikrotik_pending_ops_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       network_nodes: {
         Row: {
           created_at: string
