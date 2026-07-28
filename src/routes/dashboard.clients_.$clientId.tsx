@@ -1001,9 +1001,6 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
           <MwField label="Dirección Principal">
             <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="mw-input" />
           </MwField>
-          <MwField label="Dirección Principal">
-            <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="mw-input" />
-          </MwField>
           <MwField label="Ubicación (mapa)">
             <div className="flex items-center gap-2 flex-wrap">
               <button type="button" onClick={() => setShowMap(v => !v)} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-[#3498db] text-[#3498db] text-[12px] font-semibold hover:bg-[#3498db] hover:text-white transition-colors">
