@@ -72,15 +72,8 @@ export function LicenseGate({ children }: { children: ReactNode }) {
     window.location.href = "/auth";
   };
 
-  // Secret tap on the padlock icon (5 taps) reveals admin panel — for admins only
-  const handleLockTap = () => {
-    const next = tapCount + 1;
-    setTapCount(next);
-    if (next >= 5 && isAdmin) {
-      setShowAdmin(true);
-      setTapCount(0);
-    }
-  };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-red-950 p-4">
