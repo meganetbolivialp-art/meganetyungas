@@ -352,11 +352,19 @@ function RoutersPage() {
                       {online
                         ? <span className="mw-badge mw-badge-green"><Wifi className="w-3 h-3" /> Conectado</span>
                         : <span className="mw-badge mw-badge-red"><WifiOff className="w-3 h-3" /> Desconectado</span>}
+                      {(pending.byRouter[r.id] ?? 0) > 0 && (
+                        <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-px rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 text-[10px] font-semibold" title="Operaciones pendientes en cola">
+                          <Clock className="w-2.5 h-2.5" /> {pending.byRouter[r.id]} en cola
+                        </div>
+                      )}
                     </td>
                     <td className="text-right pr-3">
                       <div className="inline-flex items-center gap-1">
                         <button onClick={() => openEdit(r)} title="Editar" className="p-1.5 rounded hover:bg-muted text-sky-600"><Pencil className="w-4 h-4" /></button>
                         <button onClick={() => remove(r.id)} title="Eliminar" className="p-1.5 rounded hover:bg-muted text-destructive"><Trash2 className="w-4 h-4" /></button>
+                        {(pending.byRouter[r.id] ?? 0) > 0 && (
+                          <button onClick={() => flushRouter(r.id, r.name)} title="Aplicar operaciones en cola ahora" className="p-1.5 rounded hover:bg-muted text-amber-600"><Clock className="w-4 h-4" /></button>
+                        )}
                         <button onClick={() => runTest(r)} disabled={isT} title="Probar conexión" className="p-1.5 rounded hover:bg-muted text-amber-600 disabled:opacity-50">
                           {isT ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                         </button>
