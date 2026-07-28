@@ -361,6 +361,38 @@ function CutoffsPage() {
           </div>
         </div>
       )}
+
+      {riskOpen && (
+        <div className="fixed inset-0 bg-black/60 grid place-items-center z-50 p-4" onClick={() => setRiskOpen(false)}>
+          <div className="bg-card border rounded-lg p-4 w-full max-w-3xl max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Clientes en riesgo de corte (próx. 24h)</h2>
+              <button onClick={() => setRiskOpen(false)} className="text-sm text-muted-foreground">Cerrar</button>
+            </div>
+            {riskQ.isLoading ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">Cargando…</div>
+            ) : !riskQ.data?.length ? (
+              <div className="text-sm text-muted-foreground py-8 text-center">No hay clientes en riesgo en las próximas 24h.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="text-xs uppercase text-muted-foreground border-b">
+                  <tr><th className="text-left py-2">Cliente</th><th className="text-left">Teléfono</th><th className="text-right">Deuda</th><th className="text-right">Horas</th></tr>
+                </thead>
+                <tbody>
+                  {(riskQ.data as any[]).map((r: any) => (
+                    <tr key={r.invoice_id} className="border-b last:border-0">
+                      <td className="py-2">{r.full_name}</td>
+                      <td>{r.phone ?? "—"}</td>
+                      <td className="text-right">Bs {Number(r.amount).toFixed(2)}</td>
+                      <td className="text-right"><span className={`px-2 py-0.5 rounded text-xs ${r.hours_left <= 6 ? "bg-red-500 text-white" : "bg-amber-500 text-white"}`}>{r.hours_left}h</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
