@@ -65,7 +65,30 @@ function NetworkMapPage() {
       list.push({ id: `n-${n.id}`, lat: +n.latitude, lng: +n.longitude, kind, label: n.name, status: n.status, popup: n.notes || "" });
     }
     return list;
-  }, [nodes, clients, filter]);
+  }, [nodes, clients, filter, zoneFilter]);
+
+  // Zonas inteligentes: agrupa clientes por ciudad y calcula salud
+  const zones = useMemo(() => {
+    const byZone = new Map<string, { total: number; active: number; suspended: number; overdue: number; lat: number; lng: number; n: number }>();
+    for (const c of clients) {
+      const z = (c.city || "Sin zona").trim() || "Sin zona";
+      const st = (c.status || "active") as string;
+      const cur = byZone.get(z) ?? { total: 0, active: 0, suspended: 0, overdue: 0, lat: 0, lng: 0, n: 0 };
+      cur.total++;
+      if (st === "active") cur.active++;
+      else if (st === "suspended") cur.suspended++;
+      else if (st === "overdue") cur.overdue++;
+      if (c.latitude && c.longitude) { cur.lat += +c.latitude; cur.lng += +c.longitude; cur.n++; }
+      byZone.set(z, cur);
+    }
+    return Array.from(byZone.entries())
+      .map(([name, v]) => {
+        const badRatio = v.total ? (v.suspended + v.overdue) / v.total : 0;
+        const health: "ok" | "warn" | "down" = badRatio >= 0.5 ? "down" : badRatio >= 0.25 ? "warn" : "ok";
+        return { name, ...v, badRatio, health };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [clients]);
 
   const mapLines = useMemo(() => {
     if (!filter.fiber) return [];
