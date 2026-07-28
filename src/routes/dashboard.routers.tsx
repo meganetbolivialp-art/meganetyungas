@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye } from "lucide-react";
+import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
-import { testRouterConnection, listActiveSessions, pingAllRouters, importRouterPools, listRouterPools, upsertRouterPool, deleteRouterPool, poolIpUsage } from "@/lib/isp.functions";
+import { testRouterConnection, listActiveSessions, pingAllRouters, importRouterPools, listRouterPools, upsertRouterPool, deleteRouterPool, poolIpUsage, pendingOpsSummary, flushRouterQueue } from "@/lib/isp.functions";
 import { oneClickProvisionRouter } from "@/lib/router-oneclick.functions";
 
 
@@ -64,6 +64,9 @@ function RoutersPage() {
   const [wizardBusy, setWizardBusy] = useState(false);
   const [autoPoll, setAutoPoll] = useState(true);
   const [lastPoll, setLastPoll] = useState<number | null>(null);
+  const [pending, setPending] = useState<{ total: number; byRouter: Record<string, number> }>({ total: 0, byRouter: {} });
+  const pendingFn = useServerFn(pendingOpsSummary);
+  const flushFn = useServerFn(flushRouterQueue);
   const [poolsFor, setPoolsFor] = useState<R | null>(null);
   const [pools, setPools] = useState<any[]>([]);
   const [poolEdit, setPoolEdit] = useState<any | null>(null);
@@ -136,7 +139,7 @@ function RoutersPage() {
   };
   useEffect(() => { load(); }, []);
 
-  // Auto-ping cada 30s para mantener estado online/offline al día
+  // Auto-ping cada 30s + refresco de cola pendiente
   useEffect(() => {
     if (!autoPoll) return;
     let cancelled = false;
@@ -145,13 +148,26 @@ function RoutersPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
         await pingAllFn({});
-        if (!cancelled) { setLastPoll(Date.now()); await load(); }
+        const p: any = await pendingFn({}).catch(() => null);
+        if (!cancelled) {
+          setLastPoll(Date.now());
+          if (p) setPending(p);
+          await load();
+        }
       } catch (e) { console.error("auto-ping failed", e); }
     };
     tick();
     const id = setInterval(tick, 30000);
     return () => { cancelled = true; clearInterval(id); };
   }, [autoPoll]);
+
+  const flushRouter = async (routerId: string, routerName: string) => {
+    try {
+      const res: any = await flushFn({ data: { routerId } });
+      toast.success(`${routerName}: aplicadas ${res.done}, fallidas ${res.failed}, pendientes ${res.pending}`);
+      const p: any = await pendingFn({}); setPending(p);
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -286,6 +302,11 @@ function RoutersPage() {
               Auto-ping 30s
               {lastPoll && <span className="text-emerald-600 font-medium">· {new Date(lastPoll).toLocaleTimeString()}</span>}
             </label>
+            {pending.total > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 text-[11px] font-semibold" title="Operaciones en cola esperando a que el router vuelva online">
+                <Clock className="w-3 h-3" /> {pending.total} en cola
+              </span>
+            )}
           </div>
           <div className="relative w-72">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -331,11 +352,19 @@ function RoutersPage() {
                       {online
                         ? <span className="mw-badge mw-badge-green"><Wifi className="w-3 h-3" /> Conectado</span>
                         : <span className="mw-badge mw-badge-red"><WifiOff className="w-3 h-3" /> Desconectado</span>}
+                      {(pending.byRouter[r.id] ?? 0) > 0 && (
+                        <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-px rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-700 text-[10px] font-semibold" title="Operaciones pendientes en cola">
+                          <Clock className="w-2.5 h-2.5" /> {pending.byRouter[r.id]} en cola
+                        </div>
+                      )}
                     </td>
                     <td className="text-right pr-3">
                       <div className="inline-flex items-center gap-1">
                         <button onClick={() => openEdit(r)} title="Editar" className="p-1.5 rounded hover:bg-muted text-sky-600"><Pencil className="w-4 h-4" /></button>
                         <button onClick={() => remove(r.id)} title="Eliminar" className="p-1.5 rounded hover:bg-muted text-destructive"><Trash2 className="w-4 h-4" /></button>
+                        {(pending.byRouter[r.id] ?? 0) > 0 && (
+                          <button onClick={() => flushRouter(r.id, r.name)} title="Aplicar operaciones en cola ahora" className="p-1.5 rounded hover:bg-muted text-amber-600"><Clock className="w-4 h-4" /></button>
+                        )}
                         <button onClick={() => runTest(r)} disabled={isT} title="Probar conexión" className="p-1.5 rounded hover:bg-muted text-amber-600 disabled:opacity-50">
                           {isT ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                         </button>

@@ -79,31 +79,46 @@ export const suspendService = createServerFn({ method: "POST" })
     // Corte SIEMPRE por IP (address-list). Nunca se cambia el perfil PPP.
     const mode = data.mode ?? "morosos_lv";
     const router = svc.routers as any;
+    let queued = false;
     if (router) {
       const { mikrotik } = await import("./mikrotik.server");
+      const { withQueueFallback } = await import("./mikrotik-queue.server");
       const listName = router.morosos_profile ?? "sistema_cortados";
 
       if (mode === "cut") {
-        // Corte total: sólo si el admin lo pide explícito
         if (svc.service_type === "pppoe" && svc.pppoe_user) {
-          await mikrotik.disablePPPoE(router, { user: svc.pppoe_user });
+          const p = { user: svc.pppoe_user };
+          const r = await withQueueFallback(context.supabase,
+            { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "disablePPPoE", payload: p },
+            () => mikrotik.disablePPPoE(router, p));
+          if ((r as any).queued) queued = true;
         } else if (svc.service_type === "queue" && svc.queue_target) {
           await mikrotik.setQueueDisabled(router, { name: `svc-${svc.id}`, disabled: true });
         } else if (svc.service_type === "hotspot" && svc.hotspot_user) {
           await mikrotik.setHotspotUserDisabled(router, { user: svc.hotspot_user, disabled: true });
         }
       } else {
-        // Modo por defecto: agregar IP a address-list, no tocar perfil.
         let ipForList = svc.ip_address || svc.queue_target;
         if (!ipForList && svc.pppoe_user) {
-          const live = await mikrotik.getUserLive(router, { user: svc.pppoe_user });
-          ipForList = (live.active as any)?.address || (live.secret as any)?.["remote-address"] || null;
+          try {
+            const live = await mikrotik.getUserLive(router, { user: svc.pppoe_user });
+            ipForList = (live.active as any)?.address || (live.secret as any)?.["remote-address"] || null;
+          } catch (e) {
+            // Router offline: encolar sin IP resuelta usa la guardada en DB o falla suave.
+            ipForList = svc.ip_address || null;
+          }
         }
         if (!ipForList) {
           throw new Error("Este servicio no tiene IP guardada ni sesión PPPoE activa; no puedo agregarlo a la lista de corte.");
         }
-        await mikrotik.ensureCutoffRules(router, { listName, noticeIp: router.walled_garden_ip });
-        await mikrotik.addToCutoffList(router, { ip: ipForList, listName, comment: `svc-${svc.id}` });
+        const payload = { ip: ipForList, listName, comment: `svc-${svc.id}` };
+        const r = await withQueueFallback(context.supabase,
+          { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "addToCutoffList", payload },
+          async () => {
+            await mikrotik.ensureCutoffRules(router, { listName, noticeIp: router.walled_garden_ip });
+            return mikrotik.addToCutoffList(router, payload);
+          });
+        if ((r as any).queued) queued = true;
       }
     }
 
@@ -116,10 +131,10 @@ export const suspendService = createServerFn({ method: "POST" })
       .eq("id", svc.client_id);
     await context.supabase.from("client_actions").insert({
       client_id: svc.client_id, service_id: svc.id, action: "suspend",
-      detail: `${mode === "cut" ? "Corte total (disable secret)" : "IP agregada a address-list de corte"}${data.reason ? ` — ${data.reason}` : ""}`,
+      detail: `${mode === "cut" ? "Corte total (disable secret)" : "IP agregada a address-list de corte"}${data.reason ? ` — ${data.reason}` : ""}${queued ? " · en cola (router offline)" : ""}`,
       performed_by: context.userId,
     });
-    return { ok: true, mode };
+    return { ok: true, mode, queued };
   });
 
 
@@ -136,15 +151,20 @@ export const reactivateService = createServerFn({ method: "POST" })
     if (error || !svc) throw new Error(error?.message ?? "Servicio no encontrado");
 
     const router = svc.routers as any;
+    let queued = false;
     if (router) {
       const { mikrotik } = await import("./mikrotik.server");
+      const { withQueueFallback } = await import("./mikrotik-queue.server");
       const listName = router.morosos_profile ?? "sistema_cortados";
 
-      // Reactivación estilo Mikrowisp: solo quitar la IP de la address-list.
-      // El perfil PPP nunca se tocó (sigue con su plan), así que no hay que
-      // restaurar nada. Enable por si en algún momento se hizo corte total.
+      // Reactivación: quitar de address-list y (si aplica) enable + kick.
+      // Si el router está offline, encolar todo para aplicar al reconectar.
       if (svc.service_type === "pppoe" && svc.pppoe_user) {
-        try { await mikrotik.enablePPPoE(router, { user: svc.pppoe_user }); } catch { /* ignore */ }
+        const p = { user: svc.pppoe_user };
+        const r = await withQueueFallback(context.supabase,
+          { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "enablePPPoE", payload: p },
+          () => mikrotik.enablePPPoE(router, p)).catch(() => ({ queued: false }));
+        if ((r as any).queued) queued = true;
       } else if (svc.service_type === "queue") {
         try { await mikrotik.setQueueDisabled(router, { name: `svc-${svc.id}`, disabled: false }); } catch { /* ignore */ }
       } else if (svc.service_type === "hotspot" && svc.hotspot_user) {
@@ -153,18 +173,20 @@ export const reactivateService = createServerFn({ method: "POST" })
 
       const ipForList = svc.ip_address || svc.queue_target;
       if (ipForList) {
-        try { await mikrotik.removeFromCutoffList(router, { ip: ipForList, listName }); }
-        catch (e) { console.error("cutoff remove failed", e); }
+        const p = { ip: ipForList, listName };
+        const r = await withQueueFallback(context.supabase,
+          { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "removeFromCutoffList", payload: p },
+          () => mikrotik.removeFromCutoffList(router, p)).catch(() => ({ queued: false }));
+        if ((r as any).queued) queued = true;
       }
 
-      // Kick de sesión PPPoE activa para forzar reconexión inmediata (como MikroWisp).
-      // Sin esto, la sesión sigue viva pero con la address-list ya limpia; algunos
-      // clientes quedan colgados hasta que el DHCP renueva o reinician el router.
       if (svc.service_type === "pppoe" && svc.pppoe_user) {
-        try { await mikrotik.kickPPPoESession(router, { user: svc.pppoe_user }); }
-        catch (e) { console.error("kick pppoe failed", e); }
+        const p = { user: svc.pppoe_user };
+        const r = await withQueueFallback(context.supabase,
+          { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "kickPPPoESession", payload: p },
+          () => mikrotik.kickPPPoESession(router, p)).catch(() => ({ queued: false }));
+        if ((r as any).queued) queued = true;
       }
-
     }
 
 
@@ -183,9 +205,9 @@ export const reactivateService = createServerFn({ method: "POST" })
     }
     await context.supabase.from("client_actions").insert({
       client_id: svc.client_id, service_id: svc.id, action: "reactivate",
-      detail: "Reactivación", performed_by: context.userId,
+      detail: queued ? "Reactivación · en cola (router offline)" : "Reactivación", performed_by: context.userId,
     });
-    return { ok: true };
+    return { ok: true, queued };
   });
 
 // ---------- Sincronizar plan → /ppp/profile en todos los routers ----------
@@ -245,13 +267,24 @@ export const provisionPPPoE = createServerFn({ method: "POST" })
     if (!svc.pppoe_user || !svc.pppoe_password) throw new Error("Faltan credenciales PPPoE");
 
     const { mikrotik } = await import("./mikrotik.server");
-    const res = await mikrotik.createPPPoE(svc.routers as any, {
+    const { withQueueFallback } = await import("./mikrotik-queue.server");
+    const router = svc.routers as any;
+    const payload = {
       user: svc.pppoe_user, password: svc.pppoe_password,
       profile: (svc.plans as any)?.name ?? "default", remoteIp: svc.ip_address,
-    });
+    };
+    const res = await withQueueFallback(
+      context.supabase,
+      { routerId: router.id, serviceId: svc.id, clientId: svc.client_id, op: "createPPPoE", payload },
+      () => mikrotik.createPPPoE(router, payload),
+    );
+    const queued = (res as any).queued === true;
     await context.supabase.from("client_actions").insert({
       client_id: svc.client_id, service_id: svc.id, action: "provision",
-      detail: `PPPoE aprovisionado en router (id ${res.id})`, performed_by: context.userId,
+      detail: queued
+        ? "PPPoE en cola — se aplicará al reconectar el router"
+        : `PPPoE aprovisionado en router (id ${(res as any).id ?? "?"})`,
+      performed_by: context.userId,
     });
     return res;
   });
@@ -263,10 +296,61 @@ export const pingRouter = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: r, error } = await context.supabase.from("routers").select("*").eq("id", data.routerId).single();
     if (error || !r) throw new Error("Router no encontrado");
+    const prevStatus = (r as any).status;
     const { mikrotik } = await import("./mikrotik.server");
-    const res = await mikrotik.ping(r as any);
-    await context.supabase.from("routers").update({ last_sync_at: new Date().toISOString(), status: res.ok ? "online" : "offline" }).eq("id", r.id);
+    let res: any;
+    try {
+      res = await mikrotik.ping(r as any);
+    } catch (e) {
+      await context.supabase.from("routers").update({ last_sync_at: new Date().toISOString(), status: "offline" }).eq("id", r.id);
+      throw e;
+    }
+    await context.supabase.from("routers").update({ last_sync_at: new Date().toISOString(), status: "online" }).eq("id", r.id);
+    // Transición offline→online: sincronizar cola pendiente.
+    if (prevStatus !== "online") {
+      try {
+        const { flushPending } = await import("./mikrotik-queue.server");
+        const flushed = await flushPending(context.supabase, r.id);
+        if (flushed.done > 0 || flushed.failed > 0) {
+          console.log(`[mikrotik-queue] ${(r as any).name}: aplicadas ${flushed.done}, fallidas ${flushed.failed}`);
+        }
+        (res as any).flushed = flushed;
+      } catch (e) {
+        console.error("[mikrotik-queue] flush failed", (e as Error).message);
+      }
+    }
     return res;
+  });
+
+// ---------- Cola de operaciones pendientes ----------
+export const listPendingOps = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("mikrotik_pending_ops")
+      .select("id, router_id, service_id, client_id, op, status, attempts, last_error, created_at, synced_at, routers(name), clients(full_name)")
+      .in("status", ["pending", "failed"])
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return { ops: data ?? [] };
+  });
+
+export const flushRouterQueue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { routerId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { flushPending } = await import("./mikrotik-queue.server");
+    return flushPending(context.supabase, data.routerId);
+  });
+
+export const pendingOpsSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { countPendingByRouter } = await import("./mikrotik-queue.server");
+    const counts = await countPendingByRouter(context.supabase);
+    const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+    return { total, byRouter: Object.fromEntries(counts) };
   });
 
 export const listActiveSessions = createServerFn({ method: "POST" })
