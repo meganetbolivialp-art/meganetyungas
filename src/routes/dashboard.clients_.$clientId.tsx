@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Radio, DollarSign, Repeat, FileText, Mail, MessageSquare, User, Wifi, Receipt, ListChecks, Send, Copy, Pencil, Check as CheckIcon, X as XIcon, Trash2, Plus, ChevronRight, Home, Eye, EyeOff, Lock, Calendar, MailOpen, Monitor, MessagesSquare, Ban, Wallet, ReceiptText, LifeBuoy, BarChart3, FileStack, Wrench, Save } from "lucide-react";
+import { useEffect, useState, lazy, Suspense } from "react";
+import { ArrowLeft, Radio, DollarSign, Repeat, FileText, Mail, MessageSquare, User, Wifi, Receipt, ListChecks, Send, Copy, Pencil, Check as CheckIcon, X as XIcon, Trash2, Plus, ChevronRight, Home, Eye, EyeOff, Lock, Calendar, MailOpen, Monitor, MessagesSquare, Ban, Wallet, ReceiptText, LifeBuoy, BarChart3, FileStack, Wrench, Save, MapPin } from "lucide-react";
+const LeafletPicker = lazy(() => import("@/components/leaflet-picker").then((m) => ({ default: m.LeafletPicker })));
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { useServerFn } from "@tanstack/react-start";
