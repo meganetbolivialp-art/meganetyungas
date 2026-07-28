@@ -78,3 +78,32 @@ export const disable2fa = createServerFn({ method: "POST" })
     await context.supabase.from("operator_2fa").delete().eq("user_id", context.userId);
     return { ok: true };
   });
+
+export const verify2faLogin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ code: z.string().min(6).max(20) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const email = (context.claims as any)?.email ?? "user";
+    const { data: row } = await context.supabase
+      .from("operator_2fa").select("secret, enabled, recovery_codes").eq("user_id", context.userId).maybeSingle();
+    if (!row?.enabled) return { ok: true, required: false };
+    const code = data.code.trim();
+    if (code.length === 6 && /^\d{6}$/.test(code)) {
+      const delta = totp(row.secret, email).validate({ token: code, window: 1 });
+      if (delta !== null) return { ok: true, required: true };
+    } else if (Array.isArray(row.recovery_codes) && row.recovery_codes.includes(code)) {
+      const remaining = (row.recovery_codes as string[]).filter((c) => c !== code);
+      await context.supabase.from("operator_2fa").update({ recovery_codes: remaining }).eq("user_id", context.userId);
+      return { ok: true, required: true, recovery_used: true };
+    }
+    throw new Error("Código 2FA inválido");
+  });
+
+export const check2faRequired = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase
+      .from("operator_2fa").select("enabled").eq("user_id", context.userId).maybeSingle();
+    return { required: !!data?.enabled };
+  });
+
