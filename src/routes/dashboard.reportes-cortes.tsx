@@ -14,7 +14,7 @@ export const Route = createFileRoute("/dashboard/reportes-cortes")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: ReportsPage,
+  component: ReportsPageRoute,
 });
 
 function toISODate(d: Date) { return d.toISOString().slice(0, 10); }
@@ -29,7 +29,7 @@ function classificationBadge(c: string) {
   return map[c] ?? "bg-slate-200";
 }
 
-function ReportsPage() {
+export function ReportsPageContent() {
   const today = new Date();
   const monthAgo = new Date(); monthAgo.setDate(monthAgo.getDate() - 30);
   const [from, setFrom] = useState(toISODate(monthAgo));
@@ -72,7 +72,7 @@ function ReportsPage() {
   const s = statsQ.data;
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-4 md:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -187,6 +187,14 @@ function ReportsPage() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+function ReportsPageRoute() {
+  return (
+    <AdminLayout>
+      <ReportsPageContent />
     </AdminLayout>
   );
 }

@@ -21,7 +21,7 @@ export const Route = createFileRoute("/dashboard/cutoffs")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: CutoffsPage,
+  component: CutoffsPageRoute,
 });
 
 function Kpi({ label, value, color, Icon }: { label: string; value: string | number; color: string; Icon: any }) {
@@ -40,7 +40,7 @@ function Kpi({ label, value, color, Icon }: { label: string; value: string | num
 
 type PromiseTarget = { clientId: string; name: string } | null;
 
-function CutoffsPage() {
+export function CutoffsPageContent() {
   const qc = useQueryClient();
   const list = useServerFn(listCutoffs);
   const kpis = useServerFn(cutoffKpis);
@@ -160,7 +160,7 @@ function CutoffsPage() {
   const totalDebt = filtered.reduce((s, r) => s + Number(r.debt || 0), 0);
 
   return (
-    <AdminLayout>
+    <>
       <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Cortes / Morosos</h1>
@@ -393,6 +393,14 @@ function CutoffsPage() {
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+function CutoffsPageRoute() {
+  return (
+    <AdminLayout>
+      <CutoffsPageContent />
     </AdminLayout>
   );
 }
