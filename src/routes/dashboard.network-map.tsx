@@ -50,6 +50,7 @@ function NetworkMapPage() {
       for (const c of clients) {
         const st = (c.status || "active") as string;
         if (!(filter as any)[st]) continue;
+        if (zoneFilter && (c.city || "Sin zona") !== zoneFilter) continue;
         const rows: string[] = [];
         if (c.address) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Dirección</span><span style="color:#0f172a">${esc(c.address)}</span></div>`);
         if (c.city) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Ciudad</span><span style="color:#0f172a">${esc(c.city)}</span></div>`);
