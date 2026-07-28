@@ -56,7 +56,6 @@ import { Route as DashboardBulkRouterRouteImport } from './routes/dashboard.bulk
 import { Route as DashboardBranchesRouteImport } from './routes/dashboard.branches'
 import { Route as DashboardAuditRouteImport } from './routes/dashboard.audit'
 import { Route as DashboardAccountingRouteImport } from './routes/dashboard.accounting'
-import { Route as Dashboard2faRouteImport } from './routes/dashboard.2fa'
 import { Route as DashboardInvoicesInvoiceIdRouteImport } from './routes/dashboard.invoices_.$invoiceId'
 import { Route as DashboardClientsClientIdRouteImport } from './routes/dashboard.clients_.$clientId'
 import { Route as DashboardRoutersRouterIdMonitorRouteImport } from './routes/dashboard.routers_.$routerId.monitor'
@@ -303,11 +302,6 @@ const DashboardAccountingRoute = DashboardAccountingRouteImport.update({
   path: '/accounting',
   getParentRoute: () => DashboardRoute,
 } as any)
-const Dashboard2faRoute = Dashboard2faRouteImport.update({
-  id: '/2fa',
-  path: '/2fa',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardInvoicesInvoiceIdRoute =
   DashboardInvoicesInvoiceIdRouteImport.update({
     id: '/invoices_/$invoiceId',
@@ -374,7 +368,6 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suspendido': typeof SuspendidoRoute
-  '/dashboard/2fa': typeof Dashboard2faRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
@@ -433,7 +426,6 @@ export interface FileRoutesByTo {
   '/portal': typeof PortalRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suspendido': typeof SuspendidoRoute
-  '/dashboard/2fa': typeof Dashboard2faRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
@@ -494,7 +486,6 @@ export interface FileRoutesById {
   '/portal': typeof PortalRoute
   '/reset-password': typeof ResetPasswordRoute
   '/suspendido': typeof SuspendidoRoute
-  '/dashboard/2fa': typeof Dashboard2faRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
@@ -556,7 +547,6 @@ export interface FileRouteTypes {
     | '/portal'
     | '/reset-password'
     | '/suspendido'
-    | '/dashboard/2fa'
     | '/dashboard/accounting'
     | '/dashboard/audit'
     | '/dashboard/branches'
@@ -615,7 +605,6 @@ export interface FileRouteTypes {
     | '/portal'
     | '/reset-password'
     | '/suspendido'
-    | '/dashboard/2fa'
     | '/dashboard/accounting'
     | '/dashboard/audit'
     | '/dashboard/branches'
@@ -675,7 +664,6 @@ export interface FileRouteTypes {
     | '/portal'
     | '/reset-password'
     | '/suspendido'
-    | '/dashboard/2fa'
     | '/dashboard/accounting'
     | '/dashboard/audit'
     | '/dashboard/branches'
@@ -1076,13 +1064,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAccountingRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/2fa': {
-      id: '/dashboard/2fa'
-      path: '/2fa'
-      fullPath: '/dashboard/2fa'
-      preLoaderRoute: typeof Dashboard2faRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/invoices_/$invoiceId': {
       id: '/dashboard/invoices_/$invoiceId'
       path: '/invoices/$invoiceId'
@@ -1157,7 +1138,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardRouteChildren {
-  Dashboard2faRoute: typeof Dashboard2faRoute
   DashboardAccountingRoute: typeof DashboardAccountingRoute
   DashboardAuditRoute: typeof DashboardAuditRoute
   DashboardBranchesRoute: typeof DashboardBranchesRoute
@@ -1205,7 +1185,6 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
-  Dashboard2faRoute: Dashboard2faRoute,
   DashboardAccountingRoute: DashboardAccountingRoute,
   DashboardAuditRoute: DashboardAuditRoute,
   DashboardBranchesRoute: DashboardBranchesRoute,
