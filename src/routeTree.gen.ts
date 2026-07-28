@@ -46,6 +46,7 @@ import { Route as DashboardEmployeesRouteImport } from './routes/dashboard.emplo
 import { Route as DashboardCutoffsRouteImport } from './routes/dashboard.cutoffs'
 import { Route as DashboardCutoffPoliciesRouteImport } from './routes/dashboard.cutoff-policies'
 import { Route as DashboardCortesMonitorRouteImport } from './routes/dashboard.cortes-monitor'
+import { Route as DashboardCortesRouteImport } from './routes/dashboard.cortes'
 import { Route as DashboardCobrarRouteImport } from './routes/dashboard.cobrar'
 import { Route as DashboardClientsRouteImport } from './routes/dashboard.clients'
 import { Route as DashboardCashRouteImport } from './routes/dashboard.cash'
@@ -251,6 +252,11 @@ const DashboardCortesMonitorRoute = DashboardCortesMonitorRouteImport.update({
   path: '/cortes-monitor',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCortesRoute = DashboardCortesRouteImport.update({
+  id: '/cortes',
+  path: '/cortes',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardCobrarRoute = DashboardCobrarRouteImport.update({
   id: '/cobrar',
   path: '/cobrar',
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/cash': typeof DashboardCashRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes': typeof DashboardCortesRoute
   '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
   '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
   '/dashboard/cutoffs': typeof DashboardCutoffsRoute
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/dashboard/cash': typeof DashboardCashRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes': typeof DashboardCortesRoute
   '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
   '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
   '/dashboard/cutoffs': typeof DashboardCutoffsRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/dashboard/cash': typeof DashboardCashRoute
   '/dashboard/clients': typeof DashboardClientsRoute
   '/dashboard/cobrar': typeof DashboardCobrarRoute
+  '/dashboard/cortes': typeof DashboardCortesRoute
   '/dashboard/cortes-monitor': typeof DashboardCortesMonitorRoute
   '/dashboard/cutoff-policies': typeof DashboardCutoffPoliciesRoute
   '/dashboard/cutoffs': typeof DashboardCutoffsRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/dashboard/cash'
     | '/dashboard/clients'
     | '/dashboard/cobrar'
+    | '/dashboard/cortes'
     | '/dashboard/cortes-monitor'
     | '/dashboard/cutoff-policies'
     | '/dashboard/cutoffs'
@@ -604,6 +614,7 @@ export interface FileRouteTypes {
     | '/dashboard/cash'
     | '/dashboard/clients'
     | '/dashboard/cobrar'
+    | '/dashboard/cortes'
     | '/dashboard/cortes-monitor'
     | '/dashboard/cutoff-policies'
     | '/dashboard/cutoffs'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/dashboard/cash'
     | '/dashboard/clients'
     | '/dashboard/cobrar'
+    | '/dashboard/cortes'
     | '/dashboard/cortes-monitor'
     | '/dashboard/cutoff-policies'
     | '/dashboard/cutoffs'
@@ -982,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCortesMonitorRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/cortes': {
+      id: '/dashboard/cortes'
+      path: '/cortes'
+      fullPath: '/dashboard/cortes'
+      preLoaderRoute: typeof DashboardCortesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/cobrar': {
       id: '/dashboard/cobrar'
       path: '/cobrar'
@@ -1128,6 +1147,7 @@ interface DashboardRouteChildren {
   DashboardCashRoute: typeof DashboardCashRoute
   DashboardClientsRoute: typeof DashboardClientsRoute
   DashboardCobrarRoute: typeof DashboardCobrarRoute
+  DashboardCortesRoute: typeof DashboardCortesRoute
   DashboardCortesMonitorRoute: typeof DashboardCortesMonitorRoute
   DashboardCutoffPoliciesRoute: typeof DashboardCutoffPoliciesRoute
   DashboardCutoffsRoute: typeof DashboardCutoffsRoute
@@ -1174,6 +1194,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCashRoute: DashboardCashRoute,
   DashboardClientsRoute: DashboardClientsRoute,
   DashboardCobrarRoute: DashboardCobrarRoute,
+  DashboardCortesRoute: DashboardCortesRoute,
   DashboardCortesMonitorRoute: DashboardCortesMonitorRoute,
   DashboardCutoffPoliciesRoute: DashboardCutoffPoliciesRoute,
   DashboardCutoffsRoute: DashboardCutoffsRoute,

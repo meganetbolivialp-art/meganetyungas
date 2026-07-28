@@ -18,7 +18,7 @@ export const Route = createFileRoute("/dashboard/cutoff-policies")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: CutoffPoliciesPage,
+  component: CutoffPoliciesPageRoute,
 });
 
 const empty: Partial<CutoffPolicy> = {
@@ -39,7 +39,7 @@ const empty: Partial<CutoffPolicy> = {
   is_active: true,
 };
 
-function CutoffPoliciesPage() {
+export function CutoffPoliciesPageContent() {
   const qc = useQueryClient();
   const list = useServerFn(listCutoffPolicies);
   const save = useServerFn(upsertCutoffPolicy);
@@ -70,7 +70,7 @@ function CutoffPoliciesPage() {
     m === "ip" ? "Corte por IP" : m === "speed" ? "Baja velocidad" : "Deshabilitar PPPoE";
 
   return (
-    <AdminLayout>
+    <>
       <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Plantillas de corte</h1>
@@ -205,7 +205,7 @@ function CutoffPoliciesPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </>
   );
 }
 
@@ -224,5 +224,13 @@ function Check({ label, v, onChange }: { label: string; v: boolean; onChange: (v
       <input type="checkbox" checked={v} onChange={e => onChange(e.target.checked)} />
       <span>{label}</span>
     </label>
+  );
+}
+
+function CutoffPoliciesPageRoute() {
+  return (
+    <AdminLayout>
+      <CutoffPoliciesPageContent />
+    </AdminLayout>
   );
 }

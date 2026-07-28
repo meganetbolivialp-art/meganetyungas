@@ -21,7 +21,7 @@ export const Route = createFileRoute("/dashboard/cortes-monitor")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: MonitorPage,
+  component: MonitorPageRoute,
 });
 
 function Kpi({ label, value, color, Icon }: { label: string; value: string | number; color: string; Icon: any }) {
@@ -45,7 +45,7 @@ function daysBadge(d: number) {
   return "bg-slate-200 text-slate-700";
 }
 
-function MonitorPage() {
+export function MonitorPageContent() {
   const qc = useQueryClient();
   const list = useServerFn(listCutoffs);
   const kpis = useServerFn(cutoffKpis);
@@ -116,7 +116,7 @@ function MonitorPage() {
   const leaksCount = leaksQ.data?.length ?? 0;
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-4 md:p-6 space-y-4">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -274,6 +274,14 @@ function MonitorPage() {
           </div>
         </div>
       </div>
+    </>
+  );
+}
+
+function MonitorPageRoute() {
+  return (
+    <AdminLayout>
+      <MonitorPageContent />
     </AdminLayout>
   );
 }
