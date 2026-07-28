@@ -205,9 +205,9 @@ export const reactivateService = createServerFn({ method: "POST" })
     }
     await context.supabase.from("client_actions").insert({
       client_id: svc.client_id, service_id: svc.id, action: "reactivate",
-      detail: "Reactivación", performed_by: context.userId,
+      detail: queued ? "Reactivación · en cola (router offline)" : "Reactivación", performed_by: context.userId,
     });
-    return { ok: true };
+    return { ok: true, queued };
   });
 
 // ---------- Sincronizar plan → /ppp/profile en todos los routers ----------
