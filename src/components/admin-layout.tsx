@@ -75,7 +75,7 @@ const GROUPS: NavGroup[] = [
     { to: "/dashboard/settings", label: "General", mod: "ajustes", action: "edit" },
     
     
-    { to: "/dashboard/system-license", label: "Licencia del sistema", mod: "ajustes", action: "edit" },
+    
     { to: "/dashboard/employees", label: "Operadores", mod: "ajustes", action: "operators" },
   ]},
 ];
