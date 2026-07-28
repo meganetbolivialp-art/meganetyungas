@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, Lock, Phone, KeyRound, Unlock, X } from "lucide-react";
 
+
 type LicenseState = {
   valid: boolean;
   expires_at: string | null;
@@ -14,7 +15,7 @@ export function LicenseGate({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
+  
 
   const loadLicense = async () => {
     const { data, error } = await supabase.rpc("check_app_license");
@@ -71,22 +72,23 @@ export function LicenseGate({ children }: { children: ReactNode }) {
     window.location.href = "/auth";
   };
 
-  // Secret tap on the padlock icon (5 taps) reveals admin panel — for admins only
-  const handleLockTap = () => {
-    const next = tapCount + 1;
-    setTapCount(next);
-    if (next >= 5 && isAdmin) {
-      setShowAdmin(true);
-      setTapCount(0);
-    }
-  };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-red-950 p-4">
+      {/* Invisible direct-access button (top-left corner) — admin only */}
+      {isAdmin && (
+        <button
+          onClick={() => setShowAdmin(true)}
+          aria-label="rescue"
+          className="fixed top-0 left-0 w-16 h-16 opacity-0 z-50 cursor-default"
+          style={{ background: "transparent", border: "none" }}
+        />
+      )}
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center relative">
         <div
-          onClick={handleLockTap}
-          className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center cursor-pointer select-none"
+          className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center select-none"
           title="Sistema bloqueado"
         >
           <Lock className="w-10 h-10 text-red-600" />
@@ -111,16 +113,6 @@ export function LicenseGate({ children }: { children: ReactNode }) {
           <Phone className="w-4 h-4" /> Contactar por WhatsApp: +591 60000159
         </a>
 
-        {/* Admin-only rescue button */}
-        {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg mb-3 transition"
-          >
-            <KeyRound className="w-4 h-4" /> Administrar licencia (admin)
-          </button>
-        )}
-
         <button
           onClick={handleSignOut}
           className="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium py-2 rounded-lg transition"
@@ -128,13 +120,17 @@ export function LicenseGate({ children }: { children: ReactNode }) {
           Cerrar sesión
         </button>
 
-        {/* Hint if tapping the padlock as non-admin */}
-        {tapCount > 0 && !isAdmin && (
-          <div className="mt-3 text-xs text-slate-400">
-            Solo administradores pueden gestionar la licencia.
-          </div>
+        {/* Invisible direct-access button (bottom-right corner) — admin only */}
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdmin(true)}
+            aria-label="rescue-corner"
+            className="absolute bottom-0 right-0 w-12 h-12 opacity-0 cursor-default"
+            style={{ background: "transparent", border: "none" }}
+          />
         )}
       </div>
+
 
       {showAdmin && isAdmin && (
         <AdminRescueModal
