@@ -629,7 +629,7 @@ function RouterSyncPage() {
 
       {tab === "clientes" && orphans.length > 0 && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Importar {selected.size} secret(s) huérfano(s)</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Traer {selected.size} cliente(s) al sistema</div>
           <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
             Cada cliente se importa con el plan que coincida con su <b>perfil PPP</b> (auto-match por nombre).
             Si algún perfil no tiene plan en la DB, importalo primero desde la tabla de arriba.
