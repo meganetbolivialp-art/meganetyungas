@@ -25,7 +25,7 @@ const NAV_ITEMS: Result[] = [
   { type: "nav", id: "n-leads", label: "CRM Leads", sub: "Ventas", to: "/dashboard/leads" },
   { type: "nav", id: "n-kpis", label: "KPIs del negocio", sub: "Reportes", to: "/dashboard/kpis" },
   { type: "nav", id: "n-audit", label: "Auditoría", sub: "Reportes", to: "/dashboard/audit" },
-  { type: "nav", id: "n-2fa", label: "Autenticación 2FA", sub: "Configuración", to: "/dashboard/2fa" },
+  
 ];
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
