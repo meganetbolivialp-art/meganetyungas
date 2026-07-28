@@ -725,7 +725,7 @@ function WizardSteps({ result, drift, anomalies, profOrphans }: { result: any; d
     { label: "Planes", done: !!result, count: profOrphans.length, hint: "nuevos", warn: profOrphans.length > 0 },
     { label: "Clientes", done: !!result, count: (result?.secrets ?? []).filter((s: any) => !s.in_db).length, hint: "huérfanos", warn: (result?.secrets ?? []).filter((s: any) => !s.in_db).length > 0 },
     { label: "Diferencias", done: !!drift, count: (drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0), hint: "drift", warn: !!drift && ((drift?.missingOnRouter.length ?? 0) + (drift?.statusMismatch.length ?? 0) + (drift?.profileMismatch?.length ?? 0)) > 0 },
-    { label: "Anomalías", done: !!anomalies, count: (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0), hint: "alertas", warn: !!anomalies && ((anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0)) > 0 },
+    { label: "Sin internet", done: !!anomalies, count: (anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0), hint: "conectados sin tráfico", warn: !!anomalies && ((anomalies?.duplicates.length ?? 0) + (anomalies?.stalled.length ?? 0)) > 0 },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(${steps.length}, 1fr)`, gap: 8, marginBottom: 12 }}>
