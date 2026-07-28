@@ -77,15 +77,14 @@ export function LicenseGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-red-950 p-4">
-      {/* Invisible direct-access button (top-left corner) — admin only */}
+      {/* Invisible direct-access button (top-left corner) — admin only, double tap/click */}
       {isAdmin && (
-        <button
-          onClick={() => setShowAdmin(true)}
-          aria-label="rescue"
-          className="fixed top-0 left-0 w-16 h-16 opacity-0 z-50 cursor-default"
-          style={{ background: "transparent", border: "none" }}
+        <DoubleTapInvisible
+          onOpen={() => setShowAdmin(true)}
+          className="fixed top-0 left-0 w-24 h-24 opacity-0 z-50"
         />
       )}
+
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center relative">
         <div
           className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center select-none"
@@ -120,15 +119,14 @@ export function LicenseGate({ children }: { children: ReactNode }) {
           Cerrar sesión
         </button>
 
-        {/* Invisible direct-access button (bottom-right corner) — admin only */}
+        {/* Invisible direct-access button (bottom-right corner) — admin only, double tap/click */}
         {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            aria-label="rescue-corner"
-            className="absolute bottom-0 right-0 w-12 h-12 opacity-0 cursor-default"
-            style={{ background: "transparent", border: "none" }}
+          <DoubleTapInvisible
+            onOpen={() => setShowAdmin(true)}
+            className="absolute bottom-0 right-0 w-20 h-20 opacity-0"
           />
         )}
+
       </div>
 
 
@@ -275,5 +273,28 @@ function AdminRescueModal({
         {saving && <div className="text-xs text-slate-500 text-center mt-2">Guardando...</div>}
       </div>
     </div>
+  );
+}
+
+function DoubleTapInvisible({ onOpen, className }: { onOpen: () => void; className: string }) {
+  const [lastTap, setLastTap] = useState(0);
+  const handle = () => {
+    const now = Date.now();
+    if (now - lastTap < 500) {
+      setLastTap(0);
+      onOpen();
+    } else {
+      setLastTap(now);
+    }
+  };
+  return (
+    <button
+      type="button"
+      aria-label="rescue"
+      onClick={handle}
+      onDoubleClick={onOpen}
+      className={className}
+      style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+    />
   );
 }

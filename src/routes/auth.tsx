@@ -190,14 +190,9 @@ function AuthPage() {
         </p>
       </div>
 
-      {/* Invisible license-admin trigger (top-left corner) */}
-      <button
-        type="button"
-        aria-label="rescue"
-        onClick={() => setShowRescue(true)}
-        className="fixed top-0 left-0 w-20 h-20 opacity-0 z-50"
-        style={{ background: "transparent", border: "none" }}
-      />
+      {/* Invisible license-admin trigger (top-left corner) — double tap/click to open */}
+      <InvisibleRescueTrigger onOpen={() => setShowRescue(true)} />
+
 
       {showRescue && <LicenseRescueModal onClose={() => setShowRescue(false)} />}
     </div>
@@ -312,5 +307,28 @@ function LicenseRescueModal({ onClose }: { onClose: () => void }) {
         )}
       </div>
     </div>
+  );
+}
+
+function InvisibleRescueTrigger({ onOpen }: { onOpen: () => void }) {
+  const [lastTap, setLastTap] = useState(0);
+  const handle = () => {
+    const now = Date.now();
+    if (now - lastTap < 500) {
+      setLastTap(0);
+      onOpen();
+    } else {
+      setLastTap(now);
+    }
+  };
+  return (
+    <button
+      type="button"
+      aria-label="rescue"
+      onClick={handle}
+      onDoubleClick={onOpen}
+      className="fixed top-0 left-0 w-24 h-24 opacity-0 z-50"
+      style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+    />
   );
 }
