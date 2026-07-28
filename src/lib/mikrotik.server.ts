@@ -645,18 +645,16 @@ export const mikrotik = {
       router,
       "ppp/profile/upsert",
       async () => withSession(router, async (s) => {
-        const rateLimit = args.burst
-          ? `${args.rateUp}M/${args.rateDown}M ${Math.round(args.rateUp * 1.5)}M/${Math.round(args.rateDown * 1.5)}M ${args.rateUp}M/${args.rateDown}M 30`
-          : `${args.rateUp}M/${args.rateDown}M`;
+        // Política: NO sobreescribir rate-limit en MikroTik. El router manda.
+        // Si el perfil ya existe → no tocar nada (respetar velocidades del router).
+        // Si no existe → crearlo SIN rate-limit (el admin lo configura en MikroTik).
         const found = await sendCommand(s, ["/ppp/profile/print", `?name=${args.name}`, "=.proplist=.id"]);
         const id = found.find((r) => r.reply === "!re")?.attrs[".id"];
-        const words = id
-          ? ["/ppp/profile/set", `=.id=${id}`, `=rate-limit=${rateLimit}`]
-          : ["/ppp/profile/add", `=name=${args.name}`, `=rate-limit=${rateLimit}`, "=local-address=10.10.0.1"];
-        const res = await sendCommand(s, words);
+        if (id) return { ok: true as const, updated: false };
+        const res = await sendCommand(s, ["/ppp/profile/add", `=name=${args.name}`, "=local-address=10.10.0.1"]);
         const trap = res.find((r) => r.reply === "!trap");
-        if (trap) throw new Error(trap.attrs.message || "profile upsert failed");
-        return { ok: true as const, updated: !!id };
+        if (trap) throw new Error(trap.attrs.message || "profile add failed");
+        return { ok: true as const, updated: false };
       }),
       () => simulate("ppp/profile/upsert", { router: router.name, ...args }, { ok: true as const, updated: false }),
     );
@@ -784,16 +782,14 @@ export const mikrotik = {
       router,
       "hotspot/user/profile/upsert",
       async () => withSession(router, async (s) => {
-        const rate = `${args.rateUp}M/${args.rateDown}M`;
+        // Política: no sobreescribir rate-limit. Si ya existe, no tocar.
         const found = await sendCommand(s, ["/ip/hotspot/user/profile/print", `?name=${args.name}`, "=.proplist=.id"]);
         const id = found.find((r) => r.reply === "!re")?.attrs[".id"];
-        const words = id
-          ? ["/ip/hotspot/user/profile/set", `=.id=${id}`, `=rate-limit=${rate}`]
-          : ["/ip/hotspot/user/profile/add", `=name=${args.name}`, `=rate-limit=${rate}`];
-        const res = await sendCommand(s, words);
+        if (id) return { ok: true as const, updated: false };
+        const res = await sendCommand(s, ["/ip/hotspot/user/profile/add", `=name=${args.name}`]);
         const trap = res.find((r) => r.reply === "!trap");
         if (trap) throw new Error(trap.attrs.message || "hotspot profile failed");
-        return { ok: true as const, updated: !!id };
+        return { ok: true as const, updated: false };
       }),
       () => simulate("hotspot/user/profile/upsert", { router: router.name, ...args }, { ok: true as const, updated: false }),
     );
