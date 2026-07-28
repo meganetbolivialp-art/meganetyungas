@@ -1022,7 +1022,13 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
                     lat={form.latitude ?? undefined}
                     lng={form.longitude ?? undefined}
                     onChange={(la, ln) => setForm({ ...form, latitude: la, longitude: ln })}
-                    height={300}
+                    height={320}
+                    info={{
+                      name: [form.firstName, form.lastName].filter(Boolean).join(" ") || (client as any)?.full_name || null,
+                      address: form.address || null,
+                      phone: form.phone || form.city || null,
+                      code: (client as any)?.code || (client as any)?.client_code || null,
+                    }}
                   />
                 </Suspense>
               </div>
