@@ -77,15 +77,14 @@ export function LicenseGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-red-950 p-4">
-      {/* Invisible direct-access button (top-left corner) — admin only */}
+      {/* Invisible direct-access button (top-left corner) — admin only, double tap/click */}
       {isAdmin && (
-        <button
-          onClick={() => setShowAdmin(true)}
-          aria-label="rescue"
-          className="fixed top-0 left-0 w-16 h-16 opacity-0 z-50 cursor-default"
-          style={{ background: "transparent", border: "none" }}
+        <DoubleTapInvisible
+          onOpen={() => setShowAdmin(true)}
+          className="fixed top-0 left-0 w-24 h-24 opacity-0 z-50"
         />
       )}
+
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center relative">
         <div
           className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 flex items-center justify-center select-none"
