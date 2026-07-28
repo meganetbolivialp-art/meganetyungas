@@ -1506,3 +1506,27 @@ export const deleteClientCascade = createServerFn({ method: "POST" })
 
     return { ok: true, mikrotik: results };
   });
+
+// ---------- Cola de operaciones MikroTik (fallback offline) ----------
+export const pendingOpsSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: object = {}) => d as object)
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("mikrotik_pending_ops")
+      .select("router_id")
+      .eq("status", "pending");
+    if (error) throw new Error(error.message);
+    const byRouter: Record<string, number> = {};
+    (data ?? []).forEach((r: any) => { byRouter[r.router_id] = (byRouter[r.router_id] ?? 0) + 1; });
+    return { total: (data ?? []).length, byRouter };
+  });
+
+export const flushRouterQueue = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { routerId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { flushPending } = await import("./mikrotik-queue.server");
+    const res = await flushPending(context.supabase, data.routerId);
+    return res;
+  });
