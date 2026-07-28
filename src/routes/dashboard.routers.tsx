@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye } from "lucide-react";
+import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
