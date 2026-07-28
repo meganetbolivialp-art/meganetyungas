@@ -221,3 +221,96 @@ function MeganetMark({ size = 78 }: { size?: number }) {
     </div>
   );
 }
+
+function LicenseRescueModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<"login" | "manage">("login");
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [info, setInfo] = useState<{ id: string; expires_at: string; active: boolean } | null>(null);
+
+  const auth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    try {
+      const id = user.trim();
+      const emails = id.includes("@") ? [id.toLowerCase()] : [`${id}@admin.com`, `${id}@meganet.local`];
+      let signed = false;
+      for (const em of emails) {
+        const { error } = await supabase.auth.signInWithPassword({ email: em, password: pass });
+        if (!error) { signed = true; break; }
+      }
+      if (!signed) throw new Error("Credenciales inválidas");
+      const { data: u } = await supabase.auth.getUser();
+      const { data: role } = await supabase.from("user_roles").select("role").eq("user_id", u.user!.id).eq("role", "admin").maybeSingle();
+      if (!role) { await supabase.auth.signOut(); throw new Error("Solo administradores"); }
+      const { data: rows, error: rErr } = await supabase.from("app_license").select("id, expires_at, active").order("created_at", { ascending: false }).limit(1);
+      if (rErr || !rows?.length) throw new Error(rErr?.message ?? "Sin licencia");
+      setInfo(rows[0] as any);
+      setStep("manage");
+    } catch (e: any) {
+      setErr(e.message ?? "Error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const update = async (patch: { active?: boolean; days?: number }) => {
+    if (!info) return;
+    setBusy(true); setErr(null);
+    const updates: any = { updated_at: new Date().toISOString() };
+    if (patch.active !== undefined) updates.active = patch.active;
+    if (patch.days !== undefined) {
+      const base = new Date(info.expires_at); const now = new Date();
+      const from = base > now ? base : now;
+      updates.expires_at = new Date(from.getTime() + patch.days * 86400000).toISOString();
+      updates.active = true;
+    }
+    const { error } = await supabase.from("app_license").update(updates).eq("id", info.id);
+    if (error) { setErr(error.message); setBusy(false); return; }
+    const { data: rows } = await supabase.from("app_license").select("id, expires_at, active").eq("id", info.id).single();
+    setInfo(rows as any);
+    setBusy(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-slate-900">Administrar licencia</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-800">✕</button>
+        </div>
+        {step === "login" && (
+          <form onSubmit={auth} className="space-y-3">
+            <input required placeholder="Usuario admin" value={user} onChange={(e) => setUser(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            <input required type="password" placeholder="Contraseña" value={pass} onChange={(e) => setPass(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+            {err && <div className="text-xs text-red-600 bg-red-50 rounded p-2">{err}</div>}
+            <button disabled={busy} className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-md text-sm disabled:opacity-60">
+              {busy ? "Verificando..." : "Verificar y continuar"}
+            </button>
+          </form>
+        )}
+        {step === "manage" && info && (
+          <div className="space-y-3">
+            <div className="bg-slate-50 rounded-lg p-3 text-sm">
+              <div className="flex justify-between"><span className="text-slate-600">Estado:</span><span className="font-medium">{info.active ? "Activa" : "Desactivada"}</span></div>
+              <div className="flex justify-between"><span className="text-slate-600">Vence:</span><span className="font-medium">{new Date(info.expires_at).toLocaleDateString("es-BO")}</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[7, 30, 90, 365].map((d) => (
+                <button key={d} disabled={busy} onClick={() => update({ days: d })} className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium disabled:opacity-60">
+                  +{d === 365 ? "1 año" : `${d} días`}
+                </button>
+              ))}
+            </div>
+            <button disabled={busy} onClick={() => update({ active: !info.active })} className={`w-full py-2.5 rounded-md text-sm font-semibold text-white ${info.active ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} disabled:opacity-60`}>
+              {info.active ? "Desactivar sistema" : "Activar sistema"}
+            </button>
+            {err && <div className="text-xs text-red-600 bg-red-50 rounded p-2">{err}</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
