@@ -40,14 +40,49 @@ export function LicenseGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let wasValid: boolean | null = null;
+
+    const checkAndMaybeSignOut = async () => {
+      const { data } = await supabase.rpc("check_app_license");
+      const lic = (data as unknown as LicenseState) ?? { valid: false, expires_at: null, active: false, days_left: 0 };
+      if (mounted) setState(lic);
+      const isValid = !!lic.valid;
+      if (wasValid === true && !isValid) {
+        try { await supabase.auth.signOut(); } catch {}
+        window.location.href = "/auth";
+        return;
+      }
+      wasValid = isValid;
+    };
+
     (async () => {
       await Promise.all([loadLicense(), loadAdmin()]);
+      const { data } = await supabase.rpc("check_app_license");
+      wasValid = !!(data as any)?.valid;
       if (mounted) setLoading(false);
     })();
-    const t = setInterval(loadLicense, 60 * 60 * 1000);
+
+    // Poll every 60s so devices react quickly to a license cut
+    const t = setInterval(checkAndMaybeSignOut, 60 * 1000);
+
+    // Realtime: react instantly when app_license changes on any device
+    const channel = supabase
+      .channel("app_license_changes")
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table: "app_license" },
+        () => { checkAndMaybeSignOut(); }
+      )
+      .subscribe();
+
+    const onVis = () => { if (document.visibilityState === "visible") checkAndMaybeSignOut(); };
+    document.addEventListener("visibilitychange", onVis);
+
     return () => {
       mounted = false;
       clearInterval(t);
+      document.removeEventListener("visibilitychange", onVis);
+      try { supabase.removeChannel(channel); } catch {}
     };
   }, []);
 
