@@ -434,7 +434,7 @@ function RouterSyncPage() {
           {drift.missingOnRouter.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{drift.missingOnRouter.length}</b> servicio(s) en la base que <b>faltan crear en el router</b>:
+                <b>{drift.missingOnRouter.length}</b> cliente(s) del sistema que <b>faltan crear en el router</b>:
               </div>
               <table className="tbl" style={{ marginBottom: 12 }}>
                 <thead><tr><th style={{ width: 30 }}></th><th>PPPoE</th><th>Cliente</th><th>Perfil destino</th><th>IP</th><th>Estado</th></tr></thead>
