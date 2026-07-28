@@ -506,7 +506,7 @@ function RouterSyncPage() {
       {tab === "anomalias" && anomalies && (anomalies.duplicates.length > 0 || anomalies.stalled.length > 0) && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span><ShieldAlert size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />Anomalías PPPoE ({anomalies.total_active} activos)</span>
+            <span><ShieldAlert size={16} style={{ display: "inline", verticalAlign: -3, marginRight: 6 }} />Clientes conectados sin usar internet ({anomalies.total_active} activos en total)</span>
             <button className="btn" onClick={refreshAnomalies}><RefreshCw size={14} /> Refrescar</button>
           </div>
           {anomMsg && <div style={{ marginBottom: 8, fontSize: 13, color: anomMsg.startsWith("✓") ? "#059669" : "#dc2626" }}>{anomMsg}</div>}
