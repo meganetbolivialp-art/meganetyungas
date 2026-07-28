@@ -139,7 +139,7 @@ function RoutersPage() {
   };
   useEffect(() => { load(); }, []);
 
-  // Auto-ping cada 30s para mantener estado online/offline al día
+  // Auto-ping cada 30s + refresco de cola pendiente
   useEffect(() => {
     if (!autoPoll) return;
     let cancelled = false;
@@ -148,13 +148,26 @@ function RoutersPage() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
         await pingAllFn({});
-        if (!cancelled) { setLastPoll(Date.now()); await load(); }
+        const p: any = await pendingFn({}).catch(() => null);
+        if (!cancelled) {
+          setLastPoll(Date.now());
+          if (p) setPending(p);
+          await load();
+        }
       } catch (e) { console.error("auto-ping failed", e); }
     };
     tick();
     const id = setInterval(tick, 30000);
     return () => { cancelled = true; clearInterval(id); };
   }, [autoPoll]);
+
+  const flushRouter = async (routerId: string, routerName: string) => {
+    try {
+      const res: any = await flushFn({ data: { routerId } });
+      toast.success(`${routerName}: aplicadas ${res.done}, fallidas ${res.failed}, pendientes ${res.pending}`);
+      const p: any = await pendingFn({}); setPending(p);
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const openNew = () => {
     setEditing(null);
