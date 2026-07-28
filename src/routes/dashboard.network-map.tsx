@@ -28,6 +28,7 @@ function NetworkMapPage() {
   const [show, setShow] = useState(false);
   const [showLink, setShowLink] = useState(false);
   const [filter, setFilter] = useState({ clients: true, tower: true, nap: true, pole: true, olt: true, fiber: true, active: true, suspended: true, overdue: true });
+  const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [f, setF] = useState({ name: "", type: "tower", latitude: -16.5, longitude: -68.15, status: "active", notes: "" });
   const [lf, setLf] = useState({ from_node: "", to_node: "", cable_type: "aerial", fibers: 12, length_m: 0, notes: "" });
   const [mounted, setMounted] = useState(false);
