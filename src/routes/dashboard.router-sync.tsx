@@ -514,7 +514,7 @@ function RouterSyncPage() {
           {anomalies.duplicates.length > 0 && (
             <>
               <div style={{ fontSize: 12, color: "#64748b", margin: "6px 0" }}>
-                <b>{anomalies.duplicates.length}</b> usuario(s) con <b>doble sesión</b> (posible clon o secret compartido):
+                <b>{anomalies.duplicates.length}</b> cliente(s) con <b>doble sesión abierta</b> (posible clon o contraseña compartida):
               </div>
               <table className="tbl" style={{ marginBottom: 12 }}>
                 <thead><tr><th>PPPoE</th><th>Cliente</th><th>Sesiones</th><th></th></tr></thead>
