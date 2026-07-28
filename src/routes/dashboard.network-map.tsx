@@ -28,6 +28,7 @@ function NetworkMapPage() {
   const [show, setShow] = useState(false);
   const [showLink, setShowLink] = useState(false);
   const [filter, setFilter] = useState({ clients: true, tower: true, nap: true, pole: true, olt: true, fiber: true, active: true, suspended: true, overdue: true });
+  const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [f, setF] = useState({ name: "", type: "tower", latitude: -16.5, longitude: -68.15, status: "active", notes: "" });
   const [lf, setLf] = useState({ from_node: "", to_node: "", cable_type: "aerial", fibers: 12, length_m: 0, notes: "" });
   const [mounted, setMounted] = useState(false);
@@ -49,6 +50,7 @@ function NetworkMapPage() {
       for (const c of clients) {
         const st = (c.status || "active") as string;
         if (!(filter as any)[st]) continue;
+        if (zoneFilter && (c.city || "Sin zona") !== zoneFilter) continue;
         const rows: string[] = [];
         if (c.address) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Dirección</span><span style="color:#0f172a">${esc(c.address)}</span></div>`);
         if (c.city) rows.push(`<div style="display:flex;gap:6px;font-size:11.5px;color:#475569"><span style="opacity:.7;min-width:54px">Ciudad</span><span style="color:#0f172a">${esc(c.city)}</span></div>`);
@@ -63,7 +65,30 @@ function NetworkMapPage() {
       list.push({ id: `n-${n.id}`, lat: +n.latitude, lng: +n.longitude, kind, label: n.name, status: n.status, popup: n.notes || "" });
     }
     return list;
-  }, [nodes, clients, filter]);
+  }, [nodes, clients, filter, zoneFilter]);
+
+  // Zonas inteligentes: agrupa clientes por ciudad y calcula salud
+  const zones = useMemo(() => {
+    const byZone = new Map<string, { total: number; active: number; suspended: number; overdue: number; lat: number; lng: number; n: number }>();
+    for (const c of clients) {
+      const z = (c.city || "Sin zona").trim() || "Sin zona";
+      const st = (c.status || "active") as string;
+      const cur = byZone.get(z) ?? { total: 0, active: 0, suspended: 0, overdue: 0, lat: 0, lng: 0, n: 0 };
+      cur.total++;
+      if (st === "active") cur.active++;
+      else if (st === "suspended") cur.suspended++;
+      else if (st === "overdue") cur.overdue++;
+      if (c.latitude && c.longitude) { cur.lat += +c.latitude; cur.lng += +c.longitude; cur.n++; }
+      byZone.set(z, cur);
+    }
+    return Array.from(byZone.entries())
+      .map(([name, v]) => {
+        const badRatio = v.total ? (v.suspended + v.overdue) / v.total : 0;
+        const health: "ok" | "warn" | "down" = badRatio >= 0.5 ? "down" : badRatio >= 0.25 ? "warn" : "ok";
+        return { name, ...v, badRatio, health };
+      })
+      .sort((a, b) => b.total - a.total);
+  }, [clients]);
 
   const mapLines = useMemo(() => {
     if (!filter.fiber) return [];
@@ -138,6 +163,53 @@ function NetworkMapPage() {
           </div>
         ))}
       </div>
+
+      {/* Zonas inteligentes */}
+      {zones.length > 0 && (
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm mb-3">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 bg-slate-50">
+            <div className="text-xs font-semibold text-slate-700 flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5 text-primary" /> Zonas ({zones.length})
+              {zoneFilter && <span className="text-[11px] font-normal text-primary">· filtrando: {zoneFilter}</span>}
+            </div>
+            {zoneFilter && (
+              <button onClick={() => setZoneFilter(null)} className="text-[11px] text-slate-500 hover:text-slate-800 underline">Ver todas</button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 p-3">
+            {zones.map((z) => {
+              const isSel = zoneFilter === z.name;
+              const tone = z.health === "down"
+                ? "border-red-300 bg-red-50"
+                : z.health === "warn"
+                  ? "border-amber-300 bg-amber-50"
+                  : "border-emerald-200 bg-emerald-50";
+              const dot = z.health === "down" ? "bg-red-500 animate-pulse" : z.health === "warn" ? "bg-amber-500" : "bg-emerald-500";
+              return (
+                <button
+                  key={z.name}
+                  onClick={() => setZoneFilter(isSel ? null : z.name)}
+                  className={`text-left rounded-md border p-2 transition hover:shadow-sm ${tone} ${isSel ? "ring-2 ring-primary" : ""}`}
+                  title={`${z.total} clientes · ${z.active} activos · ${z.suspended} suspendidos · ${z.overdue} morosos`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${dot}`} />
+                    <span className="text-[12px] font-semibold text-slate-800 truncate flex-1">{z.name}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-600 flex gap-2 tabular-nums">
+                    <span>👥 {z.total}</span>
+                    {z.suspended > 0 && <span className="text-red-600">✂ {z.suspended}</span>}
+                    {z.overdue > 0 && <span className="text-amber-700">$ {z.overdue}</span>}
+                  </div>
+                  {z.health === "down" && <div className="text-[10px] text-red-700 font-semibold mt-0.5">🚨 Zona caída</div>}
+                  {z.health === "warn" && <div className="text-[10px] text-amber-700 font-semibold mt-0.5">⚠ Revisar</div>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
 
       {show && (
         <FormPanel onCancel={() => setShow(false)} onSave={create}>
