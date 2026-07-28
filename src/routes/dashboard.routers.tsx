@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
-import { testRouterConnection, listActiveSessions, pingAllRouters, importRouterPools, listRouterPools, upsertRouterPool, deleteRouterPool, poolIpUsage } from "@/lib/isp.functions";
+import { testRouterConnection, listActiveSessions, pingAllRouters, importRouterPools, listRouterPools, upsertRouterPool, deleteRouterPool, poolIpUsage, pendingOpsSummary, flushRouterQueue } from "@/lib/isp.functions";
 import { oneClickProvisionRouter } from "@/lib/router-oneclick.functions";
 
 
