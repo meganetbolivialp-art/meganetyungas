@@ -119,15 +119,14 @@ export function LicenseGate({ children }: { children: ReactNode }) {
           Cerrar sesión
         </button>
 
-        {/* Invisible direct-access button (bottom-right corner) — admin only */}
+        {/* Invisible direct-access button (bottom-right corner) — admin only, double tap/click */}
         {isAdmin && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            aria-label="rescue-corner"
-            className="absolute bottom-0 right-0 w-12 h-12 opacity-0 cursor-default"
-            style={{ background: "transparent", border: "none" }}
+          <DoubleTapInvisible
+            onOpen={() => setShowAdmin(true)}
+            className="absolute bottom-0 right-0 w-20 h-20 opacity-0"
           />
         )}
+
       </div>
 
 
