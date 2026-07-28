@@ -575,7 +575,7 @@ function RouterSyncPage() {
       {tab === "planes" && profResult && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>Planes (PPP profiles) en el router · {profResult.profiles.length} encontrados · {profOrphans.length} sin importar</span>
+            <span>Planes del router · {profResult.profiles.length} encontrados · {profOrphans.length} por traer al sistema</span>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <label style={{ fontSize: 12, color: "#64748b" }}>Precio base $</label>
               <input type="number" min={0} className={inputCls} style={{ width: 100 }} value={profPrice} onChange={(e) => {
