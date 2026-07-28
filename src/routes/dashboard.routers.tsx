@@ -64,6 +64,9 @@ function RoutersPage() {
   const [wizardBusy, setWizardBusy] = useState(false);
   const [autoPoll, setAutoPoll] = useState(true);
   const [lastPoll, setLastPoll] = useState<number | null>(null);
+  const [pending, setPending] = useState<{ total: number; byRouter: Record<string, number> }>({ total: 0, byRouter: {} });
+  const pendingFn = useServerFn(pendingOpsSummary);
+  const flushFn = useServerFn(flushRouterQueue);
   const [poolsFor, setPoolsFor] = useState<R | null>(null);
   const [pools, setPools] = useState<any[]>([]);
   const [poolEdit, setPoolEdit] = useState<any | null>(null);
