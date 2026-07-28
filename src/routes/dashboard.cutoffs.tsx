@@ -11,7 +11,7 @@ import {
 } from "@/lib/cutoffs.functions";
 import { listCutoffPolicies, applyCutoffPolicy } from "@/lib/cutoff-policies.functions";
 import { reactivateService } from "@/lib/isp.functions";
-import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText } from "lucide-react";
+import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText, AlertTriangle, Send } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/cutoffs")({
   head: () => ({
