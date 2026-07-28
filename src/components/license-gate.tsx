@@ -275,3 +275,26 @@ function AdminRescueModal({
     </div>
   );
 }
+
+function DoubleTapInvisible({ onOpen, className }: { onOpen: () => void; className: string }) {
+  const [lastTap, setLastTap] = useState(0);
+  const handle = () => {
+    const now = Date.now();
+    if (now - lastTap < 500) {
+      setLastTap(0);
+      onOpen();
+    } else {
+      setLastTap(now);
+    }
+  };
+  return (
+    <button
+      type="button"
+      aria-label="rescue"
+      onClick={handle}
+      onDoubleClick={onOpen}
+      className={className}
+      style={{ background: "transparent", border: "none", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+    />
+  );
+}
