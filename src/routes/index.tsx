@@ -383,7 +383,7 @@ function Landing() {
                 <div className="w-10 h-10 rounded-full bg-[#2b5cff]/10 grid place-items-center"><Phone className="w-4 h-4 text-[#2b5cff]" /></div>
                 <div>
                   <div className={`text-xs ${muted}`}>WhatsApp</div>
-                  <div className="font-semibold">+591 700 00000</div>
+                  <div className="font-semibold">+591 60000159</div>
                 </div>
               </div>
               <div className={`flex items-center gap-3 ${subtle}`}>
@@ -470,7 +470,7 @@ function Landing() {
           <div>
             <div className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Contacto</div>
             <ul className="space-y-2.5 text-sm text-slate-400">
-              <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> +591 700 00000</li>
+              <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> +591 60000159</li>
               <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> soporte@mikrosystem.bo</li>
               <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> La Paz, Bolivia</li>
             </ul>
