@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, Lock, Phone, KeyRound, Unlock, X } from "lucide-react";
 
+
 type LicenseState = {
   valid: boolean;
   expires_at: string | null;
