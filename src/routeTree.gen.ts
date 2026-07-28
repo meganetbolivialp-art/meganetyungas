@@ -20,6 +20,7 @@ import { Route as DashboardWorkOrdersRouteImport } from './routes/dashboard.work
 import { Route as DashboardVouchersRouteImport } from './routes/dashboard.vouchers'
 import { Route as DashboardTicketsRouteImport } from './routes/dashboard.tickets'
 import { Route as DashboardTemplatesRouteImport } from './routes/dashboard.templates'
+import { Route as DashboardSystemLicenseRouteImport } from './routes/dashboard.system-license'
 import { Route as DashboardSettingsPortalRouteImport } from './routes/dashboard.settings-portal'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardServicesRouteImport } from './routes/dashboard.services'
@@ -120,6 +121,11 @@ const DashboardTicketsRoute = DashboardTicketsRouteImport.update({
 const DashboardTemplatesRoute = DashboardTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSystemLicenseRoute = DashboardSystemLicenseRouteImport.update({
+  id: '/system-license',
+  path: '/system-license',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardSettingsPortalRoute = DashboardSettingsPortalRouteImport.update({
@@ -404,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/system-license': typeof DashboardSystemLicenseRoute
   '/dashboard/templates': typeof DashboardTemplatesRoute
   '/dashboard/tickets': typeof DashboardTicketsRoute
   '/dashboard/vouchers': typeof DashboardVouchersRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByTo {
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/system-license': typeof DashboardSystemLicenseRoute
   '/dashboard/templates': typeof DashboardTemplatesRoute
   '/dashboard/tickets': typeof DashboardTicketsRoute
   '/dashboard/vouchers': typeof DashboardVouchersRoute
@@ -522,6 +530,7 @@ export interface FileRoutesById {
   '/dashboard/services': typeof DashboardServicesRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/settings-portal': typeof DashboardSettingsPortalRoute
+  '/dashboard/system-license': typeof DashboardSystemLicenseRoute
   '/dashboard/templates': typeof DashboardTemplatesRoute
   '/dashboard/tickets': typeof DashboardTicketsRoute
   '/dashboard/vouchers': typeof DashboardVouchersRoute
@@ -583,6 +592,7 @@ export interface FileRouteTypes {
     | '/dashboard/services'
     | '/dashboard/settings'
     | '/dashboard/settings-portal'
+    | '/dashboard/system-license'
     | '/dashboard/templates'
     | '/dashboard/tickets'
     | '/dashboard/vouchers'
@@ -641,6 +651,7 @@ export interface FileRouteTypes {
     | '/dashboard/services'
     | '/dashboard/settings'
     | '/dashboard/settings-portal'
+    | '/dashboard/system-license'
     | '/dashboard/templates'
     | '/dashboard/tickets'
     | '/dashboard/vouchers'
@@ -700,6 +711,7 @@ export interface FileRouteTypes {
     | '/dashboard/services'
     | '/dashboard/settings'
     | '/dashboard/settings-portal'
+    | '/dashboard/system-license'
     | '/dashboard/templates'
     | '/dashboard/tickets'
     | '/dashboard/vouchers'
@@ -810,6 +822,13 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/dashboard/templates'
       preLoaderRoute: typeof DashboardTemplatesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/system-license': {
+      id: '/dashboard/system-license'
+      path: '/system-license'
+      fullPath: '/dashboard/system-license'
+      preLoaderRoute: typeof DashboardSystemLicenseRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/settings-portal': {
@@ -1174,6 +1193,7 @@ interface DashboardRouteChildren {
   DashboardServicesRoute: typeof DashboardServicesRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardSettingsPortalRoute: typeof DashboardSettingsPortalRoute
+  DashboardSystemLicenseRoute: typeof DashboardSystemLicenseRoute
   DashboardTemplatesRoute: typeof DashboardTemplatesRoute
   DashboardTicketsRoute: typeof DashboardTicketsRoute
   DashboardVouchersRoute: typeof DashboardVouchersRoute
@@ -1221,6 +1241,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardServicesRoute: DashboardServicesRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardSettingsPortalRoute: DashboardSettingsPortalRoute,
+  DashboardSystemLicenseRoute: DashboardSystemLicenseRoute,
   DashboardTemplatesRoute: DashboardTemplatesRoute,
   DashboardTicketsRoute: DashboardTicketsRoute,
   DashboardVouchersRoute: DashboardVouchersRoute,
