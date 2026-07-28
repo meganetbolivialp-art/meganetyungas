@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginIdentifier } from "@/lib/operators.functions";
+import { check2faRequired, verify2faLogin } from "@/lib/twofa.functions";
 import loginBg from "@/assets/login-bg.jpg";
 
 export const Route = createFileRoute("/auth")({
