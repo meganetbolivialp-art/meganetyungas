@@ -422,10 +422,10 @@ function RouterSyncPage() {
       {tab === "diferencias" && drift && (drift.missingOnRouter.length > 0 || drift.statusMismatch.length > 0 || (drift.profileMismatch?.length ?? 0) > 0) && (
         <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>⚠ Diferencias DB ↔ Router</span>
+            <span>⚠ Diferencias sistema ↔ router</span>
             {drift.missingOnRouter.length > 0 && (
               <button className="btn primary" onClick={doPush} disabled={pushing || pushSel.size === 0}>
-                <ArrowUpFromLine size={14} /> {pushing ? "Empujando…" : `Empujar ${pushSel.size} secret(s) al router`}
+                <ArrowUpFromLine size={14} /> {pushing ? "Subiendo al router…" : `Subir ${pushSel.size} cliente(s) al router`}
               </button>
             )}
           </div>
