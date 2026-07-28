@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_license: {
+        Row: {
+          active: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expires_at: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2465,6 +2492,7 @@ export type Database = {
       }
     }
     Functions: {
+      check_app_license: { Args: never; Returns: Json }
       cutoff_daily_series: {
         Args: { p_from?: string; p_to?: string }
         Returns: {
