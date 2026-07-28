@@ -255,12 +255,24 @@ function RouterSyncPage() {
 
   return (
     <AdminLayout>
-      <Toolbar><span style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>Sincronización router → base de datos</span></Toolbar>
+      <div style={{
+        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0891b2 100%)",
+        padding: "18px 20px", borderRadius: 14, marginBottom: 14, color: "#fff",
+        boxShadow: "0 8px 24px -8px rgba(8,145,178,0.4)",
+      }}>
+        <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
+          Sincronización router ↔ sistema
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 2 }}>Traer clientes y planes del MikroTik</div>
+        <div style={{ fontSize: 13, opacity: 0.85 }}>
+          Elegí un router, escaneá, y el sistema te muestra qué clientes están registrados, cuáles faltan traer y cuáles están conectados sin usar internet.
+        </div>
+      </div>
 
       <div style={{ background: "#fff", padding: 14, borderRadius: 10, border: "1px solid #e5e7eb", marginBottom: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
           <div>
-            <label style={{ fontSize: 12, color: "#64748b" }}>Router</label>
+            <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Router MikroTik</label>
             <select className={inputCls} value={routerId} onChange={(e) => setRouterId(e.target.value)}>
               <option value="">— Elegí router —</option>
               {routers.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.ip_address}{r.simulated ? " (sim)" : ""}</option>)}
@@ -268,7 +280,7 @@ function RouterSyncPage() {
           </div>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
             <button className="btn primary" disabled={!routerId || loading} onClick={scan}>
-              <RefreshCw size={14} className={loading ? "spin" : ""} /> {loading ? "Escaneando…" : "Escanear router"}
+              <RefreshCw size={14} className={loading ? "spin" : ""} /> {loading ? "Escaneando router…" : "Escanear router"}
             </button>
           </div>
         </div>
@@ -282,9 +294,9 @@ function RouterSyncPage() {
 
       {result && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
-          <StatCard color="#3b82f6" label="Total secrets router" value={result.secrets.length} />
-          <StatCard color="#10b981" label="Ya en DB" value={linked.length} icon={<CheckCircle2 size={16} />} />
-          <StatCard color="#f59e0b" label="Huérfanos (no en DB)" value={orphans.length} icon={<AlertCircle size={16} />} />
+          <StatCard color="#3b82f6" label="Clientes en el router" value={result.secrets.length} />
+          <StatCard color="#10b981" label="Ya registrados en el sistema" value={linked.length} icon={<CheckCircle2 size={16} />} />
+          <StatCard color="#f59e0b" label="Falta traer al sistema" value={orphans.length} icon={<AlertCircle size={16} />} />
         </div>
       )}
 
