@@ -166,12 +166,32 @@ function CutoffsPage() {
           <h1 className="text-xl font-semibold">Cortes / Morosos</h1>
           <p className="text-sm text-muted-foreground">Clientes suspendidos por deuda o corte manual</p>
         </div>
-        <button
-          onClick={runScheduledNow}
-          className="inline-flex items-center gap-2 bg-[#ff5722] hover:bg-[#e64a19] text-white px-4 py-2 rounded-md text-sm font-semibold"
-        >
-          <PlayCircle className="w-4 h-4" /> Ejecutar cortes programados
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setRiskOpen(true)}
+            className="inline-flex items-center gap-2 bg-[#f59e0b] hover:bg-[#d97706] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <AlertTriangle className="w-4 h-4" /> En riesgo (24h)
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm("¿Enviar aviso previo a todos los clientes en riesgo (24h)?")) return;
+              try {
+                const r = await notifyFn({ data: { hours: 24, channel: "whatsapp" } });
+                toast.success(`Avisos enviados: ${r.notified}`);
+              } catch (e) { toast.error((e as Error).message); }
+            }}
+            className="inline-flex items-center gap-2 bg-[#2e9cd6] hover:bg-[#1e7bb0] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <Send className="w-4 h-4" /> Avisar previo
+          </button>
+          <button
+            onClick={runScheduledNow}
+            className="inline-flex items-center gap-2 bg-[#ff5722] hover:bg-[#e64a19] text-white px-3 py-2 rounded-md text-sm font-semibold"
+          >
+            <PlayCircle className="w-4 h-4" /> Ejecutar cortes programados
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
