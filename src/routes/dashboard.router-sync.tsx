@@ -180,7 +180,7 @@ function RouterSyncPage() {
   };
 
   const doImport = async () => {
-    if (selected.size === 0) { setMsg("Elegí al menos un secret"); return; }
+    if (selected.size === 0) { setMsg("Elegí al menos un cliente"); return; }
     setImporting(true); setMsg("");
     try {
       const secrets = (result?.secrets ?? []).filter((s: any) => selected.has(s.name));
