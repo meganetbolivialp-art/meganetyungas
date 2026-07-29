@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginIdentifier } from "@/lib/operators.functions";
 import loginBg from "@/assets/login-bg.jpg";
