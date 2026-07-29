@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyPermissions } from "@/lib/operators.functions";
 
 export type MyPerms = {
   isAdmin: boolean;
@@ -12,7 +10,6 @@ export type MyPerms = {
 };
 
 export function usePermissions() {
-  const fn = useServerFn(getMyPermissions);
   const [authUserId, setAuthUserId] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -31,20 +28,43 @@ export function usePermissions() {
 
   const q = useQuery<MyPerms>({
     queryKey: ["my-permissions", authUserId],
-    queryFn: () => fn() as any,
     enabled: Boolean(authUserId),
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const uid = authUserId as string;
+      const [rolesRes, empRes] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("employees")
+          .select("id, full_name, operator_type, permissions, router_ids, status, access_days, access_from, access_to")
+          .eq("user_id", uid)
+          .maybeSingle(),
+      ]);
+      const isAdmin = (rolesRes.data ?? []).some((r: any) => r.role === "admin");
+      const emp = empRes.data ?? null;
+      return {
+        isAdmin,
+        employee: emp,
+        permissions: (emp?.permissions ?? {}) as Record<string, string[]>,
+        routerIds: (emp?.router_ids ?? []) as string[],
+      };
+    },
   });
-  const data = authUserId ? (q.data ?? { isAdmin: false, employee: null, permissions: {}, routerIds: [] }) : { isAdmin: false, employee: null, permissions: {}, routerIds: [] };
+
+  const data = q.data ?? { isAdmin: false, employee: null, permissions: {}, routerIds: [] };
   const can = (mod: string, action: string) => {
     if (data.isAdmin) return true;
     const acts = data.permissions[mod];
     return Array.isArray(acts) && acts.includes(action);
   };
   const canView = (mod: string) => can(mod, "view");
-  return { ...data, can, canView, loading: authUserId === undefined || q.isLoading || q.isFetching };
+  return {
+    ...data,
+    can,
+    canView,
+    // Sólo bloquea al primer load; refetch silencioso no oculta el menú.
+    loading: authUserId === undefined || (Boolean(authUserId) && q.isLoading && !q.data),
+  };
 }
 
 // Módulos disponibles en el sistema (para permisos)
