@@ -8,7 +8,7 @@ import { Download, Upload, Database, AlertTriangle, Loader2, CheckCircle2 } from
 import { createBackup, restoreBackup } from "@/lib/backup.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/dashboard/backup")({
+export const Route = createFileRoute("/dashboard/backup")({
   head: () => ({
     meta: [
       { title: "Backup del sistema · Meganet" },
