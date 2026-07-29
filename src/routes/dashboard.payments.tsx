@@ -94,6 +94,48 @@ function PaymentsPage() {
     refetchInterval: 15000,
   });
 
+  // Agregado diario en todo el rango (no solo página): clientes únicos, # pagos, total
+  const { data: dailyAgg } = useQuery({
+    queryKey: ["payments-daily", from, to, operator, method, search],
+    queryFn: async () => {
+      let q = supabase
+        .from("payments")
+        .select("amount, paid_at, client_id, method, reference, clients(full_name)")
+        .gte("paid_at", `${from}T00:00:00`)
+        .lte("paid_at", `${to}T23:59:59`)
+        .order("paid_at", { ascending: false })
+        .limit(10000);
+      if (operator) q = q.eq("created_by", operator);
+      if (method) q = q.eq("method", method);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      let all = (data ?? []) as any[];
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        all = all.filter((r: any) =>
+          (r.clients?.full_name ?? "").toLowerCase().includes(s) ||
+          (r.reference ?? "").toLowerCase().includes(s));
+      }
+      const byDay = new Map<string, { day: string; clients: Set<string>; count: number; total: number }>();
+      const allClients = new Set<string>();
+      let grandTotal = 0;
+      for (const p of all) {
+        const day = String(p.paid_at).slice(0, 10);
+        if (!byDay.has(day)) byDay.set(day, { day, clients: new Set(), count: 0, total: 0 });
+        const b = byDay.get(day)!;
+        if (p.client_id) { b.clients.add(p.client_id); allClients.add(p.client_id); }
+        b.count += 1;
+        b.total += Number(p.amount);
+        grandTotal += Number(p.amount);
+      }
+      const days = Array.from(byDay.values())
+        .map(d => ({ day: d.day, clients: d.clients.size, count: d.count, total: d.total }))
+        .sort((a, b) => b.day.localeCompare(a.day));
+      return { days, uniqueClients: allClients.size, grandTotal, txCount: all.length };
+    },
+    refetchInterval: 30000,
+  });
+
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
