@@ -89,8 +89,8 @@ ufw default allow outgoing >/dev/null
 ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
-ufw allow 8000/tcp >/dev/null   # Supabase Kong
-ufw allow 3000/tcp >/dev/null   # Frontend
+# NO abrir 5432 (Postgres), 8000 (Kong) ni 3000 (frontend) al público.
+# Todo lo interno pasa por Nginx (80/443) → loopback.
 ufw --force enable >/dev/null
 
 # ============================================================================
