@@ -298,6 +298,60 @@ function PaymentsPage() {
         </div>
       </div>
 
+      {/* Clientes pagados por fecha */}
+      <div className="bg-card border rounded-lg overflow-hidden mb-4">
+        <div className="px-3 py-2 border-b bg-muted/40 flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">Clientes pagados por fecha</div>
+          <div className="text-xs text-muted-foreground ml-auto">{dailyAgg?.days.length ?? 0} día(s) con cobros</div>
+        </div>
+        <div className="overflow-auto max-h-80">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left">Fecha</th>
+                <th className="px-3 py-2 text-right">Clientes únicos</th>
+                <th className="px-3 py-2 text-right">Pagos</th>
+                <th className="px-3 py-2 text-right">Total cobrado</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(dailyAgg?.days ?? []).length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-6 text-muted-foreground text-xs">Sin cobros en el rango</td></tr>
+              ) : (dailyAgg!.days).map(d => (
+                <tr key={d.day} className="border-t hover:bg-muted/30">
+                  <td className="px-3 py-2 font-medium">{new Date(d.day + "T12:00:00").toLocaleDateString("es-BO", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-amber-600">{d.clients}</td>
+                  <td className="px-3 py-2 text-right">{d.count}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-emerald-600">{bs(d.total)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => { setFrom(d.day); setTo(d.day); setPage(0); }}
+                      className="text-xs px-2 py-1 rounded border hover:bg-muted"
+                      title="Ver pagos de este día"
+                    >Ver día</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {(dailyAgg?.days.length ?? 0) > 0 && (
+              <tfoot className="bg-muted/40 text-xs font-semibold">
+                <tr className="border-t">
+                  <td className="px-3 py-2">TOTAL</td>
+                  <td className="px-3 py-2 text-right text-amber-700">{dailyAgg!.uniqueClients} únicos</td>
+                  <td className="px-3 py-2 text-right">{dailyAgg!.txCount}</td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{bs(dailyAgg!.grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+
+
+
       {show && (
         <FormPanel onCancel={() => setShow(false)} onSave={create}>
           <Field label="Cliente *"><select value={f.client_id} onChange={e => setF({ ...f, client_id: e.target.value, invoice_id: "" })} className={inputCls}><option value="">Seleccionar</option>{clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}</select></Field>
