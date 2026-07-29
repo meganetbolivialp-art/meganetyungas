@@ -407,14 +407,18 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex-1 min-w-0 max-w-xl">
-            <button onClick={() => setCmdOpen(true)} className="w-full h-9 rounded-md bg-muted/60 border border-transparent hover:border-primary/40 outline-none pl-9 pr-3 text-sm text-left text-muted-foreground relative truncate">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" />
-              <span className="hidden sm:inline">Buscar clientes, PPPoE, IP, secciones...</span>
-              <span className="sm:hidden">Buscar...</span>
-              <kbd className="hidden md:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] border rounded px-1.5 py-0.5 bg-background">Ctrl K</kbd>
-            </button>
+          <div className="flex-1 min-w-0 max-w-xl relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
+            <input
+              type="text"
+              onFocus={() => setCmdOpen(true)}
+              onClick={() => setCmdOpen(true)}
+              readOnly
+              placeholder="Buscar clientes, PPPoE, IP, facturas..."
+              className="w-full h-9 rounded-md bg-muted/60 border border-transparent hover:border-primary/40 focus:border-primary/60 outline-none pl-9 pr-3 text-sm cursor-pointer"
+            />
           </div>
+
           <div className="flex items-center gap-1 shrink-0">
             <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
             <Link to="/dashboard/cobrar" title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
