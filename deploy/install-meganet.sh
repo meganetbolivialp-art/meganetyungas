@@ -89,8 +89,8 @@ ufw default allow outgoing >/dev/null
 ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
-ufw allow 8000/tcp >/dev/null   # Supabase Kong
-ufw allow 3000/tcp >/dev/null   # Frontend
+# NO abrir 5432 (Postgres), 8000 (Kong) ni 3000 (frontend) al público.
+# Todo lo interno pasa por Nginx (80/443) → loopback.
 ufw --force enable >/dev/null
 
 # ============================================================================
@@ -157,7 +157,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: postgres
       JWT_SECRET: ${JWT_SECRET}
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -236,7 +236,7 @@ services:
     image: supabase/studio:20241014-c083b3b
     restart: unless-stopped
     depends_on: { db: { condition: service_healthy } }
-    ports: ["3001:3000"]
+    ports: ["127.0.0.1:3001:3000"]
     environment:
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -265,7 +265,7 @@ services:
   kong:
     image: kong:2.8.1
     restart: unless-stopped
-    ports: ["8000:8000/tcp", "8443:8443/tcp"]
+    ports: ["127.0.0.1:8000:8000/tcp", "127.0.0.1:8443:8443/tcp"]
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml

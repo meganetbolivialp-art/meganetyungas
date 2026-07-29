@@ -88,6 +88,8 @@ function SuspendedPage() {
       <iframe
         title="Aviso de suspensión"
         srcDoc={customHtml}
+        sandbox="allow-popups allow-popups-to-escape-sandbox"
+        referrerPolicy="no-referrer"
         style={{ position: "fixed", inset: 0, width: "100%", height: "100%", border: 0, background: "#0b1220" }}
       />
     );

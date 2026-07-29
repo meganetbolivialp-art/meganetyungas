@@ -6,8 +6,17 @@ export const Route = createFileRoute("/api/public/hooks/sync-mikrotik")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        if (!apikey || apikey !== process.env.SUPABASE_PUBLISHABLE_KEY) {
+        // Auth: secreto privado (CRON_SECRET), no la publishable key
+        const provided = request.headers.get("x-cron-secret")
+          ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+          ?? "";
+        const expected = process.env.CRON_SECRET ?? "";
+        const enc = new TextEncoder();
+        const a = enc.encode(provided);
+        const b = enc.encode(expected);
+        let ok = expected.length > 0 && a.length === b.length;
+        if (ok) { let diff = 0; for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]; ok = diff === 0; }
+        if (!ok) {
           return new Response("Unauthorized", { status: 401 });
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
