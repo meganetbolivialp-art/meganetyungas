@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLoginIdentifier } from "@/lib/operators.functions";
 import loginBg from "@/assets/login-bg.jpg";
@@ -29,6 +29,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showRescue, setShowRescue] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
 
   useEffect(() => {
@@ -112,76 +113,100 @@ function AuthPage() {
         }
       `}</style>
 
-      <div className="relative z-10 w-full max-w-[380px] flex flex-col items-center">
-        <div className="flex flex-col items-center mb-10 select-none">
-          <MeganetMark size={78} />
-          <div className="mt-4 text-[34px] font-black tracking-tight leading-none">
-            MEGA<span className="text-[#ff7a2b]">NET</span>
+      <div className="relative z-10 w-full max-w-[420px]">
+        <div className="relative rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] px-7 py-9 sm:px-9 sm:py-11">
+          <div className="pointer-events-none absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+          <div className="flex flex-col items-center mb-8 select-none">
+            <MeganetMark size={78} />
+            <div className="mt-4 text-[32px] font-black tracking-tight leading-none">
+              MEGA<span className="text-[#ff7a2b]">NET</span>
+            </div>
+            <div className="text-[10px] tracking-[0.45em] text-white/60 mt-2">
+              FIBRA ÓPTICA
+            </div>
+            <div className="mt-4 text-[12px] text-white/70">Panel administrativo</div>
           </div>
-          <div className="text-[10px] tracking-[0.45em] text-white/60 mt-2">
-            FIBRA ÓPTICA
+
+          <form onSubmit={submit} className="w-full space-y-4">
+            <div className="relative">
+              <UserIcon className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
+              <input
+                type="text"
+                required
+                placeholder="Usuario"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                className="w-full bg-white/[0.06] border border-white/15 rounded-xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-white/50 outline-none focus:border-[#2196f3]/60 focus:bg-white/[0.09] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.15)] transition"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
+              <input
+                type={showPass ? "text" : "password"}
+                required
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                className="w-full bg-white/[0.06] border border-white/15 rounded-xl pl-11 pr-12 py-3.5 text-sm text-white placeholder-white/50 outline-none focus:border-[#2196f3]/60 focus:bg-white/[0.09] focus:shadow-[0_0_0_4px_rgba(33,150,243,0.15)] transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass((v) => !v)}
+                aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-white/60 hover:text-white hover:bg-white/10 transition"
+              >
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {msg && (
+              <div className="text-xs rounded-xl px-3 py-2.5 bg-[#ff5722]/10 border border-[#ff5722]/30 text-white/90">
+                {msg}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#2196f3] to-[#1976d2] hover:from-[#1e88e5] hover:to-[#1565c0] disabled:opacity-60 transition shadow-[0_10px_30px_-10px_rgba(33,150,243,0.8)]"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Ingresar al Administrador
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-5 border-t border-white/10 space-y-2 text-center">
+            <p className="text-[12.5px] text-white/70">
+              ¿Olvidaste tu contraseña?{" "}
+              <button
+                type="button"
+                onClick={recover}
+                className="text-[#ff7a2b] hover:underline font-medium"
+              >
+                Recuperar
+              </button>
+            </p>
+            <p className="text-[12.5px] text-white/70">
+              ¿No tienes cuenta?{" "}
+              <a href="/#precios" className="text-[#4ea3ff] hover:underline font-medium">
+                Contratar
+              </a>
+            </p>
           </div>
         </div>
 
-        <form onSubmit={submit} className="w-full space-y-4">
-          <input
-            type="text"
-            required
-            placeholder="Usuario"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="username"
-            className="w-full bg-white/[0.06] border border-white/15 rounded-md px-4 py-3.5 text-sm text-white placeholder-white/50 outline-none focus:border-white/40 focus:bg-white/[0.09] transition"
-          />
-          <input
-            type="password"
-            required
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            className="w-full bg-white/[0.06] border border-white/15 rounded-md px-4 py-3.5 text-sm text-white placeholder-white/50 outline-none focus:border-white/40 focus:bg-white/[0.09] transition"
-          />
-
-          {msg && (
-            <div className="text-xs rounded-md px-3 py-2.5 bg-[#ff5722]/10 border border-[#ff5722]/30 text-white/90">
-              {msg}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-md text-sm font-semibold text-white bg-[#2196f3] hover:bg-[#1e88e5] disabled:opacity-60 transition shadow-[0_8px_20px_-8px_rgba(33,150,243,0.6)]"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Ingresar al Administrador
-              </>
-            )}
-          </button>
-        </form>
-
-        <p className="mt-6 text-[13px] text-white/70 text-center">
-          ¿Olvidaste tu contraseña? Click{" "}
-          <button
-            type="button"
-            onClick={recover}
-            className="text-[#ff7a2b] hover:underline font-medium"
-          >
-            Aquí
-          </button>{" "}
-          para recuperar.
-        </p>
-
-        <p className="mt-2 text-[13px] text-white/70 text-center">
-          ¿No tienes cuenta?{" "}
-          <a href="/#precios" className="text-[#2b5cff] hover:underline font-medium">
-            Contratar
-          </a>
+        <p className="mt-5 text-center text-[11px] text-white/40 tracking-wide">
+          © MEGANET · Fibra Óptica
         </p>
       </div>
 
