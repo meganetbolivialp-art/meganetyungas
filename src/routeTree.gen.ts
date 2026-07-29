@@ -58,6 +58,7 @@ import { Route as DashboardAuditRouteImport } from './routes/dashboard.audit'
 import { Route as DashboardAccountingRouteImport } from './routes/dashboard.accounting'
 import { Route as DashboardInvoicesInvoiceIdRouteImport } from './routes/dashboard.invoices_.$invoiceId'
 import { Route as DashboardClientsClientIdRouteImport } from './routes/dashboard.clients_.$clientId'
+import { Route as AuthenticatedDashboardBackupRouteImport } from './routes/_authenticated/dashboard.backup'
 import { Route as DashboardRoutersRouterIdMonitorRouteImport } from './routes/dashboard.routers_.$routerId.monitor'
 import { Route as ApiPublicLicenseHeartbeatRouteImport } from './routes/api/public/license.heartbeat'
 import { Route as ApiPublicLicenseActivateRouteImport } from './routes/api/public/license.activate'
@@ -314,6 +315,12 @@ const DashboardClientsClientIdRoute =
     path: '/clients/$clientId',
     getParentRoute: () => DashboardRoute,
   } as any)
+const AuthenticatedDashboardBackupRoute =
+  AuthenticatedDashboardBackupRouteImport.update({
+    id: '/_authenticated/dashboard/backup',
+    path: '/dashboard/backup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DashboardRoutersRouterIdMonitorRoute =
   DashboardRoutersRouterIdMonitorRouteImport.update({
     id: '/routers_/$routerId/monitor',
@@ -409,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/vouchers': typeof DashboardVouchersRoute
   '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/backup': typeof AuthenticatedDashboardBackupRoute
   '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
@@ -467,6 +475,7 @@ export interface FileRoutesByTo {
   '/dashboard/vouchers': typeof DashboardVouchersRoute
   '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/backup': typeof AuthenticatedDashboardBackupRoute
   '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
@@ -527,6 +536,7 @@ export interface FileRoutesById {
   '/dashboard/vouchers': typeof DashboardVouchersRoute
   '/dashboard/work-orders': typeof DashboardWorkOrdersRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/_authenticated/dashboard/backup': typeof AuthenticatedDashboardBackupRoute
   '/dashboard/clients_/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices_/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
@@ -588,6 +598,7 @@ export interface FileRouteTypes {
     | '/dashboard/vouchers'
     | '/dashboard/work-orders'
     | '/dashboard/'
+    | '/dashboard/backup'
     | '/dashboard/clients/$clientId'
     | '/dashboard/invoices/$invoiceId'
     | '/api/public/hooks/billing'
@@ -646,6 +657,7 @@ export interface FileRouteTypes {
     | '/dashboard/vouchers'
     | '/dashboard/work-orders'
     | '/dashboard'
+    | '/dashboard/backup'
     | '/dashboard/clients/$clientId'
     | '/dashboard/invoices/$invoiceId'
     | '/api/public/hooks/billing'
@@ -705,6 +717,7 @@ export interface FileRouteTypes {
     | '/dashboard/vouchers'
     | '/dashboard/work-orders'
     | '/dashboard/'
+    | '/_authenticated/dashboard/backup'
     | '/dashboard/clients_/$clientId'
     | '/dashboard/invoices_/$invoiceId'
     | '/api/public/hooks/billing'
@@ -724,6 +737,7 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SuspendidoRoute: typeof SuspendidoRoute
+  AuthenticatedDashboardBackupRoute: typeof AuthenticatedDashboardBackupRoute
   ApiPublicHooksBillingRoute: typeof ApiPublicHooksBillingRoute
   ApiPublicHooksDetectCutoffLeaksRoute: typeof ApiPublicHooksDetectCutoffLeaksRoute
   ApiPublicHooksMercadopagoRoute: typeof ApiPublicHooksMercadopagoRoute
@@ -1078,6 +1092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClientsClientIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_authenticated/dashboard/backup': {
+      id: '/_authenticated/dashboard/backup'
+      path: '/dashboard/backup'
+      fullPath: '/dashboard/backup'
+      preLoaderRoute: typeof AuthenticatedDashboardBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/routers_/$routerId/monitor': {
       id: '/dashboard/routers_/$routerId/monitor'
       path: '/routers/$routerId/monitor'
@@ -1242,6 +1263,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SuspendidoRoute: SuspendidoRoute,
+  AuthenticatedDashboardBackupRoute: AuthenticatedDashboardBackupRoute,
   ApiPublicHooksBillingRoute: ApiPublicHooksBillingRoute,
   ApiPublicHooksDetectCutoffLeaksRoute: ApiPublicHooksDetectCutoffLeaksRoute,
   ApiPublicHooksMercadopagoRoute: ApiPublicHooksMercadopagoRoute,
