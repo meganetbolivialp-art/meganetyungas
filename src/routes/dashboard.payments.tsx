@@ -364,11 +364,6 @@ function PaymentsPage() {
         </div>
       </div>
 
-
-
-        </div>
-      </div>
-
       {/* Cobros por operador */}
       <div className="bg-card border rounded-lg overflow-hidden mb-4">
         <div className="px-3 py-2 border-b bg-muted/40 flex items-center gap-2">
