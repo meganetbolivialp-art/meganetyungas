@@ -396,14 +396,34 @@ EOF
 
   command -v bun &>/dev/null || npm i -g bun >/dev/null 2>&1
   bun install
-  bun run build
+  # CRITICAL: build for Node self-host, not Cloudflare Workers (default preset)
+  NITRO_PRESET=node-server bun run build
 
-  # PM2 para servir
-  npm i -g pm2 >/dev/null 2>&1 || true
-  pm2 delete meganet-web 2>/dev/null || true
-  pm2 start "bun run start" --name meganet-web --cwd "$(pwd)"
-  pm2 save
-  pm2 startup systemd -u root --hp /root | tail -1 | bash || true
+  # systemd service (bind loopback only; Nginx expone al público)
+  cat > /etc/systemd/system/meganet-web.service <<UNIT
+[Unit]
+Description=Meganet Web Panel
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=$(pwd)
+EnvironmentFile=-$(pwd)/.env.production
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+Environment=NITRO_HOST=127.0.0.1
+Environment=NITRO_PORT=3000
+ExecStart=/usr/bin/node $(pwd)/.output/server/index.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload
+  systemctl enable --now meganet-web
+  systemctl restart meganet-web
   cd ..
 else
   warn "Repo no proporcionado. Sube el build a $INSTALL_DIR/frontend/dist"
