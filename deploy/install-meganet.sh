@@ -236,7 +236,7 @@ services:
     image: supabase/studio:20241014-c083b3b
     restart: unless-stopped
     depends_on: { db: { condition: service_healthy } }
-    ports: ["3001:3000"]
+    ports: ["127.0.0.1:3001:3000"]
     environment:
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
