@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import sidebarBg from "@/assets/sidebar-bg.jpg";
-import { CommandPalette } from "@/components/command-palette";
+import { InlineSearch } from "@/components/inline-search";
 import { usePermissions } from "@/hooks/use-permissions";
 
 type NavItem = { to?: string; label: string; badge?: number; mod?: string; action?: string };
@@ -408,13 +408,10 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
           </button>
 
           <div className="flex-1 min-w-0 max-w-xl">
-            <button onClick={() => setCmdOpen(true)} className="w-full h-9 rounded-md bg-muted/60 border border-transparent hover:border-primary/40 outline-none pl-9 pr-3 text-sm text-left text-muted-foreground relative truncate">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" />
-              <span className="hidden sm:inline">Buscar clientes, PPPoE, IP, secciones...</span>
-              <span className="sm:hidden">Buscar...</span>
-              <kbd className="hidden md:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] border rounded px-1.5 py-0.5 bg-background">Ctrl K</kbd>
-            </button>
+            <InlineSearch />
           </div>
+
+
           <div className="flex items-center gap-1 shrink-0">
             <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
             <Link to="/dashboard/cobrar" title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
@@ -445,7 +442,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
         <main className="flex-1 overflow-auto p-3 md:p-5">
           {children}
         </main>
-        <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+        
       </div>
     </div>
   );
