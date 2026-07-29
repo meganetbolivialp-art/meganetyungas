@@ -32,12 +32,11 @@ export const applyBasicSafeSetup = createServerFn({ method: "POST" })
 
     if (!data.dryRun) {
       await context.supabase.from("audit_logs").insert({
-        actor_id: context.userId,
+        user_id: context.userId,
         action: "router.basic_safe_setup",
         entity: "router",
         entity_id: data.routerId,
-        detail: `Setup básico aplicado en ${r.name}`,
-        metadata: result as any,
+        detail: { router: r.name, result } as any,
       } as any).then(() => {}, () => {});
     }
 
