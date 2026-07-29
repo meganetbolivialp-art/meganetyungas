@@ -273,10 +273,11 @@ function PaymentsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-        <KpiCard label="Total del rango" value={bs(pageTotal)} sub={`${rows.length} pagos en esta página`} icon={Wallet} tone="emerald" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+        <KpiCard label="Cobrado (rango)" value={bs(dailyAgg?.grandTotal ?? 0)} sub={`${dailyAgg?.txCount ?? 0} pagos`} icon={Wallet} tone="emerald" />
+        <KpiCard label="Clientes que pagaron" value={dailyAgg?.uniqueClients ?? 0} sub={`en ${dailyAgg?.days.length ?? 0} día(s)`} icon={Users} tone="amber" />
         <KpiCard label="Transacciones (total)" value={total} sub={`${totalPages} página(s)`} icon={CreditCard} tone="cyan" />
-        <KpiCard label="Ticket promedio" value={bs(rows.length ? pageTotal / rows.length : 0)} sub="Página actual" icon={TrendingUp} tone="indigo" />
+        <KpiCard label="Ticket promedio" value={bs(dailyAgg && dailyAgg.txCount ? dailyAgg.grandTotal / dailyAgg.txCount : 0)} sub="Rango completo" icon={TrendingUp} tone="indigo" />
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Por método (página)</div>
           {Object.keys(byMethod).length === 0 ? (
