@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 import { AdminLayout } from "@/components/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Upload, Database, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Download, Upload, Database, AlertTriangle, Loader2, CheckCircle2, Info, List } from "lucide-react";
 import { createBackup, restoreBackup } from "@/lib/backup.functions";
 import { toast } from "sonner";
 
@@ -18,24 +19,38 @@ export const Route = createFileRoute("/dashboard/backup")({
   component: BackupPage,
 });
 
+const CORE_TABLES = [
+  "app_license", "branches", "employees", "user_roles", "profiles", "routers", "plans", "clients",
+  "services", "subscriptions", "invoices", "payments", "payment_gateways", "payment_intents",
+  "cash_registers", "cash_movements", "accounting_entries", "commissions", "payroll",
+  "cutoff_policies", "cutoff_leaks", "client_actions", "client_portal_users", "client_portal_sessions",
+  "portal_settings", "tickets", "ticket_messages", "work_orders", "leads", "hotspot_vouchers",
+  "inventory_items", "inventory_serials", "message_templates", "messages", "bulk_change_templates",
+  "network_nodes", "fiber_links", "radius_users", "router_ip_pools", "mikrotik_pending_ops",
+  "vpn_servers", "vpn_peers", "licenses", "license_activations", "license_state",
+];
+
+const LOG_TABLES = ["audit_logs", "job_runs"];
+
 function BackupPage() {
   const doBackup = useServerFn(createBackup);
   const doRestore = useServerFn(restoreBackup);
   const [busy, setBusy] = useState<"backup" | "restore" | null>(null);
   const [lastResult, setLastResult] = useState<any>(null);
   const [mode, setMode] = useState<"merge" | "replace">("merge");
+  const [includeLogs, setIncludeLogs] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleBackup() {
     setBusy("backup");
     try {
-      const dump = await doBackup();
+      const dump = await doBackup({ data: { includeLogs } });
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
       const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `meganet-backup-${stamp}.json`;
+      a.download = `meganet-backup-${includeLogs ? "full-" : ""}${stamp}.json`;
       a.click();
       URL.revokeObjectURL(url);
       const rows = Object.values(dump.tables).reduce((a: number, r: any) => a + r.length, 0);
@@ -84,14 +99,67 @@ function BackupPage() {
               <Download className="h-5 w-5" /> Descargar backup
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Se descargará un archivo <code className="text-xs bg-muted px-1 rounded">.json</code> con todas las tablas del sistema (clientes, facturas, pagos, planes, routers, etc.). Guárdalo en un lugar seguro.
+              Se descargará un archivo <code className="text-xs bg-muted px-1 rounded">.json</code> con todos los datos de la aplicación. Guárdalo en un lugar seguro.
             </p>
+
+            <div className="flex items-start gap-2 p-3 rounded-md bg-blue-500/10 border border-blue-500/30 text-sm">
+              <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+              <div>
+                <strong>¿Qué incluye el backup?</strong>
+                <ul className="list-disc ml-4 mt-1 space-y-0.5">
+                  <li>Todos los datos de negocio: clientes, servicios, facturas, pagos, routers, planes, usuarios, roles, etc.</li>
+                  <li>No incluye los archivos del sistema de autenticación de Lovable Cloud ni las imágenes de Storage.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="includeLogs"
+                checked={includeLogs}
+                onCheckedChange={(v) => setIncludeLogs(v === true)}
+              />
+              <label
+                htmlFor="includeLogs"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Backup completo incluyendo logs de auditoría y ejecuciones de jobs
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {includeLogs
+                ? "El backup incluirá además audit_logs y job_runs. El archivo puede ser más grande."
+                : "Backup estándar: datos de negocio únicamente. Los logs de auditoría no se incluyen."}
+            </p>
+
             <Button onClick={handleBackup} disabled={busy !== null} size="lg">
               {busy === "backup" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Descargar backup ahora
+              Descargar backup {includeLogs ? "completo" : "estándar"}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <List className="h-5 w-5" /> Tablas incluidas en el backup
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
+              {CORE_TABLES.map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
+              <strong>Opcional (solo backup completo):</strong>{" "}
+              {LOG_TABLES.join(", ")}
+            </div>
           </CardContent>
         </Card>
 
