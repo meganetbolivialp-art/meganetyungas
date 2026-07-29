@@ -41,19 +41,16 @@ Todo lo demás lo hace solo. Tarda **~10 minutos**.
 | Nginx | 80/443 | Proxy + SSL |
 | MikroTik Agent | 8777 | Puente a routers |
 
-## Migrar los datos de Lovable Cloud
+## Migrar los datos de Lovable Cloud (automático)
 
 1. En Lovable: **Cloud → Advanced settings → Export data**
-2. Espera el email con el archivo
-3. Súbelo al VPS:
+2. Espera el email con el archivo `.sql`
+3. Desde tu PC ejecuta el script automático:
    ```bash
-   scp meganet-dump.sql root@TU_IP:/opt/meganet/backups/
+   bash deploy/migrate-from-lovable.sh meganet-dump.sql root@TU_IP_CONTABO
    ```
-4. Impórtalo:
-   ```bash
-   ssh root@TU_IP
-   docker exec -i meganet-supabase-db-1 psql -U postgres < /opt/meganet/backups/meganet-dump.sql
-   ```
+   El script hace backup previo, limpia el SQL, importa y reinicia servicios solo.
+4. Para más detalles lee [`deploy/MIGRACION.md`](./MIGRACION.md).
 
 ## Después de instalar
 
