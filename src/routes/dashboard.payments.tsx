@@ -100,7 +100,7 @@ function PaymentsPage() {
     queryFn: async () => {
       let q = supabase
         .from("payments")
-        .select("amount, paid_at, client_id, method, reference, clients(full_name)")
+        .select("amount, paid_at, client_id, method, reference, created_by, clients(full_name), profiles:created_by(full_name, email)")
         .gte("paid_at", `${from}T00:00:00`)
         .lte("paid_at", `${to}T23:59:59`)
         .order("paid_at", { ascending: false })
@@ -117,6 +117,7 @@ function PaymentsPage() {
           (r.reference ?? "").toLowerCase().includes(s));
       }
       const byDay = new Map<string, { day: string; clients: Set<string>; count: number; total: number }>();
+      const byOp = new Map<string, { user_id: string; name: string; clients: Set<string>; days: Set<string>; count: number; total: number; byMethod: Record<string, number> }>();
       const allClients = new Set<string>();
       let grandTotal = 0;
       for (const p of all) {
@@ -127,11 +128,24 @@ function PaymentsPage() {
         b.count += 1;
         b.total += Number(p.amount);
         grandTotal += Number(p.amount);
+
+        const opId = p.created_by ?? "__none__";
+        const opName = p.profiles?.full_name ?? p.profiles?.email ?? (p.created_by ? "—" : "Sin operador");
+        if (!byOp.has(opId)) byOp.set(opId, { user_id: opId, name: opName, clients: new Set(), days: new Set(), count: 0, total: 0, byMethod: {} });
+        const o = byOp.get(opId)!;
+        if (p.client_id) o.clients.add(p.client_id);
+        o.days.add(day);
+        o.count += 1;
+        o.total += Number(p.amount);
+        o.byMethod[p.method] = (o.byMethod[p.method] ?? 0) + Number(p.amount);
       }
       const days = Array.from(byDay.values())
         .map(d => ({ day: d.day, clients: d.clients.size, count: d.count, total: d.total }))
         .sort((a, b) => b.day.localeCompare(a.day));
-      return { days, uniqueClients: allClients.size, grandTotal, txCount: all.length };
+      const ops = Array.from(byOp.values())
+        .map(o => ({ user_id: o.user_id, name: o.name, clients: o.clients.size, days: o.days.size, count: o.count, total: o.total, byMethod: o.byMethod }))
+        .sort((a, b) => b.total - a.total);
+      return { days, ops, uniqueClients: allClients.size, grandTotal, txCount: all.length };
     },
     refetchInterval: 30000,
   });
