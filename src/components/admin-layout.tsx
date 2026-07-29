@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import sidebarBg from "@/assets/sidebar-bg.jpg";
-import { CommandPalette } from "@/components/command-palette";
+import { InlineSearch } from "@/components/inline-search";
 import { usePermissions } from "@/hooks/use-permissions";
 
 type NavItem = { to?: string; label: string; badge?: number; mod?: string; action?: string };
