@@ -70,7 +70,7 @@ export const createBackup = createServerFn({ method: "POST" })
 
     const dump: Record<string, any[]> = {};
     for (const t of BACKUP_TABLES) {
-      const { data, error } = await supabaseAdmin.from(t).select("*");
+      const { data, error } = await supabaseAdmin.from(t as any).select("*");
       if (error) {
         // skip tables that don't exist / are inaccessible
         continue;
@@ -119,7 +119,7 @@ export const restoreBackup = createServerFn({ method: "POST" })
 
       if (data.mode === "replace") {
         // best-effort wipe
-        await supabaseAdmin.from(t).delete().gte("created_at", "1900-01-01");
+        await supabaseAdmin.from(t as any).delete().gte("created_at", "1900-01-01");
       }
 
       const { error, count } = await supabaseAdmin
