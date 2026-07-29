@@ -73,7 +73,7 @@ const GROUPS: NavGroup[] = [
 
   { label: "Configuración", icon: Settings, mod: "ajustes", items: [
     { to: "/dashboard/settings", label: "General", mod: "ajustes", action: "edit" },
-    
+    { to: "/dashboard/backup", label: "Backup del sistema", mod: "ajustes", action: "edit" },
     
     
     { to: "/dashboard/employees", label: "Operadores", mod: "ajustes", action: "operators" },

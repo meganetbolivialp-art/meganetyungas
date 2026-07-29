@@ -54,6 +54,7 @@ import { Route as DashboardCashRouteImport } from './routes/dashboard.cash'
 import { Route as DashboardBulkTemplatesRouteImport } from './routes/dashboard.bulk-templates'
 import { Route as DashboardBulkRouterRouteImport } from './routes/dashboard.bulk-router'
 import { Route as DashboardBranchesRouteImport } from './routes/dashboard.branches'
+import { Route as DashboardBackupRouteImport } from './routes/dashboard.backup'
 import { Route as DashboardAuditRouteImport } from './routes/dashboard.audit'
 import { Route as DashboardAccountingRouteImport } from './routes/dashboard.accounting'
 import { Route as DashboardInvoicesInvoiceIdRouteImport } from './routes/dashboard.invoices_.$invoiceId'
@@ -292,6 +293,11 @@ const DashboardBranchesRoute = DashboardBranchesRouteImport.update({
   path: '/branches',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardBackupRoute = DashboardBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardAuditRoute = DashboardAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -370,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/suspendido': typeof SuspendidoRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/backup': typeof DashboardBackupRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
   '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
   '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
@@ -428,6 +435,7 @@ export interface FileRoutesByTo {
   '/suspendido': typeof SuspendidoRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/backup': typeof DashboardBackupRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
   '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
   '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
@@ -488,6 +496,7 @@ export interface FileRoutesById {
   '/suspendido': typeof SuspendidoRoute
   '/dashboard/accounting': typeof DashboardAccountingRoute
   '/dashboard/audit': typeof DashboardAuditRoute
+  '/dashboard/backup': typeof DashboardBackupRoute
   '/dashboard/branches': typeof DashboardBranchesRoute
   '/dashboard/bulk-router': typeof DashboardBulkRouterRoute
   '/dashboard/bulk-templates': typeof DashboardBulkTemplatesRoute
@@ -549,6 +558,7 @@ export interface FileRouteTypes {
     | '/suspendido'
     | '/dashboard/accounting'
     | '/dashboard/audit'
+    | '/dashboard/backup'
     | '/dashboard/branches'
     | '/dashboard/bulk-router'
     | '/dashboard/bulk-templates'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/suspendido'
     | '/dashboard/accounting'
     | '/dashboard/audit'
+    | '/dashboard/backup'
     | '/dashboard/branches'
     | '/dashboard/bulk-router'
     | '/dashboard/bulk-templates'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/suspendido'
     | '/dashboard/accounting'
     | '/dashboard/audit'
+    | '/dashboard/backup'
     | '/dashboard/branches'
     | '/dashboard/bulk-router'
     | '/dashboard/bulk-templates'
@@ -1050,6 +1062,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardBranchesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/backup': {
+      id: '/dashboard/backup'
+      path: '/backup'
+      fullPath: '/dashboard/backup'
+      preLoaderRoute: typeof DashboardBackupRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/audit': {
       id: '/dashboard/audit'
       path: '/audit'
@@ -1140,6 +1159,7 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardAccountingRoute: typeof DashboardAccountingRoute
   DashboardAuditRoute: typeof DashboardAuditRoute
+  DashboardBackupRoute: typeof DashboardBackupRoute
   DashboardBranchesRoute: typeof DashboardBranchesRoute
   DashboardBulkRouterRoute: typeof DashboardBulkRouterRoute
   DashboardBulkTemplatesRoute: typeof DashboardBulkTemplatesRoute
@@ -1187,6 +1207,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAccountingRoute: DashboardAccountingRoute,
   DashboardAuditRoute: DashboardAuditRoute,
+  DashboardBackupRoute: DashboardBackupRoute,
   DashboardBranchesRoute: DashboardBranchesRoute,
   DashboardBulkRouterRoute: DashboardBulkRouterRoute,
   DashboardBulkTemplatesRoute: DashboardBulkTemplatesRoute,
