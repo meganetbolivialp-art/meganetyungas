@@ -144,7 +144,9 @@ export async function getClientsOnlineStatus(context: PermissionContext) {
       const res = await mikrotik.listActive(router as any);
       for (const a of res.active ?? []) {
         if (!a.name) continue;
-        activeByUser.set(a.name, {
+        // Key by router_id + pppoe_user so duplicated PPPoE names on different
+        // routers don't cross-contaminate online status.
+        activeByUser.set(`${router.id}::${a.name}`, {
           router_id: router.id,
           router_name: router.name,
           address: a.address ?? "",

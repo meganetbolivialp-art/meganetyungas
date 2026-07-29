@@ -265,10 +265,16 @@ function ClientsPage() {
   };
 
 
+  const svcOnlineKey = (s: any) => s?.router_id && s?.pppoe_user ? `${s.router_id}::${s.pppoe_user}` : null;
+
   const getClientOnlineStatus = (r: Client): "online" | "offline" | "unknown" => {
-    const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
-    if (!users.length) return "unknown";
-    const anyOnline = users.some((u: string) => onlineStatus[u] != null);
+    const svcs = r.services ?? [];
+    const withPppoe = svcs.filter((s: any) => s.pppoe_user);
+    if (!withPppoe.length) return "unknown";
+    const anyOnline = withPppoe.some((s: any) => {
+      const k = svcOnlineKey(s);
+      return k ? onlineStatus[k] != null : false;
+    });
     return anyOnline ? "online" : "offline";
   };
 
@@ -419,8 +425,8 @@ function ClientsPage() {
       else if (r.status === "cancelled") cancelled++;
       const bal = Number((r as any).balance ?? 0);
       if (bal > 0) { debt++; totalDebt += bal; }
-      const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
-      if (users.some((u: string) => onlineStatus[u] != null)) online++;
+      const svcs = r.services ?? [];
+      if (svcs.some((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; })) online++;
     }
     return { total, active, suspended, cancelled, debt, online, totalDebt };
   }, [rows, onlineStatus]);
@@ -602,8 +608,8 @@ function ClientsPage() {
               : "bg-slate-50 text-slate-700 ring-1 ring-slate-200";
             const stLabel = st === "active" ? "Activo" : st === "suspended" ? "Suspendido" : st === "cancelled" ? "Cancelado" : st;
             const connStatus = getClientOnlineStatus(r);
-            const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
-            const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+            const onlineSvc = r.services?.find((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; });
+            const activeInfo = connStatus === "online" && onlineSvc ? onlineStatus[svcOnlineKey(onlineSvc)!] : null;
             const connBadge = connStatus === "online"
               ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
               : connStatus === "offline"
@@ -728,8 +734,8 @@ function ClientsPage() {
               const busy = busyIds.has(r.id);
               const st = r.status;
               const connStatus = getClientOnlineStatus(r);
-              const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
-              const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+              const onlineSvc = r.services?.find((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; });
+              const activeInfo = connStatus === "online" && onlineSvc ? onlineStatus[svcOnlineKey(onlineSvc)!] : null;
               const zebra = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
               const rowTint = st === "suspended" ? "!bg-amber-50/70"
                 : st === "cancelled" ? "!bg-rose-50/60"
