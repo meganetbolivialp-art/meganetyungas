@@ -416,6 +416,7 @@ function RoutersPage() {
                         </button>
                         <button onClick={() => loadSessions(r)} title="Sesiones PPPoE" className="p-1.5 rounded hover:bg-muted text-emerald-600"><Users className="w-4 h-4" /></button>
                         <button onClick={() => openPools(r)} title="Pools de IP" className="p-1.5 rounded hover:bg-muted text-orange-600"><Network className="w-4 h-4" /></button>
+                        <button onClick={() => openSetup(r)} title="Configuración básica y segura" className="p-1.5 rounded hover:bg-muted text-teal-600"><ShieldCheck className="w-4 h-4" /></button>
                         
                         <Link to="/dashboard/routers/$routerId/monitor" params={{ routerId: r.id }} title="Monitor" className="p-1.5 rounded hover:bg-muted text-indigo-600 inline-flex"><Activity className="w-4 h-4" /></Link>
                         <Link to="/dashboard/router-sync" title="Sincronizar" className="p-1.5 rounded hover:bg-muted text-slate-600 inline-flex"><Radio className="w-4 h-4" /></Link>
