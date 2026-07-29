@@ -170,6 +170,51 @@ function RoutersPage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  // ---- Setup básico y seguro ----
+  const applySetupFn = useServerFn(applyBasicSafeSetup);
+  const undoSetupFn = useServerFn(undoBasicSafeSetup);
+  const [setupFor, setSetupFor] = useState<R | null>(null);
+  const [setupOpts, setSetupOpts] = useState({ setIdentity: true, enableApi: true, allowApiFromVpn: true, enableNtp: true });
+  const [setupPreview, setSetupPreview] = useState<any[] | null>(null);
+  const [setupBusy, setSetupBusy] = useState(false);
+
+  const openSetup = (r: R) => { setSetupFor(r); setSetupPreview(null); setSetupOpts({ setIdentity: true, enableApi: true, allowApiFromVpn: true, enableNtp: true }); };
+
+  const runPreview = async () => {
+    if (!setupFor) return;
+    setSetupBusy(true);
+    try {
+      const res: any = await applySetupFn({ data: { routerId: setupFor.id, ...setupOpts, dryRun: true } });
+      setSetupPreview(res.steps ?? []);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSetupBusy(false); }
+  };
+
+  const runApply = async () => {
+    if (!setupFor) return;
+    if (!confirm(`¿Aplicar configuración básica en ${setupFor.name}?\n\nEs seguro: solo agrega lo mínimo, no modifica reglas existentes.`)) return;
+    setSetupBusy(true);
+    try {
+      const res: any = await applySetupFn({ data: { routerId: setupFor.id, ...setupOpts, dryRun: false } });
+      setSetupPreview(res.steps ?? []);
+      const ok = (res.steps ?? []).filter((s: any) => s.status === "ok").length;
+      const skip = (res.steps ?? []).filter((s: any) => s.status === "skipped").length;
+      toast.success(`${setupFor.name}: ${ok} aplicadas, ${skip} ya estaban`);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSetupBusy(false); }
+  };
+
+  const runUndo = async () => {
+    if (!setupFor) return;
+    if (!confirm(`¿Deshacer el setup en ${setupFor.name}? (Solo elimina reglas con comentario "meganet-panel-*")`)) return;
+    setSetupBusy(true);
+    try {
+      const res: any = await undoSetupFn({ data: { routerId: setupFor.id } });
+      toast.success(`${setupFor.name}: ${res.removed} regla(s) eliminada(s)`);
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSetupBusy(false); }
+  };
+
   const openNew = () => {
     setEditing(null);
     const c = genCreds("nuevo");
