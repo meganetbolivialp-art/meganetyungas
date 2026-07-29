@@ -88,9 +88,14 @@ apt-get update -qq
 apt-get install -y -qq curl git ca-certificates gnupg lsb-release ufw jq >/dev/null
 log "Dependencias base OK"
 
-# ---------- 3. Clonar repo ----------
-warn "PASO 3/6 — Clonando repo desde GitHub"
-if [[ -d "$INSTALL_DIR/.git" ]]; then
+# ---------- 3. Clonar repo (o usar código ya presente) ----------
+warn "PASO 3/6 — Preparando código"
+if [[ -z "$GIT_REPO" ]]; then
+  if [[ ! -d "$INSTALL_DIR" || -z "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]]; then
+    err "GIT_REPO vacío y $INSTALL_DIR no tiene código. Subí el proyecto con rsync a $INSTALL_DIR antes de correr."
+  fi
+  info "GIT_REPO vacío — usando código ya presente en $INSTALL_DIR (modo SCP/rsync)"
+elif [[ -d "$INSTALL_DIR/.git" ]]; then
   info "Repo ya existe, actualizando..."
   git -C "$INSTALL_DIR" fetch --all
   git -C "$INSTALL_DIR" reset --hard "origin/$GIT_BRANCH"
