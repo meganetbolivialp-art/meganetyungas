@@ -265,10 +265,16 @@ function ClientsPage() {
   };
 
 
+  const svcOnlineKey = (s: any) => s?.router_id && s?.pppoe_user ? `${s.router_id}::${s.pppoe_user}` : null;
+
   const getClientOnlineStatus = (r: Client): "online" | "offline" | "unknown" => {
-    const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
-    if (!users.length) return "unknown";
-    const anyOnline = users.some((u: string) => onlineStatus[u] != null);
+    const svcs = r.services ?? [];
+    const withPppoe = svcs.filter((s: any) => s.pppoe_user);
+    if (!withPppoe.length) return "unknown";
+    const anyOnline = withPppoe.some((s: any) => {
+      const k = svcOnlineKey(s);
+      return k ? onlineStatus[k] != null : false;
+    });
     return anyOnline ? "online" : "offline";
   };
 
