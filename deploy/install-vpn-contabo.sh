@@ -27,14 +27,16 @@ fi
 log "Instalando dependencias de compilación..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get install -y -qq build-essential gcc make libssl-dev libreadline-dev \
-    libncurses5-dev zlib1g-dev wget curl ufw >/dev/null
+apt-get install -y -qq build-essential gcc g++ make cmake pkg-config \
+    libssl-dev libreadline-dev libncurses5-dev libncurses-dev \
+    zlib1g-dev libsodium-dev wget curl ufw ca-certificates >/dev/null
 
 # ---------- 2) Descarga y compilación ---------------------------------------
 SE_VERSION="4.44-9807-rtm"
 SE_DATE="2025.04.16"
 SE_TARBALL="softether-vpnserver-v${SE_VERSION}-${SE_DATE}-linux-x64-64bit.tar.gz"
 SE_URL="https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/releases/download/v${SE_VERSION}/${SE_TARBALL}"
+BUILD_LOG="/tmp/softether-build.log"
 
 cd /opt
 if [[ -d vpnserver ]]; then
@@ -49,15 +51,23 @@ if ! wget -q "${SE_URL}" -O "${SE_TARBALL}"; then
   exit 1
 fi
 
-log "Compilando SoftEther (tarda 2–4 min)..."
+log "Compilando SoftEther (tarda 2–4 min, log en ${BUILD_LOG})..."
 tar xzf "${SE_TARBALL}"
 rm -f "${SE_TARBALL}"
 cd vpnserver
-# aceptar licencia automáticamente
-yes 1 | make >/dev/null 2>&1 || { err "Compilación falló"; exit 1; }
-chmod 600 *
-chmod 700 vpnserver vpncmd
+# aceptar licencia automáticamente; capturar log para diagnóstico
+if ! yes 1 | make >"${BUILD_LOG}" 2>&1; then
+  err "Compilación falló. Últimas líneas del log:"
+  tail -n 40 "${BUILD_LOG}" >&2
+  err "Log completo: ${BUILD_LOG}"
+  exit 1
+fi
+# permisos: binarios ejecutables, resto restringido
+find . -maxdepth 1 -type f ! -name 'vpnserver' ! -name 'vpncmd' ! -name 'vpnbridge' ! -name 'vpnclient' -exec chmod 600 {} +
+chmod 700 vpnserver vpncmd 2>/dev/null || true
+chmod 700 vpnbridge vpnclient 2>/dev/null || true
 cd /
+
 
 # ---------- 3) Servicio systemd ---------------------------------------------
 log "Creando servicio systemd 'vpnserver'..."
