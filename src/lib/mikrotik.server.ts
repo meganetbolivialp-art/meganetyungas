@@ -1256,6 +1256,107 @@ export const mikrotik = {
       () => simulate("ip/pool/used", { router: router.name }, { ok: true as const, ips: [] as string[] }),
     );
   },
+
+  // -------- Configuración básica y segura --------
+  // SOLO agrega lo mínimo indispensable, con comentario "meganet-panel" para poder
+  // deshacer. NO modifica reglas existentes, NO agrega drops, NO toca NAT/DNS/rutas.
+  // Todo idempotente: si algo ya existe, se salta.
+  async basicSafeSetup(router: MtRouter, args: {
+    setIdentity?: boolean;
+    enableApi?: boolean;
+    allowApiFromVpn?: boolean;
+    enableNtp?: boolean;
+    dryRun?: boolean;
+  }) {
+    const steps: Array<{ label: string; command: string; status: "planned" | "ok" | "skipped" | "error"; detail?: string }> = [];
+    const plan = (label: string, command: string) => steps.push({ label, command, status: "planned" });
+
+    if (args.setIdentity) plan("Identidad del router", `/system identity set name="${router.name}"`);
+    if (args.enableApi) plan("Habilitar servicio API (8728)", `/ip service set api disabled=no port=8728`);
+    if (args.allowApiFromVpn) plan(
+      "Firewall: permitir API desde OVPN",
+      `/ip firewall filter add chain=input protocol=tcp dst-port=8728 in-interface=ovpn-panel action=accept comment="meganet-panel-api" place-before=0`,
+    );
+    if (args.enableNtp) plan("NTP client (Cloudflare)", `/system ntp client set enabled=yes primary-ntp=162.159.200.1 secondary-ntp=162.159.200.123`);
+
+    if (args.dryRun) return { ok: true as const, dryRun: true as const, steps };
+
+    return real(
+      router,
+      "basic-safe-setup",
+      async () => withSession(router, async (s) => {
+        const run = async (idx: number, cmd: string[]) => {
+          const res = await sendCommand(s, cmd);
+          const trap = res.find((r) => r.reply === "!trap");
+          if (trap) { steps[idx].status = "error"; steps[idx].detail = trap.attrs.message || "trap"; throw new Error(trap.attrs.message || "command failed"); }
+          steps[idx].status = "ok";
+        };
+
+        let i = 0;
+        if (args.setIdentity) {
+          await run(i, ["/system/identity/set", `=name=${router.name}`]);
+          i++;
+        }
+        if (args.enableApi) {
+          const found = await sendCommand(s, ["/ip/service/print", `?name=api`, "=.proplist=.id,disabled,port"]);
+          const cur = found.find((r) => r.reply === "!re");
+          if (cur && cur.attrs.disabled === "false" && cur.attrs.port === "8728") {
+            steps[i].status = "skipped"; steps[i].detail = "ya habilitado";
+          } else {
+            await run(i, ["/ip/service/set", `=numbers=api`, `=disabled=no`, `=port=8728`]);
+          }
+          i++;
+        }
+        if (args.allowApiFromVpn) {
+          const existing = await sendCommand(s, ["/ip/firewall/filter/print", `?comment=meganet-panel-api`, "=.proplist=.id"]);
+          if (existing.find((r) => r.reply === "!re")) {
+            steps[i].status = "skipped"; steps[i].detail = "regla ya existe";
+          } else {
+            await run(i, [
+              "/ip/firewall/filter/add",
+              "=chain=input",
+              "=protocol=tcp",
+              "=dst-port=8728",
+              "=in-interface=ovpn-panel",
+              "=action=accept",
+              "=comment=meganet-panel-api",
+              "=place-before=0",
+            ]);
+          }
+          i++;
+        }
+        if (args.enableNtp) {
+          await run(i, ["/system/ntp/client/set", "=enabled=yes", "=primary-ntp=162.159.200.1", "=secondary-ntp=162.159.200.123"]);
+          i++;
+        }
+
+        return { ok: true as const, dryRun: false as const, steps };
+      }),
+      () => simulate("basic-safe-setup", { router: router.name, args }, {
+        ok: true as const,
+        dryRun: false as const,
+        steps: steps.map(x => ({ ...x, status: "ok" as const })),
+      }),
+    );
+  },
+
+  // Deshace: elimina reglas con comentario "meganet-panel-*"
+  async basicSafeUndo(router: MtRouter) {
+    return real(
+      router,
+      "basic-safe-undo",
+      async () => withSession(router, async (s) => {
+        let removed = 0;
+        const check = await sendCommand(s, ["/ip/firewall/filter/print", `?comment=meganet-panel-api`, "=.proplist=.id"]);
+        for (const r of check.filter((r) => r.reply === "!re")) {
+          const id = r.attrs[".id"];
+          if (id) { await sendCommand(s, ["/ip/firewall/filter/remove", `=.id=${id}`]); removed++; }
+        }
+        return { ok: true as const, removed };
+      }),
+      () => simulate("basic-safe-undo", { router: router.name }, { ok: true as const, removed: 0 }),
+    );
+  },
 };
 
 
