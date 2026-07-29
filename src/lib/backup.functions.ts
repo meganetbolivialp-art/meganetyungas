@@ -2,9 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-// Tables safe to include in a system backup (public schema, app data).
-// Excludes auth.*, storage.*, and heavy/log tables.
-const BACKUP_TABLES = [
+// Tables with business/app data that are always included in a backup.
+const CORE_BACKUP_TABLES = [
   "app_license",
   "branches",
   "employees",
@@ -50,7 +49,10 @@ const BACKUP_TABLES = [
   "licenses",
   "license_activations",
   "license_state",
-];
+] as const;
+
+// Heavy/log tables that are only included when the user explicitly requests a full backup.
+const LOG_BACKUP_TABLES = ["audit_logs", "job_runs"] as const;
 
 async function requireAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", {
@@ -61,15 +63,24 @@ async function requireAdmin(supabase: any, userId: string) {
   if (!data) throw new Error("Solo administradores pueden gestionar backups");
 }
 
+const CreateBackupSchema = z.object({
+  includeLogs: z.boolean().default(false),
+});
+
 export const createBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data) => CreateBackupSchema.parse(data ?? {}))
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await requireAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const tables = data.includeLogs
+      ? [...CORE_BACKUP_TABLES, ...LOG_BACKUP_TABLES]
+      : [...CORE_BACKUP_TABLES];
+
     const dump: Record<string, any[]> = {};
-    for (const t of BACKUP_TABLES) {
+    for (const t of tables) {
       const { data, error } = await supabaseAdmin.from(t as any).select("*");
       if (error) {
         // skip tables that don't exist / are inaccessible
@@ -85,12 +96,14 @@ export const createBackup = createServerFn({ method: "POST" })
       detail: {
         tables: Object.keys(dump).length,
         rows: Object.values(dump).reduce((a, r) => a + r.length, 0),
+        full: data.includeLogs,
       },
     });
 
     return {
       version: "1.0",
       generatedAt: new Date().toISOString(),
+      full: data.includeLogs,
       tables: dump,
     };
   });
@@ -111,9 +124,14 @@ export const restoreBackup = createServerFn({ method: "POST" })
     await requireAdmin(supabase, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Restore every table present in the backup payload, in dependency order.
+    const allTables = [
+      ...CORE_BACKUP_TABLES,
+      ...LOG_BACKUP_TABLES,
+    ];
+
     const results: { table: string; inserted: number; error?: string }[] = [];
-    // Restore in the declared order so parents come before children.
-    for (const t of BACKUP_TABLES) {
+    for (const t of allTables) {
       const rows = data.payload.tables[t];
       if (!rows || rows.length === 0) continue;
 
