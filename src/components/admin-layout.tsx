@@ -442,7 +442,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
         <main className="flex-1 overflow-auto p-3 md:p-5">
           {children}
         </main>
-        <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
+        
       </div>
     </div>
   );
