@@ -425,8 +425,8 @@ function ClientsPage() {
       else if (r.status === "cancelled") cancelled++;
       const bal = Number((r as any).balance ?? 0);
       if (bal > 0) { debt++; totalDebt += bal; }
-      const users = r.services?.map((s: any) => s.pppoe_user).filter(Boolean) ?? [];
-      if (users.some((u: string) => onlineStatus[u] != null)) online++;
+      const svcs = r.services ?? [];
+      if (svcs.some((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; })) online++;
     }
     return { total, active, suspended, cancelled, debt, online, totalDebt };
   }, [rows, onlineStatus]);
