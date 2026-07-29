@@ -74,6 +74,13 @@ if [[ -n "$DUMP_SQL" && ! -f "$DUMP_SQL" ]]; then
   err "No encontré el dump: $DUMP_SQL"
 fi
 
+# VPN opcional (SoftEther SSTP :443 para alcanzar MikroTiks detrás de NAT)
+INSTALL_VPN="${INSTALL_VPN:-}"
+if [[ -z "$INSTALL_VPN" && -t 0 ]]; then
+  ask INSTALL_VPN "¿Instalar también la VPN SoftEther (SSTP :443)? [y/N]" "n"
+fi
+case "${INSTALL_VPN,,}" in y|yes|s|si|sí|1|true) INSTALL_VPN=1 ;; *) INSTALL_VPN=0 ;; esac
+
 # ---------- 2. Dependencias base ----------
 warn "PASO 2/6 — Instalando dependencias del sistema"
 export DEBIAN_FRONTEND=noninteractive
