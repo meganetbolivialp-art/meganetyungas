@@ -2,29 +2,49 @@
 
 Un solo script hace todo: instala Docker, Supabase self-hosted (Postgres + Auth + API + Storage + Studio), Nginx con SSL Let's Encrypt, el frontend, el agente MikroTik y backups diarios.
 
-## Uso rápido
+## Uso rápido (1 comando en VPS limpio)
+
+> ⚠️ El repo `meganetbolivialp-art/control-shine-hub` es **privado**, así que
+> `curl https://raw.githubusercontent.com/...` devuelve **404**. Usá uno de
+> estos 3 métodos:
+
+### Método A — SCP (recomendado, sin GitHub)
 
 ```bash
-# 1. Conéctate al VPS de Contabo
-ssh root@TU_IP_CONTABO
+# Desde tu PC, en la carpeta del proyecto:
+scp deploy/install-full.sh root@TU_IP:/root/
+scp meganet-dump.sql        root@TU_IP:/root/   # opcional
 
-# 2. Descarga el script
-wget https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/deploy/install-meganet.sh
-# o súbelo por SCP:
-# scp deploy/install-meganet.sh root@TU_IP:/root/
+# En el VPS, subí el código con rsync (evita clonar de GitHub):
+rsync -az --exclude node_modules --exclude .git ./ root@TU_IP:/opt/meganet/
 
-# 3. Ejecuta
-chmod +x install-meganet.sh
-sudo bash install-meganet.sh
+# Ejecutá el instalador
+ssh root@TU_IP
+sudo GIT_REPO="" DUMP_SQL=/root/meganet-dump.sql bash /root/install-full.sh
 ```
 
-El script te preguntará:
-- **Dominio** (ej: `admin.tudominio.com`) o vacío para usar la IP
-- **Email** para el certificado SSL
-- **Admin inicial** (email + contraseña)
-- **Repo Git del frontend** (opcional, si no lo tienes se sube manual)
+Con `GIT_REPO=""` el script omite el clone y usa el código ya subido en
+`/opt/meganet`.
 
-Todo lo demás lo hace solo. Tarda **~10 minutos**.
+### Método B — Con Personal Access Token
+
+```bash
+export GH_TOKEN=ghp_xxxxxxxxxxxx   # PAT con scope 'repo'
+curl -fsSL -H "Authorization: token $GH_TOKEN" \
+  https://raw.githubusercontent.com/meganetbolivialp-art/control-shine-hub/main/deploy/install-full.sh \
+  | sudo -E GIT_REPO="https://$GH_TOKEN@github.com/meganetbolivialp-art/control-shine-hub.git" bash
+```
+
+### Método C — Hacer el repo público
+
+En GitHub → Settings → Danger Zone → Change visibility → Public. Después:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/meganetbolivialp-art/control-shine-hub/main/deploy/install-full.sh | sudo bash
+```
+
+El script pregunta: dominio (o vacío para IP), email SSL, admin inicial,
+dump SQL (opcional) y si instalar la VPN SoftEther. Tarda ~10 min.
 
 ## Qué instala
 
