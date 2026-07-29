@@ -265,7 +265,7 @@ services:
   kong:
     image: kong:2.8.1
     restart: unless-stopped
-    ports: ["8000:8000/tcp", "8443:8443/tcp"]
+    ports: ["127.0.0.1:8000:8000/tcp", "127.0.0.1:8443:8443/tcp"]
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
