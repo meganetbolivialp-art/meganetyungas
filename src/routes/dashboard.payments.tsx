@@ -366,6 +366,76 @@ function PaymentsPage() {
 
 
 
+        </div>
+      </div>
+
+      {/* Cobros por operador */}
+      <div className="bg-card border rounded-lg overflow-hidden mb-4">
+        <div className="px-3 py-2 border-b bg-muted/40 flex items-center gap-2">
+          <UserCog className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">Cobros por operador</div>
+          <div className="text-xs text-muted-foreground ml-auto">{dailyAgg?.ops.length ?? 0} operador(es) con cobros</div>
+        </div>
+        <div className="overflow-auto max-h-96">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left">Operador</th>
+                <th className="px-3 py-2 text-right">Días activos</th>
+                <th className="px-3 py-2 text-right">Clientes únicos</th>
+                <th className="px-3 py-2 text-right">Pagos</th>
+                <th className="px-3 py-2 text-left">Por método</th>
+                <th className="px-3 py-2 text-right">Total cobrado</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(dailyAgg?.ops ?? []).length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-6 text-muted-foreground text-xs">Sin cobros en el rango</td></tr>
+              ) : (dailyAgg!.ops).map(o => (
+                <tr key={o.user_id} className="border-t hover:bg-muted/30">
+                  <td className="px-3 py-2 font-medium truncate max-w-[200px]">{o.name}</td>
+                  <td className="px-3 py-2 text-right">{o.days}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-amber-600">{o.clients}</td>
+                  <td className="px-3 py-2 text-right">{o.count}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(o.byMethod).sort((a,b) => b[1]-a[1]).map(([m,v]) => (
+                        <span key={m} className="text-[10px] px-1.5 py-0.5 rounded text-white whitespace-nowrap" style={{ background: METHOD_COLOR[m] ?? "#64748b" }}>
+                          {METHOD_LABEL[m] ?? m}: {bs(v)}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-emerald-600 whitespace-nowrap">{bs(o.total)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => { if (o.user_id !== "__none__") { setOperator(o.user_id); setPage(0); } }}
+                      disabled={o.user_id === "__none__"}
+                      className="text-xs px-2 py-1 rounded border hover:bg-muted disabled:opacity-40"
+                      title="Filtrar por este operador"
+                    >Filtrar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {(dailyAgg?.ops.length ?? 0) > 0 && (
+              <tfoot className="bg-muted/40 text-xs font-semibold">
+                <tr className="border-t">
+                  <td className="px-3 py-2">TOTAL</td>
+                  <td className="px-3 py-2 text-right">—</td>
+                  <td className="px-3 py-2 text-right text-amber-700">{dailyAgg!.uniqueClients} únicos</td>
+                  <td className="px-3 py-2 text-right">{dailyAgg!.txCount}</td>
+                  <td></td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{bs(dailyAgg!.grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+
       {show && (
         <FormPanel onCancel={() => setShow(false)} onSave={create}>
           <Field label="Cliente *"><select value={f.client_id} onChange={e => setF({ ...f, client_id: e.target.value, invoice_id: "" })} className={inputCls}><option value="">Seleccionar</option>{clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}</select></Field>
