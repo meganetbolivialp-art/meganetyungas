@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
-import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer, Users, CalendarDays } from "lucide-react";
+import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer, Users, CalendarDays, UserCog } from "lucide-react";
 import { recordPayment } from "@/lib/isp.functions";
 import { getFinanceOperators } from "@/lib/finance.functions";
 import { printReceipt } from "@/lib/print-receipt";
@@ -100,7 +100,7 @@ function PaymentsPage() {
     queryFn: async () => {
       let q = supabase
         .from("payments")
-        .select("amount, paid_at, client_id, method, reference, clients(full_name)")
+        .select("amount, paid_at, client_id, method, reference, created_by, clients(full_name), profiles:created_by(full_name, email)")
         .gte("paid_at", `${from}T00:00:00`)
         .lte("paid_at", `${to}T23:59:59`)
         .order("paid_at", { ascending: false })
@@ -117,6 +117,7 @@ function PaymentsPage() {
           (r.reference ?? "").toLowerCase().includes(s));
       }
       const byDay = new Map<string, { day: string; clients: Set<string>; count: number; total: number }>();
+      const byOp = new Map<string, { user_id: string; name: string; clients: Set<string>; days: Set<string>; count: number; total: number; byMethod: Record<string, number> }>();
       const allClients = new Set<string>();
       let grandTotal = 0;
       for (const p of all) {
@@ -127,11 +128,24 @@ function PaymentsPage() {
         b.count += 1;
         b.total += Number(p.amount);
         grandTotal += Number(p.amount);
+
+        const opId = p.created_by ?? "__none__";
+        const opName = p.profiles?.full_name ?? p.profiles?.email ?? (p.created_by ? "—" : "Sin operador");
+        if (!byOp.has(opId)) byOp.set(opId, { user_id: opId, name: opName, clients: new Set(), days: new Set(), count: 0, total: 0, byMethod: {} });
+        const o = byOp.get(opId)!;
+        if (p.client_id) o.clients.add(p.client_id);
+        o.days.add(day);
+        o.count += 1;
+        o.total += Number(p.amount);
+        o.byMethod[p.method] = (o.byMethod[p.method] ?? 0) + Number(p.amount);
       }
       const days = Array.from(byDay.values())
         .map(d => ({ day: d.day, clients: d.clients.size, count: d.count, total: d.total }))
         .sort((a, b) => b.day.localeCompare(a.day));
-      return { days, uniqueClients: allClients.size, grandTotal, txCount: all.length };
+      const ops = Array.from(byOp.values())
+        .map(o => ({ user_id: o.user_id, name: o.name, clients: o.clients.size, days: o.days.size, count: o.count, total: o.total, byMethod: o.byMethod }))
+        .sort((a, b) => b.total - a.total);
+      return { days, ops, uniqueClients: allClients.size, grandTotal, txCount: all.length };
     },
     refetchInterval: 30000,
   });
@@ -350,7 +364,72 @@ function PaymentsPage() {
         </div>
       </div>
 
-
+      {/* Cobros por operador */}
+      <div className="bg-card border rounded-lg overflow-hidden mb-4">
+        <div className="px-3 py-2 border-b bg-muted/40 flex items-center gap-2">
+          <UserCog className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">Cobros por operador</div>
+          <div className="text-xs text-muted-foreground ml-auto">{dailyAgg?.ops.length ?? 0} operador(es) con cobros</div>
+        </div>
+        <div className="overflow-auto max-h-96">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left">Operador</th>
+                <th className="px-3 py-2 text-right">Días activos</th>
+                <th className="px-3 py-2 text-right">Clientes únicos</th>
+                <th className="px-3 py-2 text-right">Pagos</th>
+                <th className="px-3 py-2 text-left">Por método</th>
+                <th className="px-3 py-2 text-right">Total cobrado</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(dailyAgg?.ops ?? []).length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-6 text-muted-foreground text-xs">Sin cobros en el rango</td></tr>
+              ) : (dailyAgg!.ops).map(o => (
+                <tr key={o.user_id} className="border-t hover:bg-muted/30">
+                  <td className="px-3 py-2 font-medium truncate max-w-[200px]">{o.name}</td>
+                  <td className="px-3 py-2 text-right">{o.days}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-amber-600">{o.clients}</td>
+                  <td className="px-3 py-2 text-right">{o.count}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(o.byMethod).sort((a,b) => b[1]-a[1]).map(([m,v]) => (
+                        <span key={m} className="text-[10px] px-1.5 py-0.5 rounded text-white whitespace-nowrap" style={{ background: METHOD_COLOR[m] ?? "#64748b" }}>
+                          {METHOD_LABEL[m] ?? m}: {bs(v)}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-emerald-600 whitespace-nowrap">{bs(o.total)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => { if (o.user_id !== "__none__") { setOperator(o.user_id); setPage(0); } }}
+                      disabled={o.user_id === "__none__"}
+                      className="text-xs px-2 py-1 rounded border hover:bg-muted disabled:opacity-40"
+                      title="Filtrar por este operador"
+                    >Filtrar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {(dailyAgg?.ops.length ?? 0) > 0 && (
+              <tfoot className="bg-muted/40 text-xs font-semibold">
+                <tr className="border-t">
+                  <td className="px-3 py-2">TOTAL</td>
+                  <td className="px-3 py-2 text-right">—</td>
+                  <td className="px-3 py-2 text-right text-amber-700">{dailyAgg!.uniqueClients} únicos</td>
+                  <td className="px-3 py-2 text-right">{dailyAgg!.txCount}</td>
+                  <td></td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{bs(dailyAgg!.grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
 
       {show && (
         <FormPanel onCancel={() => setShow(false)} onSave={create}>
