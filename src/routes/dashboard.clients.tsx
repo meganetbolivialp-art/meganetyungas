@@ -734,8 +734,8 @@ function ClientsPage() {
               const busy = busyIds.has(r.id);
               const st = r.status;
               const connStatus = getClientOnlineStatus(r);
-              const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
-              const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+              const onlineSvc = r.services?.find((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; });
+              const activeInfo = connStatus === "online" && onlineSvc ? onlineStatus[svcOnlineKey(onlineSvc)!] : null;
               const zebra = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
               const rowTint = st === "suspended" ? "!bg-amber-50/70"
                 : st === "cancelled" ? "!bg-rose-50/60"
