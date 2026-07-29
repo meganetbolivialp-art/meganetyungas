@@ -144,18 +144,21 @@ function RoutersPage() {
   useEffect(() => {
     if (!autoPoll) return;
     let cancelled = false;
+    const hasSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      return !!data.session;
+    };
     const tick = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        await pingAllFn({});
-        const p: any = await pendingFn({}).catch(() => null);
-        if (!cancelled) {
-          setLastPoll(Date.now());
-          if (p) setPending(p);
-          await load();
-        }
-      } catch (e) { console.error("auto-ping failed", e); }
+      if (cancelled) return;
+      if (!(await hasSession())) return;
+      await pingAllFn({}).catch((e) => console.error("ping failed", e));
+      if (cancelled || !(await hasSession())) return;
+      const p: any = await pendingFn({}).catch(() => null);
+      if (cancelled) return;
+      setLastPoll(Date.now());
+      if (p) setPending(p);
+      if (!(await hasSession())) return;
+      await load().catch((e) => console.error("load failed", e));
     };
     tick();
     const id = setInterval(tick, 30000);
