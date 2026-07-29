@@ -608,8 +608,8 @@ function ClientsPage() {
               : "bg-slate-50 text-slate-700 ring-1 ring-slate-200";
             const stLabel = st === "active" ? "Activo" : st === "suspended" ? "Suspendido" : st === "cancelled" ? "Cancelado" : st;
             const connStatus = getClientOnlineStatus(r);
-            const onlinePppoe = r.services?.find((s: any) => s.pppoe_user && onlineStatus[s.pppoe_user]);
-            const activeInfo = connStatus === "online" && onlinePppoe?.pppoe_user ? onlineStatus[onlinePppoe.pppoe_user] : null;
+            const onlineSvc = r.services?.find((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; });
+            const activeInfo = connStatus === "online" && onlineSvc ? onlineStatus[svcOnlineKey(onlineSvc)!] : null;
             const connBadge = connStatus === "online"
               ? { icon: Wifi, cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200", label: "En línea" }
               : connStatus === "offline"
