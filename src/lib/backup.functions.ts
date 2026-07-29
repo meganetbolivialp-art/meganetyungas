@@ -122,8 +122,7 @@ export const restoreBackup = createServerFn({ method: "POST" })
         await supabaseAdmin.from(t as any).delete().gte("created_at", "1900-01-01");
       }
 
-      const { error, count } = await supabaseAdmin
-        .from(t)
+      const { error, count } = await (supabaseAdmin.from(t as any) as any)
         .upsert(rows, { onConflict: "id", ignoreDuplicates: false, count: "exact" });
       if (error) {
         results.push({ table: t, inserted: 0, error: error.message });
