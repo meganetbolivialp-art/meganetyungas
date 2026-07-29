@@ -30,18 +30,23 @@ export function usePermissions() {
     queryKey: ["my-permissions", authUserId],
     enabled: Boolean(authUserId),
     staleTime: 60_000,
+    retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async () => {
       const uid = authUserId as string;
-      const [rolesRes, empRes] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", uid),
-        supabase.from("employees")
+      let isAdmin = false;
+      let emp: any = null;
+      try {
+        const rolesRes = await supabase.from("user_roles").select("role").eq("user_id", uid);
+        isAdmin = (rolesRes.data ?? []).some((r: any) => r.role === "admin");
+      } catch {}
+      try {
+        const empRes = await supabase.from("employees")
           .select("id, full_name, operator_type, permissions, router_ids, status, access_days, access_from, access_to")
           .eq("user_id", uid)
-          .maybeSingle(),
-      ]);
-      const isAdmin = (rolesRes.data ?? []).some((r: any) => r.role === "admin");
-      const emp = empRes.data ?? null;
+          .maybeSingle();
+        emp = empRes.data ?? null;
+      } catch {}
       return {
         isAdmin,
         employee: emp,
@@ -62,8 +67,8 @@ export function usePermissions() {
     ...data,
     can,
     canView,
-    // Sólo bloquea al primer load; refetch silencioso no oculta el menú.
-    loading: authUserId === undefined || (Boolean(authUserId) && q.isLoading && !q.data),
+    // Solo bloquea al primer load; ante error o éxito muestra el menú.
+    loading: authUserId === undefined || (Boolean(authUserId) && q.isLoading && !q.data && !q.isError),
   };
 }
 
