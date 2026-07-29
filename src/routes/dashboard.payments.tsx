@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
-import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer } from "lucide-react";
+import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer, Users, CalendarDays } from "lucide-react";
 import { recordPayment } from "@/lib/isp.functions";
 import { getFinanceOperators } from "@/lib/finance.functions";
 import { printReceipt } from "@/lib/print-receipt";
