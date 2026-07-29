@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
-import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer } from "lucide-react";
+import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer, Users, CalendarDays } from "lucide-react";
 import { recordPayment } from "@/lib/isp.functions";
 import { getFinanceOperators } from "@/lib/finance.functions";
 import { printReceipt } from "@/lib/print-receipt";
@@ -92,6 +92,48 @@ function PaymentsPage() {
       return { rows, count: count ?? 0 };
     },
     refetchInterval: 15000,
+  });
+
+  // Agregado diario en todo el rango (no solo página): clientes únicos, # pagos, total
+  const { data: dailyAgg } = useQuery({
+    queryKey: ["payments-daily", from, to, operator, method, search],
+    queryFn: async () => {
+      let q = supabase
+        .from("payments")
+        .select("amount, paid_at, client_id, method, reference, clients(full_name)")
+        .gte("paid_at", `${from}T00:00:00`)
+        .lte("paid_at", `${to}T23:59:59`)
+        .order("paid_at", { ascending: false })
+        .limit(10000);
+      if (operator) q = q.eq("created_by", operator);
+      if (method) q = q.eq("method", method);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      let all = (data ?? []) as any[];
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        all = all.filter((r: any) =>
+          (r.clients?.full_name ?? "").toLowerCase().includes(s) ||
+          (r.reference ?? "").toLowerCase().includes(s));
+      }
+      const byDay = new Map<string, { day: string; clients: Set<string>; count: number; total: number }>();
+      const allClients = new Set<string>();
+      let grandTotal = 0;
+      for (const p of all) {
+        const day = String(p.paid_at).slice(0, 10);
+        if (!byDay.has(day)) byDay.set(day, { day, clients: new Set(), count: 0, total: 0 });
+        const b = byDay.get(day)!;
+        if (p.client_id) { b.clients.add(p.client_id); allClients.add(p.client_id); }
+        b.count += 1;
+        b.total += Number(p.amount);
+        grandTotal += Number(p.amount);
+      }
+      const days = Array.from(byDay.values())
+        .map(d => ({ day: d.day, clients: d.clients.size, count: d.count, total: d.total }))
+        .sort((a, b) => b.day.localeCompare(a.day));
+      return { days, uniqueClients: allClients.size, grandTotal, txCount: all.length };
+    },
+    refetchInterval: 30000,
   });
 
   const rows = result?.rows ?? [];
@@ -231,10 +273,11 @@ function PaymentsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-        <KpiCard label="Total del rango" value={bs(pageTotal)} sub={`${rows.length} pagos en esta página`} icon={Wallet} tone="emerald" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+        <KpiCard label="Cobrado (rango)" value={bs(dailyAgg?.grandTotal ?? 0)} sub={`${dailyAgg?.txCount ?? 0} pagos`} icon={Wallet} tone="emerald" />
+        <KpiCard label="Clientes que pagaron" value={dailyAgg?.uniqueClients ?? 0} sub={`en ${dailyAgg?.days.length ?? 0} día(s)`} icon={Users} tone="amber" />
         <KpiCard label="Transacciones (total)" value={total} sub={`${totalPages} página(s)`} icon={CreditCard} tone="cyan" />
-        <KpiCard label="Ticket promedio" value={bs(rows.length ? pageTotal / rows.length : 0)} sub="Página actual" icon={TrendingUp} tone="indigo" />
+        <KpiCard label="Ticket promedio" value={bs(dailyAgg && dailyAgg.txCount ? dailyAgg.grandTotal / dailyAgg.txCount : 0)} sub="Rango completo" icon={TrendingUp} tone="indigo" />
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Por método (página)</div>
           {Object.keys(byMethod).length === 0 ? (
@@ -254,6 +297,60 @@ function PaymentsPage() {
           )}
         </div>
       </div>
+
+      {/* Clientes pagados por fecha */}
+      <div className="bg-card border rounded-lg overflow-hidden mb-4">
+        <div className="px-3 py-2 border-b bg-muted/40 flex items-center gap-2">
+          <CalendarDays className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">Clientes pagados por fecha</div>
+          <div className="text-xs text-muted-foreground ml-auto">{dailyAgg?.days.length ?? 0} día(s) con cobros</div>
+        </div>
+        <div className="overflow-auto max-h-80">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <tr>
+                <th className="px-3 py-2 text-left">Fecha</th>
+                <th className="px-3 py-2 text-right">Clientes únicos</th>
+                <th className="px-3 py-2 text-right">Pagos</th>
+                <th className="px-3 py-2 text-right">Total cobrado</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(dailyAgg?.days ?? []).length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-6 text-muted-foreground text-xs">Sin cobros en el rango</td></tr>
+              ) : (dailyAgg!.days).map(d => (
+                <tr key={d.day} className="border-t hover:bg-muted/30">
+                  <td className="px-3 py-2 font-medium">{new Date(d.day + "T12:00:00").toLocaleDateString("es-BO", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-amber-600">{d.clients}</td>
+                  <td className="px-3 py-2 text-right">{d.count}</td>
+                  <td className="px-3 py-2 text-right font-semibold text-emerald-600">{bs(d.total)}</td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => { setFrom(d.day); setTo(d.day); setPage(0); }}
+                      className="text-xs px-2 py-1 rounded border hover:bg-muted"
+                      title="Ver pagos de este día"
+                    >Ver día</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {(dailyAgg?.days.length ?? 0) > 0 && (
+              <tfoot className="bg-muted/40 text-xs font-semibold">
+                <tr className="border-t">
+                  <td className="px-3 py-2">TOTAL</td>
+                  <td className="px-3 py-2 text-right text-amber-700">{dailyAgg!.uniqueClients} únicos</td>
+                  <td className="px-3 py-2 text-right">{dailyAgg!.txCount}</td>
+                  <td className="px-3 py-2 text-right text-emerald-700">{bs(dailyAgg!.grandTotal)}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+
+
 
       {show && (
         <FormPanel onCancel={() => setShow(false)} onSave={create}>
