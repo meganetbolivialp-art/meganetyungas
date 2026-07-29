@@ -108,9 +108,9 @@ function PaymentsPage() {
     queryFn: async () => {
       let q = supabase
         .from("payments")
-        .select("amount, paid_at, client_id, method, reference, created_by, clients(full_name), profiles:created_by(full_name, email)")
+        .select("amount, paid_at, client_id, method, reference, created_by, clients(full_name)")
         .gte("paid_at", `${from}T00:00:00`)
-        .lte("paid_at", `${to}T23:59:59`)
+        .lte("paid_at", `${to}T23:59:59.999`)
         .order("paid_at", { ascending: false })
         .limit(10000);
       if (operator) q = q.eq("created_by", operator);
@@ -118,6 +118,13 @@ function PaymentsPage() {
       const { data, error } = await q;
       if (error) throw new Error(error.message);
       let all = (data ?? []) as any[];
+      const opIds = Array.from(new Set(all.map(r => r.created_by).filter(Boolean)));
+      let opMap: Record<string, { full_name: string | null; email: string | null }> = {};
+      if (opIds.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("id, full_name, email").in("id", opIds);
+        for (const p of profs ?? []) opMap[p.id] = { full_name: (p as any).full_name, email: (p as any).email };
+      }
+      all = all.map(r => ({ ...r, profiles: r.created_by ? opMap[r.created_by] ?? null : null }));
       if (search.trim()) {
         const s = search.toLowerCase();
         all = all.filter((r: any) =>
