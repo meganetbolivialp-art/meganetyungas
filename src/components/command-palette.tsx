@@ -41,7 +41,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return;
     const term = q.trim();
     if (!term) {
-      setResults(NAV_ITEMS);
+      setResults([]);
       return;
     }
     setLoading(true);
