@@ -117,6 +117,21 @@ else
   info "PASO 5/6 — Sin dump, instalación fresca (skip import)"
 fi
 
+# ---------- 5b. VPN opcional ----------
+if [[ "$INSTALL_VPN" == "1" ]]; then
+  warn "PASO 5b — Instalando VPN SoftEther SSTP :443"
+  if ss -tlnp 2>/dev/null | grep -q ':443 '; then
+    warn "Puerto 443 ocupado (Nginx del panel). Saltando instalación de VPN."
+    warn "Para VPN dedicada usá un VPS aparte y corré: bash $INSTALL_DIR/deploy/install-vpn-contabo.sh"
+  else
+    bash "$INSTALL_DIR/deploy/install-vpn-contabo.sh"
+    log "VPN instalada. Credenciales en /root/meganet-vpn-credentials.txt"
+    log "Agregar routers con: sudo bash $INSTALL_DIR/deploy/vpn-add-router.sh <nombre> <ip>"
+  fi
+else
+  info "VPN no solicitada (skip)"
+fi
+
 # ---------- 6. Verificación final ----------
 warn "PASO 6/6 — Verificación"
 sleep 3
