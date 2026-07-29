@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye, Clock } from "lucide-react";
+import { Wifi, WifiOff, Zap, Loader2, Radio, Activity, Pencil, Trash2, Wrench, Users, Printer, Search, Maximize2, RefreshCw, Minus, Network, Download, Star, X, Eye, Clock, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { FormPanel, Field, inputCls } from "@/components/ui-kit";
 import { testRouterConnection, listActiveSessions, pingAllRouters, importRouterPools, listRouterPools, upsertRouterPool, deleteRouterPool, poolIpUsage, pendingOpsSummary, flushRouterQueue } from "@/lib/isp.functions";
 import { oneClickProvisionRouter } from "@/lib/router-oneclick.functions";
+import { applyBasicSafeSetup, undoBasicSafeSetup } from "@/lib/router-basic-setup.functions";
 
 
 
