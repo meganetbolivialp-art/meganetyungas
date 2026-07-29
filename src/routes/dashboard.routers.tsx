@@ -603,6 +603,65 @@ function RoutersPage() {
         </div>
       )}
 
+      {setupFor && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !setupBusy && setSetupFor(null)}>
+          <div className="bg-background rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-3 border-b bg-teal-600 text-white">
+              <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /><span className="font-semibold text-sm">Configuración básica y segura — {setupFor.name}</span></div>
+              <button onClick={() => setSetupFor(null)} disabled={setupBusy} className="p-1 hover:bg-white/10 rounded disabled:opacity-50"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-4 space-y-3 overflow-auto">
+              <div className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded p-2">
+                Solo <b>agrega</b> lo mínimo necesario. No modifica reglas existentes, no toca NAT, DNS ni rutas. Todo lo agregado lleva el comentario <code>meganet-panel-*</code> y podés deshacerlo.
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={setupOpts.setIdentity} onChange={e => setSetupOpts(o => ({ ...o, setIdentity: e.target.checked }))} /> Poner nombre del router (<code>/system identity</code>)</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={setupOpts.enableApi} onChange={e => setSetupOpts(o => ({ ...o, enableApi: e.target.checked }))} /> Habilitar servicio API en 8728</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={setupOpts.allowApiFromVpn} onChange={e => setSetupOpts(o => ({ ...o, allowApiFromVpn: e.target.checked }))} /> Permitir API desde OVPN (<code>ovpn-panel</code>)</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={setupOpts.enableNtp} onChange={e => setSetupOpts(o => ({ ...o, enableNtp: e.target.checked }))} /> Activar NTP (hora correcta para cortes programados)</label>
+              </div>
+
+              {setupPreview && (
+                <div className="border rounded overflow-hidden">
+                  <div className="px-3 py-1.5 bg-slate-100 text-xs font-semibold">Comandos a ejecutar</div>
+                  <ul className="divide-y">
+                    {setupPreview.map((s: any, i: number) => (
+                      <li key={i} className="p-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className={
+                            s.status === "ok" ? "px-1.5 py-px rounded bg-emerald-100 text-emerald-700 text-[10px]" :
+                            s.status === "skipped" ? "px-1.5 py-px rounded bg-slate-100 text-slate-600 text-[10px]" :
+                            s.status === "error" ? "px-1.5 py-px rounded bg-red-100 text-red-700 text-[10px]" :
+                            "px-1.5 py-px rounded bg-blue-100 text-blue-700 text-[10px]"
+                          }>{s.status}</span>
+                          <span className="font-semibold">{s.label}</span>
+                          {s.detail && <span className="text-muted-foreground">· {s.detail}</span>}
+                        </div>
+                        <code className="block mt-1 text-[11px] text-slate-600 bg-slate-50 rounded p-1 font-mono break-all">{s.command}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="p-3 border-t bg-muted/30 flex items-center justify-between gap-2 flex-wrap">
+              <button onClick={runUndo} disabled={setupBusy} className="mw-btn mw-btn-outline text-red-600 border-red-300 disabled:opacity-50" title="Elimina solo lo que agregó este asistente">
+                <Trash2 className="w-3.5 h-3.5" /> Deshacer
+              </button>
+              <div className="flex items-center gap-2 ml-auto">
+                <button onClick={() => setSetupFor(null)} disabled={setupBusy} className="mw-btn mw-btn-outline">Cancelar</button>
+                <button onClick={runPreview} disabled={setupBusy} className="mw-btn mw-btn-outline">
+                  {setupBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />} Vista previa
+                </button>
+                <button onClick={runApply} disabled={setupBusy} className="mw-btn mw-btn-primary bg-teal-600 hover:bg-teal-700">
+                  {setupBusy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Aplicando…</> : <><ShieldCheck className="w-3.5 h-3.5" /> Aplicar</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </AdminLayout>
   );
 }
