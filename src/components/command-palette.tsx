@@ -41,7 +41,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return;
     const term = q.trim();
     if (!term) {
-      setResults(NAV_ITEMS);
+      setResults([]);
       return;
     }
     setLoading(true);
@@ -98,7 +98,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {loading && <div className="px-4 py-3 text-xs text-muted-foreground">Buscando...</div>}
-          {!loading && results.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Sin resultados</div>}
+          {!loading && q.trim() === "" && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Escribe para buscar clientes, PPPoE, IP, facturas...</div>}
+          {!loading && q.trim() !== "" && results.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Sin resultados</div>}
           {results.map((r, i) => {
             const Icon = icon(r.type);
             return (
