@@ -29,6 +29,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [showRescue, setShowRescue] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
 
   useEffect(() => {
