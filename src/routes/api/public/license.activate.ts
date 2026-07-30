@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/public/license/activate")({
         // Bind IP on first activation; reject if trying to use elsewhere
         if (lic.bound_ip && ip && lic.bound_ip !== ip) {
           await log(supabaseAdmin, lic.id, key, "activate", ip, hostname, "ip_mismatch", `Bound to ${lic.bound_ip}`);
-          return json({ ok: false, error: "ip_mismatch", bound_ip: lic.bound_ip }, 403);
+          return json({ ok: false, error: "ip_mismatch" }, 403);
         }
 
         const now = new Date().toISOString();
