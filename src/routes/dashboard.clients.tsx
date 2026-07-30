@@ -880,7 +880,7 @@ function ClientsPage() {
 
       {/* MODAL WIZARD 3 pasos estilo Mikrowisp */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
+        <div data-modal-open="cliente-nuevo" className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
           <div className="min-h-full flex items-start justify-center p-4">
             <div className="w-full max-w-6xl bg-card rounded-lg shadow-2xl border">
               {/* Header modal */}
