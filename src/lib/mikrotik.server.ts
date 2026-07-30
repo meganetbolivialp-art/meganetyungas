@@ -259,6 +259,11 @@ type Breaker = { fails: number; openUntil: number };
 const routerBreakers = new Map<string, Breaker>();
 const BREAKER_THRESHOLD = 2;
 const BREAKER_COOLDOWN_MS = 15_000;
+// Credenciales inválidas: cooldown largo. Evita repetir /login con la misma contraseña
+// equivocada (llena el log del MikroTik con "login failure" y dispara sus bloqueos).
+const AUTH_COOLDOWN_MS = 10 * 60_000;
+const AUTH_FAIL_RE = /(login failed|cannot log in|invalid user name or password|not allowed)/i;
+
 
 function breakerFor(id: string): Breaker {
   let b = routerBreakers.get(id);
