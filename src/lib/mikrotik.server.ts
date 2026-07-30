@@ -6,6 +6,8 @@
 // (not implemented here — mark those routers as `simulated`).
 
 import net from "node:net";
+import tls from "node:tls";
+import crypto from "node:crypto";
 
 export type MtRouter = {
   id: string;
