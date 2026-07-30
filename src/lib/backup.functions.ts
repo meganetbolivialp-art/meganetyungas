@@ -165,8 +165,19 @@ export const restoreBackup = createServerFn({ method: "POST" })
         await supabaseAdmin.from(t as any).delete().gte("created_at", "1900-01-01");
       }
 
+      // Los campos sensibles vienen vacíos en el backup: no pisar los valores actuales.
+      const sensitive = SENSITIVE_FIELDS[t as string] ?? [];
+      const safeRows = sensitive.length
+        ? rows.map((r: any) => {
+            const copy = { ...r };
+            for (const f of sensitive) if (copy[f] == null) delete copy[f];
+            return copy;
+          })
+        : rows;
+
       const { error, count } = await (supabaseAdmin.from(t as any) as any)
-        .upsert(rows, { onConflict: "id", ignoreDuplicates: false, count: "exact" });
+        .upsert(safeRows, { onConflict: "id", ignoreDuplicates: false, count: "exact" });
+
       if (error) {
         results.push({ table: t, inserted: 0, error: error.message });
       } else {
