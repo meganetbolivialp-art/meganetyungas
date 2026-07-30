@@ -17,11 +17,37 @@ err()  { echo -e "${R}[✗]${N} $*" >&2; exit 1; }
 
 [[ $EUID -eq 0 ]] || err "Ejecuta como root: sudo bash deploy/update-vps.sh"
 
-INSTALL_DIR="/opt/meganet"
+INSTALL_DIR="${MEGANET_DIR:-/opt/meganet}"
 FRONT_DIR="$INSTALL_DIR/frontend-src"
 AGENT_DIR="$INSTALL_DIR/agent"
 
-cd "$FRONT_DIR" || err "No se encuentra $FRONT_DIR"
+# --- Autodetección: el panel puede estar en otra ruta ---------------------
+if [[ ! -d "$FRONT_DIR" ]]; then
+  warn "No existe $FRONT_DIR. Buscando la instalación en el sistema..."
+  FOUND=""
+  for cand in /opt/meganet/frontend-src /opt/meganet /opt/mikrosystem /root/control-shine-hub /root/meganet /var/www/meganet; do
+    [[ -f "$cand/package.json" ]] && { FOUND="$cand"; break; }
+  done
+  if [[ -z "$FOUND" ]]; then
+    FOUND=$(find /opt /root /var/www /srv -maxdepth 4 -name package.json -not -path '*/node_modules/*' 2>/dev/null | head -n1 | xargs -r dirname)
+  fi
+  if [[ -n "$FOUND" ]]; then
+    FRONT_DIR="$FOUND"
+    INSTALL_DIR="$(dirname "$FOUND")"
+    AGENT_DIR="$INSTALL_DIR/agent"
+    log "Instalación detectada en $FRONT_DIR"
+  else
+    echo ""
+    err "No hay ninguna instalación de MIKROSYSTEM en este servidor.
+     Este VPS todavía no tiene el panel instalado (es probable que estés en el VPS de la VPN).
+     Para instalarlo por primera vez ejecutá:
+       bash <(curl -fsSL https://raw.githubusercontent.com/meganetbolivialp-art/control-shine-hub/main/deploy/install-full.sh)
+     O, si el panel vive en otro servidor, conectate a ese servidor y corré este script allí."
+  fi
+fi
+
+mkdir -p "$AGENT_DIR"
+cd "$FRONT_DIR"
 
 clear
 log "Actualizando MIKROSYSTEM desde el repositorio Git..."
