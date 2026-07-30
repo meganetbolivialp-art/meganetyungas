@@ -878,22 +878,37 @@ function ClientsPage() {
         )}
       </div>
 
-      {/* MODAL WIZARD 3 pasos estilo Mikrowisp */}
+      {/* MODAL WIZARD 3 pasos */}
       {showForm && (
-        <div data-modal-open="cliente-nuevo" className="fixed inset-0 z-50 bg-black/50 overflow-y-auto">
-          <div className="min-h-full flex items-start justify-center p-4">
-            <div className="w-full max-w-6xl bg-card rounded-lg shadow-2xl border">
+        <div data-modal-open="cliente-nuevo" className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="min-h-full flex items-start justify-center p-3 sm:p-6">
+            <div className="w-full max-w-6xl bg-card rounded-2xl shadow-2xl border overflow-hidden animate-in zoom-in-95 duration-200">
               {/* Header modal */}
-              <div className="flex items-center justify-between px-6 py-4 border-b">
-                <div>
-                  <h2 className="text-xl font-semibold">Nuevo Cliente</h2>
-                  <div className="text-xs text-muted-foreground mt-0.5">Inicio / Usuarios / <span className="text-primary">Nuevo cliente</span></div>
+              <div className="relative px-5 sm:px-7 py-5 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary grid place-items-center shrink-0">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-lg sm:text-xl font-semibold tracking-tight truncate">Nuevo Cliente</h2>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        Inicio / Usuarios / <span className="text-primary font-medium">Nuevo cliente</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={closeForm} aria-label="Cerrar" className="shrink-0 p-2 rounded-lg border bg-card/60 hover:bg-muted transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button onClick={closeForm} className="p-2 rounded hover:bg-muted"><X className="w-4 h-4" /></button>
+                {/* Barra de progreso */}
+                <div className="mt-4 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${(step / 3) * 100}%` }} />
+                </div>
               </div>
 
               {/* Stepper */}
-              <div className="grid grid-cols-3 border-b">
+              <div className="grid grid-cols-3 border-b bg-muted/20">
                 {[
                   { n: 1, t: "Datos personales", s: "Nombre, dirección, teléfonos" },
                   { n: 2, t: "Facturación y Notificaciones", s: "Día de pago, Corte, aviso" },
@@ -902,15 +917,19 @@ function ClientsPage() {
                   const done = step > s.n;
                   const active = step === s.n;
                   return (
-                    <div key={s.n} className={`flex items-center gap-3 px-5 py-4 border-r last:border-r-0 ${active ? "text-primary-foreground" : done ? "text-foreground" : "text-muted-foreground"}`}
-                      style={active ? { background: "hsl(207 90% 54%)" } : undefined}>
-                      <div className={`w-8 h-8 rounded-full grid place-items-center text-xs font-bold shrink-0
-                        ${active ? "bg-white/25" : done ? "bg-emerald-500 text-white" : "bg-muted"}`}>
+                    <div
+                      key={s.n}
+                      className={`relative flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3.5 border-r last:border-r-0 transition-colors
+                        ${active ? "bg-card" : done ? "bg-card/60" : ""}`}
+                    >
+                      {active && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
+                      <div className={`w-8 h-8 rounded-full grid place-items-center text-xs font-bold shrink-0 transition-colors
+                        ${active ? "bg-primary text-primary-foreground shadow-sm" : done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
                         {done ? <Check className="w-4 h-4" /> : s.n}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold truncate">{s.t}</div>
-                        <div className={`text-[11px] ${active ? "text-white/80" : "text-muted-foreground"} truncate`}>{s.s}</div>
+                      <div className="min-w-0 hidden sm:block">
+                        <div className={`text-sm font-semibold truncate ${active ? "text-foreground" : done ? "text-foreground" : "text-muted-foreground"}`}>{s.t}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">{s.s}</div>
                       </div>
                     </div>
                   );
@@ -918,18 +937,18 @@ function ClientsPage() {
               </div>
 
               {/* Body */}
-              <div className="p-6 max-h-[calc(100vh-260px)] overflow-y-auto">
+              <div className="p-5 sm:p-7 max-h-[calc(100vh-280px)] overflow-y-auto">
                 {step === 1 && <Step1 form={form} set={set} />}
                 {step === 2 && <Step2 form={form} set={set} policies={policies} />}
                 {step === 3 && <Step3 form={form} set={set} plans={plans} routers={routers} genCreds={genCreds} />}
 
                 {steps && (
-                  <div className="mt-4 rounded border bg-muted/30 p-4">
-                    <div className="text-xs font-semibold mb-2">Progreso de alta</div>
-                    <ul className="space-y-1 text-sm">
+                  <div className="mt-5 rounded-xl border bg-muted/30 p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Progreso de alta</div>
+                    <ul className="space-y-1.5 text-sm">
                       {steps.map(s => (
                         <li key={s.key} className="flex items-center gap-2">
-                          {s.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <XCircle className="w-4 h-4 text-destructive" />}
+                          {s.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
                           <span className="font-medium capitalize">{s.key}</span>
                           {s.detail && <span className="text-xs text-muted-foreground">— {s.detail}</span>}
                         </li>
@@ -940,33 +959,39 @@ function ClientsPage() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t flex items-center justify-end gap-2 bg-muted/20">
-                {step > 1 && (
-                  <button onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} className="px-5 py-2 rounded-md border text-sm inline-flex items-center gap-1">
-                    <ChevronLeft className="w-4 h-4" /> Anterior
-                  </button>
-                )}
-                {step < 3 && (
-                  <button
-                    onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
-                    disabled={step === 1 && !canNext1}
-                    className="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm disabled:opacity-50"
-                  >
-                    Siguiente
-                  </button>
-                )}
-                {step === 3 && (
-                  <button onClick={submit} disabled={saving || !canRegister}
-                    className="px-6 py-2 rounded-md bg-primary text-primary-foreground text-sm inline-flex items-center gap-2 disabled:opacity-60">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
-                    {saving ? "Registrando..." : "Registrar Cliente"}
-                  </button>
-                )}
+              <div className="px-5 sm:px-7 py-4 border-t bg-muted/30 grid grid-cols-[auto_1fr_auto] items-center gap-3">
+                <div>
+                  {step > 1 && (
+                    <button onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)} className="px-4 sm:px-5 py-2 rounded-lg border bg-card text-sm inline-flex items-center gap-1 hover:bg-muted transition-colors">
+                      <ChevronLeft className="w-4 h-4" /> Anterior
+                    </button>
+                  )}
+                </div>
+                <div className="text-[11px] text-muted-foreground text-center hidden sm:block">Paso {step} de 3</div>
+                <div className="flex justify-end">
+                  {step < 3 && (
+                    <button
+                      onClick={() => setStep((s) => (s + 1) as 1 | 2 | 3)}
+                      disabled={step === 1 && !canNext1}
+                      className="px-6 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Siguiente
+                    </button>
+                  )}
+                  {step === 3 && (
+                    <button onClick={submit} disabled={saving || !canRegister}
+                      className="px-6 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm inline-flex items-center gap-2 hover:opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed">
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
+                      {saving ? "Registrando..." : "Registrar Cliente"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
+
 
       {/* MODAL EDITAR CLIENTE */}
       {editing && (
