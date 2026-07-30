@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { safeReturnUrls, assertSameSite } from "@/lib/gateway-urls";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -9,8 +10,9 @@ async function admin() {
 // Crea sesión de Stripe Checkout para una factura
 export const createStripeCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { invoiceId: string; successUrl: string; cancelUrl: string }) => d)
+  .inputValidator(safeReturnUrls)
   .handler(async ({ data, context }) => {
+    assertSameSite([data.successUrl, data.cancelUrl], process.env.PUBLIC_SITE_URL);
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error("Stripe no configurado (falta STRIPE_SECRET_KEY)");
     const { data: inv, error } = await context.supabase
@@ -59,8 +61,9 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
 // MercadoPago Checkout (preference)
 export const createMPCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { invoiceId: string; successUrl: string; cancelUrl: string }) => d)
+  .inputValidator(safeReturnUrls)
   .handler(async ({ data, context }) => {
+    assertSameSite([data.successUrl, data.cancelUrl], process.env.PUBLIC_SITE_URL);
     const token = process.env.MP_ACCESS_TOKEN;
     if (!token) throw new Error("MercadoPago no configurado (falta MP_ACCESS_TOKEN)");
     const { data: inv, error } = await context.supabase
