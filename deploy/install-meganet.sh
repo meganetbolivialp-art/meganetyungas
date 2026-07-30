@@ -504,21 +504,36 @@ warn "PASO 8/8 — Agente MikroTik + tareas programadas"
 
 cat > agent/mikrotik-agent.mjs <<'AGENT'
 import net from 'node:net';
+import tls from 'node:tls';
+import fs from 'node:fs';
 import { timingSafeEqual } from 'node:crypto';
 
 const TOKEN = process.env.MIKROTIK_AGENT_TOKEN || '';
 const PORT = Number(process.env.PORT || 8777);
 const HOST = process.env.AGENT_BIND_HOST || '127.0.0.1';
+const TLS_CERT = process.env.AGENT_TLS_CERT || '';
+const TLS_KEY = process.env.AGENT_TLS_KEY || '';
 const MAX_HANDSHAKE = 1024;
 const PRIVATE_HOST = /^(10\.(?:\d{1,3}\.){2}\d{1,3}|192\.168\.(?:\d{1,3}\.)\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.(?:\d{1,3}\.)\d{1,3})$/;
+
+if (TOKEN.length < 32) {
+  console.error('MIKROTIK_AGENT_TOKEN must be at least 32 characters');
+  process.exit(1);
+}
+// Exposing the bridge outside loopback without TLS would leak RouterOS
+// credentials in cleartext, so refuse to start in that configuration.
+if (HOST !== '127.0.0.1' && HOST !== '::1' && !(TLS_CERT && TLS_KEY)) {
+  console.error('Refusing to bind publicly without AGENT_TLS_CERT/AGENT_TLS_KEY');
+  process.exit(1);
+}
 
 function tokenMatches(value) {
   const a = Buffer.from(value);
   const b = Buffer.from(TOKEN);
-  return TOKEN.length >= 32 && a.length === b.length && timingSafeEqual(a, b);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
-net.createServer((client) => {
+const onClient = (client) => {
   client.setTimeout(20000, () => client.destroy());
   let pending = Buffer.alloc(0);
   const reject = (message) => { client.end(`ERR ${message}\n`); };
@@ -547,12 +562,27 @@ net.createServer((client) => {
     client.once('close', () => upstream.destroy());
   };
   client.on('data', handshake);
-}).listen(PORT, HOST, () => console.log(`mikrotik-agent on ${HOST}:${PORT}`));
+};
+
+const server = (TLS_CERT && TLS_KEY)
+  ? tls.createServer({ cert: fs.readFileSync(TLS_CERT), key: fs.readFileSync(TLS_KEY), minVersion: 'TLSv1.2' }, onClient)
+  : net.createServer(onClient);
+server.listen(PORT, HOST, () => console.log(`mikrotik-agent on ${HOST}:${PORT} tls=${Boolean(TLS_CERT && TLS_KEY)}`));
 AGENT
 
 cat > agent/package.json <<'PKG'
 {"name":"mikrotik-agent","type":"module","private":true}
 PKG
+
+# Certificado TLS del agente (auto-firmado + fingerprint para fijar en el panel)
+mkdir -p /etc/meganet-agent
+if [[ ! -f /etc/meganet-agent/agent.crt ]]; then
+  openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+    -keyout /etc/meganet-agent/agent.key -out /etc/meganet-agent/agent.crt \
+    -subj "/CN=$VPS_IP" -addext "subjectAltName=IP:$VPS_IP" >/dev/null 2>&1
+  chmod 600 /etc/meganet-agent/agent.key
+fi
+AGENT_TLS_FP=$(openssl x509 -in /etc/meganet-agent/agent.crt -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr 'A-Z' 'a-z')
 
 cat > /etc/systemd/system/mikrotik-agent.service <<UNIT
 [Unit]
@@ -561,7 +591,9 @@ After=network.target
 [Service]
 Environment=MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 Environment=PORT=8777
-Environment=AGENT_BIND_HOST=127.0.0.1
+Environment=AGENT_BIND_HOST=0.0.0.0
+Environment=AGENT_TLS_CERT=/etc/meganet-agent/agent.crt
+Environment=AGENT_TLS_KEY=/etc/meganet-agent/agent.key
 WorkingDirectory=$INSTALL_DIR/agent
 ExecStart=/usr/bin/node mikrotik-agent.mjs
 Restart=always
@@ -570,6 +602,7 @@ WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload
 systemctl enable --now mikrotik-agent
+
 
 # Backup diario
 cat > /etc/cron.daily/meganet-backup <<'CRON'
@@ -609,6 +642,8 @@ POSTGRES_PASSWORD:         $POSTGRES_PASSWORD
 MIKROTIK_AGENT_HOST:  $VPS_IP
 MIKROTIK_AGENT_PORT:  8777
 MIKROTIK_AGENT_TOKEN: $AGENT_TOKEN
+MIKROTIK_AGENT_TLS:   1
+MIKROTIK_AGENT_TLS_FINGERPRINT: $AGENT_TLS_FP
 
 ------ Comandos útiles ------
   Ver logs Supabase:   cd $INSTALL_DIR/supabase && docker compose logs -f
