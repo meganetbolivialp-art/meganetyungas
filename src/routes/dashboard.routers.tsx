@@ -133,7 +133,7 @@ function RoutersPage() {
     const { data } = await supabase.from("routers").select("*").order("name");
     setRows((data as R[]) ?? []);
     // client counts per router
-    const { data: subs } = await supabase.from("subscriptions").select("router_id");
+    const { data: subs } = await supabase.from("services").select("router_id");
     const c: Record<string, number> = {};
     (subs ?? []).forEach((s: any) => { if (s.router_id) c[s.router_id] = (c[s.router_id] ?? 0) + 1; });
     setCounts(c);

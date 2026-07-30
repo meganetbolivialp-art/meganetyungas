@@ -126,7 +126,7 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
   const agentToken = process.env.MIKROTIK_AGENT_TOKEN;
   const useAgent = Boolean(agentHost && agentToken);
 
-  const targetHost = useAgent ? agentHost! : router.ip_address;
+  const targetHost = useAgent ? agentHost as string : router.ip_address;
   const targetPort = useAgent ? agentPort : (router.api_port || 8728);
 
   return new Promise((resolve, reject) => {
@@ -164,7 +164,8 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
       return;
     }
 
-    // Agent handshake: send "AUTH <token> <host> <port>\n" and wait for "OK\n"
+    // TCP proxy handshake. The agent runs inside the VPN VPS and opens the
+    // private 10.x/192.168.x address on behalf of the panel.
     let buf = "";
     const onData = (chunk: Buffer) => {
       buf += chunk.toString("utf8");

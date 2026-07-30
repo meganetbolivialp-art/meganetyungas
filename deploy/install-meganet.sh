@@ -104,6 +104,7 @@ JWT_SECRET=$(gen 32)
 ANON_KEY=""
 SERVICE_ROLE_KEY=""
 DASHBOARD_PASSWORD=$(gen 16)
+AGENT_TOKEN=$(gen 24)
 SITE_URL="https://$DOMAIN"; [[ $USE_IP -eq 1 ]] && SITE_URL="http://$DOMAIN"
 
 # Generar JWTs
@@ -392,6 +393,9 @@ VITE_SUPABASE_PROJECT_ID=meganet
 SUPABASE_URL=http://localhost:8000
 SUPABASE_PUBLISHABLE_KEY=$ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
+MIKROTIK_AGENT_HOST=127.0.0.1
+MIKROTIK_AGENT_PORT=8777
+MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 EOF
 
   command -v bun &>/dev/null || npm i -g bun >/dev/null 2>&1
@@ -499,31 +503,56 @@ fi
 warn "PASO 8/8 — Agente MikroTik + tareas programadas"
 
 cat > agent/mikrotik-agent.mjs <<'AGENT'
-import http from 'node:http';
-import { RouterOSAPI } from 'node-routeros';
-const TOKEN = process.env.MIKROTIK_AGENT_TOKEN;
-const PORT = process.env.PORT || 8777;
-http.createServer(async (req, res) => {
-  if (req.headers['x-token'] !== TOKEN) { res.writeHead(401); return res.end('unauthorized'); }
-  let body=''; req.on('data',c=>body+=c); req.on('end',async()=>{
-    try{
-      const {host,user,pass,port,cmd,params} = JSON.parse(body||'{}');
-      const api = new RouterOSAPI({host,user,password:pass,port:port||8728,timeout:15});
-      await api.connect();
-      const out = await api.write(cmd, params||[]);
-      await api.close();
-      res.writeHead(200,{'Content-Type':'application/json'}); res.end(JSON.stringify({ok:true,data:out}));
-    }catch(e){ res.writeHead(500); res.end(JSON.stringify({ok:false,error:String(e)})); }
-  });
-}).listen(PORT, ()=>console.log('mikrotik-agent on',PORT));
+import net from 'node:net';
+import { timingSafeEqual } from 'node:crypto';
+
+const TOKEN = process.env.MIKROTIK_AGENT_TOKEN || '';
+const PORT = Number(process.env.PORT || 8777);
+const HOST = process.env.AGENT_BIND_HOST || '127.0.0.1';
+const MAX_HANDSHAKE = 1024;
+const PRIVATE_HOST = /^(10\.(?:\d{1,3}\.){2}\d{1,3}|192\.168\.(?:\d{1,3}\.)\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.(?:\d{1,3}\.)\d{1,3})$/;
+
+function tokenMatches(value) {
+  const a = Buffer.from(value);
+  const b = Buffer.from(TOKEN);
+  return TOKEN.length >= 32 && a.length === b.length && timingSafeEqual(a, b);
+}
+
+net.createServer((client) => {
+  client.setTimeout(20000, () => client.destroy());
+  let pending = Buffer.alloc(0);
+  const reject = (message) => { client.end(`ERR ${message}\n`); };
+  const handshake = (chunk) => {
+    pending = Buffer.concat([pending, chunk]);
+    if (pending.length > MAX_HANDSHAKE) return reject('handshake too large');
+    const newline = pending.indexOf(10);
+    if (newline < 0) return;
+    client.off('data', handshake);
+    const line = pending.subarray(0, newline).toString('utf8').trim();
+    const remainder = pending.subarray(newline + 1);
+    const match = /^AUTH\s+(\S+)\s+(\S+)\s+(\d+)$/.exec(line);
+    if (!match || !tokenMatches(match[1])) return reject('unauthorized');
+    const targetHost = match[2];
+    const targetPort = Number(match[3]);
+    if (!PRIVATE_HOST.test(targetHost) || targetPort !== 8728) return reject('target denied');
+    const upstream = net.createConnection({ host: targetHost, port: targetPort });
+    upstream.setTimeout(20000, () => upstream.destroy());
+    upstream.once('connect', () => {
+      client.write('OK\n');
+      if (remainder.length) upstream.write(remainder);
+      client.pipe(upstream).pipe(client);
+    });
+    upstream.once('error', () => reject('router unavailable'));
+    client.once('error', () => upstream.destroy());
+    client.once('close', () => upstream.destroy());
+  };
+  client.on('data', handshake);
+}).listen(PORT, HOST, () => console.log(`mikrotik-agent on ${HOST}:${PORT}`));
 AGENT
 
 cat > agent/package.json <<'PKG'
-{"name":"mikrotik-agent","type":"module","dependencies":{"node-routeros":"^1.6.8"}}
+{"name":"mikrotik-agent","type":"module","private":true}
 PKG
-
-AGENT_TOKEN=$(gen 24)
-cd agent && npm install --silent && cd ..
 
 cat > /etc/systemd/system/mikrotik-agent.service <<UNIT
 [Unit]
@@ -532,6 +561,7 @@ After=network.target
 [Service]
 Environment=MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 Environment=PORT=8777
+Environment=AGENT_BIND_HOST=127.0.0.1
 WorkingDirectory=$INSTALL_DIR/agent
 ExecStart=/usr/bin/node mikrotik-agent.mjs
 Restart=always
