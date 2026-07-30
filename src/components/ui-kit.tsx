@@ -97,7 +97,7 @@ export function FormPanel({ children, onCancel, onSave, saveLabel = "Guardar", t
   const cancel = onCancel ?? onClose ?? (() => {});
   const save = onSave ?? onSubmit ?? (() => {});
   return (
-    <div className="mb-4 rounded-md border bg-card p-5 relative">
+    <div data-no-pull-refresh="" className="mb-4 rounded-md border bg-card p-5 relative">
       <button
         type="button"
         onClick={cancel}
