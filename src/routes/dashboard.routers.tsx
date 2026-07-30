@@ -33,6 +33,8 @@ type R = {
   client_pool_cidr: string | null; client_pool_gateway: string | null;
 };
 
+type ConnectionNotice = { kind: "configuration" | "connection"; message: string } | null;
+
 function RoutersPage() {
   const [rows, setRows] = useState<R[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -41,6 +43,7 @@ function RoutersPage() {
   const [q, setQ] = useState("");
   const [pageSize, setPageSize] = useState(15);
   const [testing, setTesting] = useState<Record<string, boolean>>({});
+  const [connectionNotice, setConnectionNotice] = useState<ConnectionNotice>(null);
 
   const empty = (): R => ({
     id: "", name: "", ip_address: "", type: "mikrotik", location: "",
@@ -151,7 +154,15 @@ function RoutersPage() {
     const tick = async () => {
       if (cancelled) return;
       if (!(await hasSession())) return;
-      await pingAllFn({}).catch((e) => console.error("ping failed", e));
+      const pingResult: any = await pingAllFn({}).catch((e) => {
+        setConnectionNotice({ kind: "connection", message: e instanceof Error ? e.message : "No se pudo comprobar la conexión" });
+        return null;
+      });
+      if (pingResult?.configuration_required) {
+        setConnectionNotice({ kind: "configuration", message: "Los equipos están dentro de la VPN, pero el puente seguro entre Lovable y el VPS todavía no está configurado." });
+      } else if (pingResult) {
+        setConnectionNotice(null);
+      }
       if (cancelled || !(await hasSession())) return;
       const p: any = await pendingFn({}).catch(() => null);
       if (cancelled) return;
@@ -298,6 +309,15 @@ function RoutersPage() {
 
   return (
     <AdminLayout title="Routers / NAS" subtitle={`${rows.length} equipos · prueba de conexión en vivo`} breadcrumb={["Red", "Routers"]}>
+      {connectionNotice && (
+        <div className="mb-3 flex items-start gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+          <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <div className="font-semibold">VPN sin enlace con el panel</div>
+            <div className="mt-0.5 text-xs opacity-90">{connectionNotice.message} Esto no significa que los MikroTik estén apagados.</div>
+          </div>
+        </div>
+      )}
       {show && (
         <FormPanel onCancel={() => { setShow(false); setEditing(null); }} onSave={save}>
           <Field label="Nombre *"><input value={f.name} onChange={e => setF({ ...f, name: e.target.value })} className={inputCls} placeholder="NAS-Centro" /></Field>

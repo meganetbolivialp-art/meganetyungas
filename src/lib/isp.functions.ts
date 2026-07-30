@@ -865,6 +865,23 @@ export const pingAllRouters = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data: routers, error } = await context.supabase.from("routers").select("*");
     if (error) throw new Error(error.message);
+    const hasPrivateRouters = (routers ?? []).some((router: any) => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(router.ip_address));
+    const agentConfigured = Boolean(process.env.MIKROTIK_AGENT_HOST && process.env.MIKROTIK_AGENT_TOKEN);
+    if (hasPrivateRouters && !agentConfigured) {
+      return {
+        results: (routers ?? []).map((router: any) => ({
+          id: router.id,
+          name: router.name,
+          ok: false,
+          configuration_required: true,
+          error: "El puente VPN no está configurado en el panel",
+          elapsed_ms: 0,
+        })),
+        configuration_required: true,
+        error: "Los MikroTik usan IP privadas de la VPN, pero faltan MIKROTIK_AGENT_HOST y MIKROTIK_AGENT_TOKEN.",
+        at: Date.now(),
+      };
+    }
     const { mikrotik } = await import("./mikrotik.server");
     const results = await Promise.all(
       ((routers ?? []) as any[]).map(async (r) => {
