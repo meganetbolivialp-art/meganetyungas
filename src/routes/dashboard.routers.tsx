@@ -61,7 +61,7 @@ function RoutersPage() {
     client_pool_cidr: "", client_pool_gateway: "",
   });
 
-  const [f, setF] = useState<R>(empty());
+  const [f, setF] = useState<RouterForm>(empty());
 
   const testFn = useServerFn(testRouterConnection);
   const sessFn = useServerFn(listActiveSessions);
