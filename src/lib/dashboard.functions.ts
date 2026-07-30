@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Real-time PPPoE online count aggregated from every online router.
-export const getLiveOnlineCount = createServerFn({ method: "GET" }).handler(async () => {
+export const getLiveOnlineCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth]).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { mikrotik } = await import("@/lib/mikrotik.server");
   const { data: routers } = await supabaseAdmin
@@ -24,6 +26,7 @@ export const getLiveOnlineCount = createServerFn({ method: "GET" }).handler(asyn
 });
 
 export const getRouterTrafficSample = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { routerId: string; iface: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -35,6 +38,7 @@ export const getRouterTrafficSample = createServerFn({ method: "GET" })
   });
 
 export const listRouterInterfaces = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { routerId: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -54,6 +58,7 @@ export const listRouterInterfaces = createServerFn({ method: "GET" })
 // Muestra puntual de tráfico de un servicio PPPoE (por serviceId).
 // Devuelve bps si el router los da; siempre devuelve bytes acumulados para calcular bps por delta en el cliente.
 export const getServicePppoeTraffic = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { serviceId: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
