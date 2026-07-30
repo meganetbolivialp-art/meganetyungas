@@ -132,11 +132,18 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
     return () => sub.subscription.unsubscribe();
   }, [nav, queryClient]);
 
+  // ¿Hay un modal/formulario abierto? (evita perder datos con pull-to-refresh o auto-logout)
+  const isFormOpen = () =>
+    typeof document !== "undefined" &&
+    !!document.querySelector('[data-modal-open], [data-no-pull-refresh], dialog[open], [role="dialog"]');
+
   // Auto-logout tras 30 min de inactividad
   useEffect(() => {
     const IDLE_MS = 30 * 60 * 1000;
     let timer: ReturnType<typeof setTimeout>;
     const doLogout = async () => {
+      // No cerrar sesión mientras se está cargando/creando algo en un formulario
+      if (isFormOpen()) { reset(); return; }
       try {
         await queryClient.cancelQueries();
         queryClient.clear();
@@ -151,13 +158,15 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       timer = setTimeout(doLogout, IDLE_MS);
       try { localStorage.setItem("last_activity", String(Date.now())); } catch {}
     };
-    const events: (keyof WindowEventMap)[] = ["mousedown", "keydown", "touchstart", "scroll", "click"];
+    const events: (keyof WindowEventMap)[] = [
+      "mousedown", "keydown", "touchstart", "touchmove", "scroll", "click", "input", "change", "pointerdown", "focusin",
+    ];
     events.forEach(e => window.addEventListener(e, reset, { passive: true } as any));
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         try {
           const last = Number(localStorage.getItem("last_activity") || 0);
-          if (last && Date.now() - last > IDLE_MS) { doLogout(); return; }
+          if (last && Date.now() - last > IDLE_MS && !isFormOpen()) { doLogout(); return; }
         } catch {}
         reset();
       }
@@ -185,8 +194,19 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       document.body.appendChild(indicator);
       return indicator;
     };
+    // No recargar si el gesto ocurre dentro de un contenedor con scroll propio
+    const insideScrollable = (target: EventTarget | null) => {
+      let el = target as HTMLElement | null;
+      while (el && el !== document.body) {
+        const style = window.getComputedStyle(el);
+        if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight) return true;
+        el = el.parentElement;
+      }
+      return false;
+    };
     const onStart = (e: TouchEvent) => {
-      if (window.scrollY > 0) { pulling = false; return; }
+      // Nunca en formularios/modales abiertos: se perderían los datos cargados
+      if (isFormOpen() || insideScrollable(e.target) || window.scrollY > 0) { pulling = false; return; }
       startY = e.touches[0].clientY;
       pulling = true;
     };
@@ -204,7 +224,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       pulling = false;
       const dy = (e.changedTouches[0]?.clientY ?? startY) - startY;
       if (indicator) indicator.style.transform = "translate(-50%,-100%)";
-      if (dy > 70 && window.scrollY === 0) {
+      if (dy > 70 && window.scrollY === 0 && !isFormOpen()) {
         if (indicator) indicator.textContent = "Actualizando...";
         window.location.reload();
       }
@@ -219,6 +239,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       if (indicator?.parentNode) indicator.parentNode.removeChild(indicator);
     };
   }, []);
+
 
   // close mobile drawer & user menu on route change
   useEffect(() => {
