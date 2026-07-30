@@ -259,6 +259,11 @@ type Breaker = { fails: number; openUntil: number };
 const routerBreakers = new Map<string, Breaker>();
 const BREAKER_THRESHOLD = 2;
 const BREAKER_COOLDOWN_MS = 15_000;
+// Credenciales inválidas: cooldown largo. Evita repetir /login con la misma contraseña
+// equivocada (llena el log del MikroTik con "login failure" y dispara sus bloqueos).
+const AUTH_COOLDOWN_MS = 10 * 60_000;
+const AUTH_FAIL_RE = /(login failed|cannot log in|invalid user name or password|not allowed)/i;
+
 
 function breakerFor(id: string): Breaker {
   let b = routerBreakers.get(id);
@@ -295,11 +300,17 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
       }
     }
     br.fails += 1;
+    if (AUTH_FAIL_RE.test((lastErr as Error)?.message || "")) {
+      br.openUntil = Date.now() + AUTH_COOLDOWN_MS;
+      console.warn(`[mikrotik] ${router.name}: credenciales API rechazadas — pausa ${AUTH_COOLDOWN_MS / 60000} min para no llenar el log del router`);
+      throw new Error(`Credenciales API inválidas para ${router.name}. Corregí usuario/contraseña del router antes de reintentar.`);
+    }
     if (br.fails >= BREAKER_THRESHOLD) {
       br.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
       console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${BREAKER_COOLDOWN_MS/1000}s tras ${br.fails} fallos`);
     }
     throw lastErr;
+
   });
 }
 
