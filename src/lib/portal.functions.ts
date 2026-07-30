@@ -46,21 +46,21 @@ export const portalMe = createServerFn({ method: "POST" })
     // Solo campos seguros: nunca credenciales ni notas internas.
     const { data: client } = await sb
       .from("clients")
-      .select("id, name, code, email, phone, address, status, city, zone")
+      .select("id, full_name, email, phone, address, city, status, billing_day, balance")
       .eq("id", pu.client_id)
       .single();
     const { data: invoices } = await sb
       .from("invoices")
-      .select("id, number, amount, status, due_date, paid_at, period_start, period_end, created_at")
+      .select("id, invoice_number, amount, status, concept, due_date, paid_at, period_month, period_year, days_overdue, created_at")
       .eq("client_id", pu.client_id)
       .order("created_at", { ascending: false });
     const { data: services } = await sb
       .from("services")
-      .select("id, status, ip_address, pppoe_user, created_at, plans(id, name, price, download_mbps, upload_mbps)")
+      .select("id, status, ip_address, pppoe_user, service_type, monthly_price, installation_date, created_at, plans(id, name, price, download_mbps, upload_mbps)")
       .eq("client_id", pu.client_id);
     const { data: tickets } = await sb
       .from("tickets")
-      .select("id, subject, description, status, priority, created_at")
+      .select("id, ticket_number, subject, description, status, priority, created_at, resolved_at")
       .eq("client_id", pu.client_id)
       .order("created_at", { ascending: false });
     return { client, invoices: invoices ?? [], services: services ?? [], tickets: tickets ?? [], username: pu.username };
