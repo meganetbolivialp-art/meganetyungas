@@ -51,12 +51,25 @@ export const portalMe = createServerFn({ method: "POST" })
   });
 
 export const portalCreateTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; subject: string; description: string }) => d)
+  .inputValidator((d: { token: string; subject: string; description: string }) => {
+    const subject = (d.subject ?? "").trim();
+    const description = (d.description ?? "").trim();
+    if (!d.token) throw new Error("Sesión inválida");
+    if (subject.length < 3 || subject.length > 150) throw new Error("Asunto inválido (3-150 caracteres)");
+    if (description.length > 4000) throw new Error("Descripción demasiado larga");
+    return { token: d.token, subject, description };
+  })
   .handler(async ({ data }) => {
     const sb = await admin();
-    const { data: s } = await sb.from("client_portal_sessions").select("client_portal_users(client_id)").eq("token", data.token).maybeSingle();
-    if (!s) throw new Error("Sesión inválida");
+    const { data: s } = await sb
+      .from("client_portal_sessions")
+      .select("expires_at, client_portal_users(client_id)")
+      .eq("token", data.token)
+      .maybeSingle();
+    // La sesión debe existir Y no estar vencida.
+    if (!s || new Date(s.expires_at) < new Date()) throw new Error("Sesión inválida");
     const clientId = (s.client_portal_users as any).client_id;
+
     const { error } = await sb.from("tickets").insert({
       client_id: clientId,
       subject: data.subject,

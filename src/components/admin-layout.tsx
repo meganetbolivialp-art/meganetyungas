@@ -435,7 +435,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
 
           <div className="flex items-center gap-1 shrink-0">
             <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
-            <Link to="/dashboard/cobrar" title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
+            <Link to="/dashboard/cobrar" search={{}} title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
             <button className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground relative">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-400 text-[9px] font-bold text-white grid place-items-center">1</span>
