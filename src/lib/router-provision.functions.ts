@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { secureString } from "@/lib/secure-random";
 
 function ipToLong(ip: string): number {
   return ip.split(".").reduce((acc, o) => (acc << 8) + parseInt(o, 10), 0) >>> 0;
@@ -28,10 +29,7 @@ function nextIp(network: string, serverIp: string, used: string[]): string | nul
 }
 
 function randPass(): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  let out = "";
-  for (let i = 0; i < 16; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return out;
+  return secureString(16);
 }
 
 /**

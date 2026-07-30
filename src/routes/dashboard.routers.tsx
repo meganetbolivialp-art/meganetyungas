@@ -24,14 +24,22 @@ export const Route = createFileRoute("/dashboard/routers")({
   component: RoutersPage,
 });
 
+import { secureString, secureInt } from "@/lib/secure-random";
+
+// Nunca se selecciona api_password: las credenciales del router no deben llegar al navegador.
+const SAFE_ROUTER_COLUMNS =
+  "id,name,ip_address,type,location,api_port,api_user,simulated,status,last_sync_at,morosos_profile,walled_garden_ip,client_pool_cidr,client_pool_gateway";
+
 type R = {
   id: string; name: string; ip_address: string; type: string;
   location: string | null; api_port: number; api_user: string | null;
-  api_password: string | null; simulated: boolean;
+  simulated: boolean;
   status: string; last_sync_at: string | null;
   morosos_profile: string; walled_garden_ip: string | null;
   client_pool_cidr: string | null; client_pool_gateway: string | null;
 };
+
+type RouterForm = R & { api_password: string };
 
 type ConnectionNotice = { kind: "configuration" | "connection"; message: string } | null;
 
@@ -45,7 +53,7 @@ function RoutersPage() {
   const [testing, setTesting] = useState<Record<string, boolean>>({});
   const [connectionNotice, setConnectionNotice] = useState<ConnectionNotice>(null);
 
-  const empty = (): R => ({
+  const empty = (): RouterForm => ({
     id: "", name: "", ip_address: "", type: "mikrotik", location: "",
     api_port: 8728, api_user: "", api_password: "", simulated: true,
     status: "offline", last_sync_at: null,
@@ -53,7 +61,7 @@ function RoutersPage() {
     client_pool_cidr: "", client_pool_gateway: "",
   });
 
-  const [f, setF] = useState<R>(empty());
+  const [f, setF] = useState<RouterForm>(empty());
 
   const testFn = useServerFn(testRouterConnection);
   const sessFn = useServerFn(listActiveSessions);
@@ -86,8 +94,8 @@ function RoutersPage() {
   // Genera credenciales únicas por router (nombre-slug + sufijo random)
   const genCreds = (routerName: string) => {
     const slug = (routerName || "router").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 10) || "router";
-    const rand = Math.random().toString(36).slice(2, 8);
-    return { user: `ms_${slug}`, pass: `${slug.toUpperCase()}${rand}!${Math.floor(Math.random() * 90 + 10)}` };
+    const rand = secureString(6, "abcdefghijkmnpqrstuvwxyz23456789");
+    return { user: `ms_${slug}`, pass: `${slug.toUpperCase()}${rand}!${secureInt(10, 99)}` };
   };
 
 
@@ -133,7 +141,7 @@ function RoutersPage() {
   };
 
   const load = async () => {
-    const { data } = await supabase.from("routers").select("*").order("name");
+    const { data } = await supabase.from("routers").select(SAFE_ROUTER_COLUMNS).order("name");
     setRows((data as R[]) ?? []);
     // client counts per router
     const { data: subs } = await supabase.from("services").select("router_id");
@@ -235,13 +243,15 @@ function RoutersPage() {
     setF({ ...empty(), api_user: c.user, api_password: c.pass, simulated: false });
     setShow(true);
   };
-  const openEdit = (r: R) => { setEditing(r); setF({ ...r, api_password: r.api_password ?? "", api_user: r.api_user ?? "" }); setShow(true); };
+  const openEdit = (r: R) => { setEditing(r); setF({ ...r, api_password: "", api_user: r.api_user ?? "" }); setShow(true); };
 
   const save = async () => {
     if (!f.name || !f.ip_address) { toast.error("Nombre e IP son obligatorios"); return; }
     const payload = {
       name: f.name, ip_address: f.ip_address, type: f.type, location: f.location || null,
-      api_port: f.api_port, api_user: f.api_user || null, api_password: f.api_password || null,
+      api_port: f.api_port, api_user: f.api_user || null,
+      // Solo se envía la contraseña cuando el admin la escribe; nunca se reenvía en blanco.
+      ...(f.api_password ? { api_password: f.api_password } : {}),
       simulated: f.simulated, status: f.status,
       morosos_profile: f.morosos_profile || "sistema_cortados",
       walled_garden_ip: f.walled_garden_ip || null,
@@ -332,7 +342,7 @@ function RoutersPage() {
           <Field label="Dirección IP *"><input value={f.ip_address} onChange={e => setF({ ...f, ip_address: e.target.value })} className={inputCls} placeholder="192.168.88.1" /></Field>
           <Field label="Puerto API"><input type="number" value={f.api_port} onChange={e => setF({ ...f, api_port: +e.target.value })} className={inputCls} /></Field>
           <Field label="Usuario API"><input value={f.api_user ?? ""} onChange={e => setF({ ...f, api_user: e.target.value })} className={inputCls} placeholder="admin" /></Field>
-          <Field label="Contraseña API"><input type="password" value={f.api_password ?? ""} onChange={e => setF({ ...f, api_password: e.target.value })} className={inputCls} placeholder="••••••••" /></Field>
+          <Field label="Contraseña API"><input type="password" value={f.api_password ?? ""} onChange={e => setF({ ...f, api_password: e.target.value })} className={inputCls} placeholder={editing ? "Dejar vacío para no cambiar" : "••••••••"} /></Field>
           <Field label="Ubicación"><input value={f.location ?? ""} onChange={e => setF({ ...f, location: e.target.value })} className={inputCls} placeholder="POP Central" /></Field>
           <Field label="Modo">
             <label className="flex items-center gap-2 h-9 px-3 rounded border bg-background">

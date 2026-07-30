@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import * as OTPAuth from "otpauth";
+import { secureString } from "@/lib/secure-random";
 import QRCode from "qrcode";
 
 const ISSUER = "MegaNet ISP";
@@ -56,7 +57,7 @@ export const enable2fa = createServerFn({ method: "POST" })
     const delta = totp(row.secret, email).validate({ token: data.code, window: 1 });
     if (delta === null) throw new Error("Código inválido");
     const codes = Array.from({ length: 8 }, () =>
-      Math.random().toString(36).slice(2, 6) + "-" + Math.random().toString(36).slice(2, 6)
+      `${secureString(4, "abcdefghijkmnpqrstuvwxyz23456789")}-${secureString(4, "abcdefghijkmnpqrstuvwxyz23456789")}`
     );
     await context.supabase
       .from("operator_2fa")

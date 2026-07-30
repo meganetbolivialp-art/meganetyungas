@@ -1,3 +1,4 @@
+import { secureString, secureShuffle } from "@/lib/secure-random";
 const COMMON_PASSWORD_PARTS = [
   "123456",
   "12345678",
@@ -45,14 +46,6 @@ export function normalizePasswordAuthError(message: string) {
 export function generateStrongPassword() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*?";
   const required = ["M", "g", "7", "#"];
-  const bytes = new Uint32Array(10);
-
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * alphabet.length);
-  }
-
-  const randomPart = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]);
-  return [...required, ...randomPart].sort(() => Math.random() - 0.5).join("");
+  const randomPart = secureString(10, alphabet).split("");
+  return secureShuffle([...required, ...randomPart]).join("");
 }

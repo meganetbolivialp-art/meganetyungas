@@ -1,10 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { secureString } from "@/lib/secure-random";
 
 function rand(n: number) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let s = ""; for (let i = 0; i < n; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  return secureString(n, "ABCDEFGHJKLMNPQRSTUVWXYZ23456789");
 }
 
 export const generateVouchers = createServerFn({ method: "POST" })

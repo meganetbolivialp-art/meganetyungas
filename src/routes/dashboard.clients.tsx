@@ -23,14 +23,13 @@ export const Route = createFileRoute("/dashboard/clients")({
   component: ClientsPage,
 });
 
+import { secureString, secureInt } from "@/lib/secure-random";
+
 type Client = { id: string; full_name: string; document: string | null; email: string | null; phone: string | null; city: string | null; address?: string | null; zone?: string | null; billing_day?: number | null; status: string; created_at: string; balance?: number | null; services?: { id: string; ip_address: string | null; pppoe_user: string | null; status: string; plans: { name: string } | null }[] };
 type Plan = { id: string; name: string; price: number; download_mbps: number; upload_mbps: number };
 type Router = { id: string; name: string; ip_address: string | null };
 
-const randomStr = (n: number) => {
-  const chars = "abcdefghijkmnpqrstuvwxyz23456789";
-  return Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-};
+const randomStr = (n: number) => secureString(n, "abcdefghijkmnpqrstuvwxyz23456789");
 
 const ROUTER_BADGE_PALETTE = [
   "bg-sky-100 text-sky-700 border-sky-300",
@@ -148,7 +147,7 @@ function ClientsPage() {
 
   const genCreds = () => {
     const base = (form.full_name || "user").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "user";
-    setForm(f => ({ ...f, pppoe_user: `${base}${Math.floor(Math.random() * 900 + 100)}`, pppoe_password: randomStr(10) }));
+    setForm(f => ({ ...f, pppoe_user: `${base}${secureInt(100, 999)}`, pppoe_password: randomStr(10) }));
   };
 
   const openForm = () => { setForm({ ...initialForm, portal_password: randomStr(7) }); setStep(1); setSteps(null); setShowForm(true); };
