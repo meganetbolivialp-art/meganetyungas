@@ -1,0 +1,2 @@
+UPDATE public.routers SET ip_address = '10.8.0.11', api_port = 8728, updated_at = now() WHERE name = 'MERCEDES';
+UPDATE public.routers SET ip_address = '10.8.0.12', api_port = 8728, api_user = 'admin', updated_at = now() WHERE name = 'santa rosa';
