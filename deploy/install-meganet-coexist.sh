@@ -440,16 +440,25 @@ fi
 # Agente MikroTik
 cat > agent/mikrotik-agent.mjs <<'AGENT'
 import net from 'node:net';
+import tls from 'node:tls';
+import fs from 'node:fs';
 import { timingSafeEqual } from 'node:crypto';
 const TOKEN = process.env.MIKROTIK_AGENT_TOKEN || '';
 const PORT = Number(process.env.PORT || 8777);
 const HOST = process.env.AGENT_BIND_HOST || '127.0.0.1';
+const TLS_CERT = process.env.AGENT_TLS_CERT || '';
+const TLS_KEY = process.env.AGENT_TLS_KEY || '';
 const PRIVATE_HOST = /^(10\.(?:\d{1,3}\.){2}\d{1,3}|192\.168\.(?:\d{1,3}\.)\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.(?:\d{1,3}\.)\d{1,3})$/;
+if (TOKEN.length < 32) { console.error('MIKROTIK_AGENT_TOKEN must be at least 32 characters'); process.exit(1); }
+if (HOST !== '127.0.0.1' && HOST !== '::1' && !(TLS_CERT && TLS_KEY)) {
+  console.error('Refusing to bind publicly without AGENT_TLS_CERT/AGENT_TLS_KEY');
+  process.exit(1);
+}
 function tokenMatches(value) {
   const a = Buffer.from(value), b = Buffer.from(TOKEN);
-  return TOKEN.length >= 32 && a.length === b.length && timingSafeEqual(a, b);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
-net.createServer((client) => {
+const onClient = (client) => {
   client.setTimeout(20000, () => client.destroy());
   let pending = Buffer.alloc(0);
   const reject = (message) => client.end(`ERR ${message}\n`);
@@ -474,7 +483,11 @@ net.createServer((client) => {
     client.once('close', () => upstream.destroy());
   };
   client.on('data', handshake);
-}).listen(PORT, HOST, () => console.log(`mikrotik-agent on ${HOST}:${PORT}`));
+};
+const server = (TLS_CERT && TLS_KEY)
+  ? tls.createServer({ cert: fs.readFileSync(TLS_CERT), key: fs.readFileSync(TLS_KEY), minVersion: 'TLSv1.2' }, onClient)
+  : net.createServer(onClient);
+server.listen(PORT, HOST, () => console.log(`mikrotik-agent on ${HOST}:${PORT} tls=${Boolean(TLS_CERT && TLS_KEY)}`));
 AGENT
 cat > agent/package.json <<'PKG'
 {"name":"mikrotik-agent","type":"module","private":true}
