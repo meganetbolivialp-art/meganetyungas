@@ -67,7 +67,10 @@ fi
 # 2. Dependencias
 # ============================================================================
 log "Instalando dependencias..."
-command -v bun &>/dev/null || npm i -g bun >/dev/null 2>&1
+if ! command -v bun &>/dev/null; then
+  curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1 || npm i -g bun >/dev/null 2>&1
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
 bun install
 
 # ============================================================================
@@ -82,7 +85,7 @@ NITRO_PRESET=node-server bun run build
 if [[ -f "$FRONT_DIR/deploy/mikrotik-agent.mjs" ]]; then
   log "Actualizando agente MikroTik..."
   cp "$FRONT_DIR/deploy/mikrotik-agent.mjs" "$AGENT_DIR/mikrotik-agent.mjs"
-  systemctl restart mikrotik-agent || warn "No se pudo reiniciar mikrotik-agent"
+  systemctl restart mikrotik-agent 2>/dev/null || warn "Servicio mikrotik-agent no instalado (omitido)"
 fi
 
 # ============================================================================
@@ -90,8 +93,12 @@ fi
 # ============================================================================
 log "Reiniciando servicios web..."
 systemctl daemon-reload
-systemctl restart meganet-web
-systemctl status meganet-web --no-pager
+if systemctl list-unit-files | grep -q '^meganet-web.service'; then
+  systemctl restart meganet-web
+  systemctl status meganet-web --no-pager || true
+else
+  warn "El servicio meganet-web no existe todavía. Instalalo con: sudo bash $FRONT_DIR/deploy/install-full.sh"
+fi
 
 # ============================================================================
 # 6. (Opcional) Recargar Supabase si se detecta cambio de migraciones
