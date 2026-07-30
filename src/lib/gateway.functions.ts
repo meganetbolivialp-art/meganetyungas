@@ -1,26 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { safeReturnUrls, assertSameSite } from "@/lib/gateway-urls";
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
-}
-
-// Evita redirección abierta: las URLs de retorno deben ser del propio sitio.
-function safeReturnUrls(d: { invoiceId: string; successUrl: string; cancelUrl: string }) {
-  const check = (raw: string, label: string) => {
-    let u: URL;
-    try { u = new URL(raw); } catch { throw new Error(`URL de ${label} inválida`); }
-    if (u.protocol !== "https:" && u.hostname !== "localhost") throw new Error(`URL de ${label} debe ser https`);
-    const allowed = (process.env.PUBLIC_SITE_URL ?? "").trim();
-    if (allowed) {
-      try { if (new URL(allowed).host !== u.host) throw new Error(""); }
-      catch { throw new Error(`URL de ${label} fuera del dominio permitido`); }
-    }
-    return u.toString();
-  };
-  if (!d.invoiceId) throw new Error("Factura requerida");
-  return { invoiceId: d.invoiceId, successUrl: check(d.successUrl, "éxito"), cancelUrl: check(d.cancelUrl, "cancelación") };
 }
 
 // Crea sesión de Stripe Checkout para una factura
@@ -28,6 +12,7 @@ export const createStripeCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(safeReturnUrls)
   .handler(async ({ data, context }) => {
+    assertSameSite([data.successUrl, data.cancelUrl], process.env.PUBLIC_SITE_URL);
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error("Stripe no configurado (falta STRIPE_SECRET_KEY)");
     const { data: inv, error } = await context.supabase
@@ -78,6 +63,7 @@ export const createMPCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(safeReturnUrls)
   .handler(async ({ data, context }) => {
+    assertSameSite([data.successUrl, data.cancelUrl], process.env.PUBLIC_SITE_URL);
     const token = process.env.MP_ACCESS_TOKEN;
     if (!token) throw new Error("MercadoPago no configurado (falta MP_ACCESS_TOKEN)");
     const { data: inv, error } = await context.supabase
