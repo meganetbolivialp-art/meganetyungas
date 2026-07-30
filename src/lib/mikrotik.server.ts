@@ -122,14 +122,34 @@ function parseSentence(words: string[]): Sentence {
   return { reply, attrs, tag };
 }
 
+function isLoopbackHost(host: string) {
+  return host === "127.0.0.1" || host === "::1" || host === "localhost";
+}
+
 async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket> {
   const agentHost = process.env.MIKROTIK_AGENT_HOST;
-  const agentPort = process.env.MIKROTIK_AGENT_PORT ? Number(process.env.MIKROTIK_AGENT_PORT) : 8729;
+  const agentPort = process.env.MIKROTIK_AGENT_PORT ? Number(process.env.MIKROTIK_AGENT_PORT) : 8777;
   const agentToken = process.env.MIKROTIK_AGENT_TOKEN;
   const useAgent = Boolean(agentHost && agentToken);
 
   const targetHost = useAgent ? agentHost as string : router.ip_address;
   const targetPort = useAgent ? agentPort : (router.api_port || 8728);
+
+  // The bridge carries RouterOS credentials across the public internet, so it
+  // must be encrypted. TLS is on by default for any non-loopback agent host and
+  // can only be disabled explicitly (MIKROTIK_AGENT_TLS=0) for local setups.
+  const tlsSetting = (process.env.MIKROTIK_AGENT_TLS || "").trim().toLowerCase();
+  const useTls = useAgent && (
+    tlsSetting === "1" || tlsSetting === "true"
+      ? true
+      : tlsSetting === "0" || tlsSetting === "false"
+        ? false
+        : !isLoopbackHost(targetHost)
+  );
+  const pinnedFingerprint = (process.env.MIKROTIK_AGENT_TLS_FINGERPRINT || "")
+    .replace(/[^a-fA-F0-9]/g, "")
+    .toLowerCase();
+
 
   return new Promise((resolve, reject) => {
     let settled = false;
