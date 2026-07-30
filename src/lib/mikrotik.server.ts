@@ -171,7 +171,17 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
       clearTimeout(t);
       resolve(socket);
     };
-    const socket = net.createConnection({ host: targetHost, port: targetPort });
+    const socket: net.Socket = useTls
+      ? tls.connect({
+          host: targetHost,
+          port: targetPort,
+          servername: /^[\d.]+$/.test(targetHost) ? undefined : targetHost,
+          // Self-signed agent certificates are accepted only when the panel
+          // pins their SHA-256 fingerprint, which keeps the channel
+          // authenticated without a public CA.
+          rejectUnauthorized: pinnedFingerprint ? false : true,
+        })
+      : net.createConnection({ host: targetHost, port: targetPort });
     socket.setKeepAlive(true, 5000);
     socket.setNoDelay(true);
     const t = setTimeout(() => {
@@ -205,10 +215,26 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
       if (rest.length > 0) process.nextTick(() => socket.emit("data", rest));
       succeed();
     };
-    socket.on("data", onData);
-    socket.once("connect", () => {
+
+    const startHandshake = () => {
+      if (useTls && pinnedFingerprint) {
+        const cert = (socket as tls.TLSSocket).getPeerCertificate();
+        const raw = cert && (cert as { raw?: Buffer }).raw;
+        const actual = raw
+          ? crypto.createHash("sha256").update(raw).digest("hex")
+          : "";
+        if (actual !== pinnedFingerprint) {
+          socket.destroy();
+          fail(new Error("agent TLS fingerprint mismatch"));
+          return;
+        }
+      }
+      socket.on("data", onData);
       socket.write(`AUTH ${agentToken} ${router.ip_address} ${router.api_port || 8728}\n`);
-    });
+    };
+
+    socket.once(useTls ? "secureConnect" : "connect", startHandshake);
+
   });
 }
 
