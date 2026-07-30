@@ -24,6 +24,11 @@ export const Route = createFileRoute("/dashboard/routers")({
   component: RoutersPage,
 });
 
+import { secureString, secureInt } from "@/lib/secure-random";
+
+const SAFE_ROUTER_COLUMNS =
+  "id,name,ip_address,api_port,api_user,model,version,status,simulated,notes,created_at,updated_at";
+
 type R = {
   id: string; name: string; ip_address: string; type: string;
   location: string | null; api_port: number; api_user: string | null;
@@ -86,8 +91,8 @@ function RoutersPage() {
   // Genera credenciales únicas por router (nombre-slug + sufijo random)
   const genCreds = (routerName: string) => {
     const slug = (routerName || "router").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 10) || "router";
-    const rand = Math.random().toString(36).slice(2, 8);
-    return { user: `ms_${slug}`, pass: `${slug.toUpperCase()}${rand}!${Math.floor(Math.random() * 90 + 10)}` };
+    const rand = secureString(6, "abcdefghijkmnpqrstuvwxyz23456789");
+    return { user: `ms_${slug}`, pass: `${slug.toUpperCase()}${rand}!${secureInt(10, 99)}` };
   };
 
 
@@ -133,7 +138,7 @@ function RoutersPage() {
   };
 
   const load = async () => {
-    const { data } = await supabase.from("routers").select("*").order("name");
+    const { data } = await supabase.from("routers").select(SAFE_ROUTER_COLUMNS).order("name");
     setRows((data as R[]) ?? []);
     // client counts per router
     const { data: subs } = await supabase.from("services").select("router_id");

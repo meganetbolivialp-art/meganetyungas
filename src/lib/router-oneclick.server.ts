@@ -1,3 +1,4 @@
+import { secureString } from "@/lib/secure-random";
 export type ProvisionFiles = { ca: string; crt: string; key: string };
 
 export function ipToLong(ip: string): number {
@@ -9,10 +10,7 @@ export function longToIp(l: number): string {
 }
 
 export function randPass(len = 14): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  let value = "";
-  for (let i = 0; i < len; i++) value += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return value;
+  return secureString(len);
 }
 
 export function slugifyRouterName(value: string): string {
