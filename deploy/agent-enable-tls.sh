@@ -103,6 +103,7 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
+systemctl enable mikrotik-agent >/dev/null 2>&1 || true
 systemctl restart mikrotik-agent
 sleep 1
 systemctl --no-pager --lines=5 status mikrotik-agent || true
