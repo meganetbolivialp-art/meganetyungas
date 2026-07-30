@@ -47,11 +47,9 @@ export function usePermissions() {
           .maybeSingle();
         emp = empRes.data ?? null;
       } catch {}
-      // Fallback: si no hay rol asignado ni empleado registrado, asumir admin
-      // (instalación nueva sin seed de user_roles). RLS sigue protegiendo datos.
-      if (!isAdmin && !emp) {
-        isAdmin = true;
-      }
+      // Sin rol ni empleado => sin permisos. Nunca asumir admin en el cliente:
+      // la autorización real vive en RLS y en las server functions.
+
       return {
         isAdmin,
         employee: emp,

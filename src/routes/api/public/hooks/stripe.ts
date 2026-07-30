@@ -7,8 +7,9 @@ export const Route = createFileRoute("/api/public/hooks/stripe")({
     const sig = request.headers.get("stripe-signature") ?? "";
     const body = await request.text();
 
-    // Verificación Stripe: t=timestamp,v1=signature
-    if (secret) {
+    // La firma es OBLIGATORIA: sin secreto configurado el endpoint no procesa nada.
+    if (!secret) return new Response("webhook not configured", { status: 503 });
+    {
       const parts = Object.fromEntries(sig.split(",").map(kv => kv.split("=")));
       const t = parts.t; const v1 = parts.v1;
       if (!t || !v1) return new Response("bad sig", { status: 401 });
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/api/public/hooks/stripe")({
       const a = Buffer.from(v1); const b = Buffer.from(expected);
       if (a.length !== b.length || !timingSafeEqual(a, b)) return new Response("invalid", { status: 401 });
     }
+
 
     const event = JSON.parse(body);
     if (event.type === "checkout.session.completed") {
