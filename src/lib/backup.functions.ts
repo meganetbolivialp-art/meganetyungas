@@ -54,6 +54,31 @@ const CORE_BACKUP_TABLES = [
 // Heavy/log tables that are only included when the user explicitly requests a full backup.
 const LOG_BACKUP_TABLES = ["audit_logs", "job_runs"] as const;
 
+// Campos con credenciales en claro: nunca salen en el backup descargable.
+const SENSITIVE_FIELDS: Record<string, string[]> = {
+  routers: ["api_password"],
+  services: ["pppoe_password", "hotspot_password"],
+  radius_users: ["password"],
+  hotspot_vouchers: ["password"],
+  vpn_servers: ["server_private_key", "ipsec_secret"],
+  vpn_peers: ["private_key", "sstp_password"],
+  client_portal_users: ["password_hash"],
+  client_portal_sessions: ["token"],
+  payment_gateways: ["config"],
+  operator_2fa: ["secret", "recovery_codes"],
+  license_state: ["last_token"],
+};
+
+function sanitizeRows(table: string, rows: any[]) {
+  const fields = SENSITIVE_FIELDS[table];
+  if (!fields || rows.length === 0) return rows;
+  return rows.map((r) => {
+    const copy = { ...r };
+    for (const f of fields) if (f in copy && copy[f] != null) copy[f] = null;
+    return copy;
+  });
+}
+
 async function requireAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("has_role", {
     _user_id: userId,
@@ -86,7 +111,7 @@ export const createBackup = createServerFn({ method: "POST" })
         // skip tables that don't exist / are inaccessible
         continue;
       }
-      dump[t] = data ?? [];
+      dump[t] = sanitizeRows(t as string, data ?? []);
     }
 
     await supabase.from("audit_logs").insert({
