@@ -300,11 +300,17 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
       }
     }
     br.fails += 1;
+    if (AUTH_FAIL_RE.test((lastErr as Error)?.message || "")) {
+      br.openUntil = Date.now() + AUTH_COOLDOWN_MS;
+      console.warn(`[mikrotik] ${router.name}: credenciales API rechazadas — pausa ${AUTH_COOLDOWN_MS / 60000} min para no llenar el log del router`);
+      throw new Error(`Credenciales API inválidas para ${router.name}. Corregí usuario/contraseña del router antes de reintentar.`);
+    }
     if (br.fails >= BREAKER_THRESHOLD) {
       br.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
       console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${BREAKER_COOLDOWN_MS/1000}s tras ${br.fails} fallos`);
     }
     throw lastErr;
+
   });
 }
 
