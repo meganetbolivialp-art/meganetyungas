@@ -47,7 +47,3 @@ export const Route = createFileRoute("/api/public/license/heartbeat")({
   },
 });
 function json(d: any, s = 200) { return new Response(JSON.stringify(d), { status: s, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
-function clientIp(req: Request): string | null {
-  const h = req.headers;
-  return (h.get("cf-connecting-ip") || h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0].trim() || null);
-}
