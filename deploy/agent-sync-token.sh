@@ -58,7 +58,7 @@ case "$ACTION" in
     echo "$TOK"
     echo
     echo "Fingerprint TLS del agente:"
-    openssl x509 -in /etc/mikrotik-agent/cert.pem -noout -fingerprint -sha256 2>/dev/null \
+    openssl x509 -in /etc/meganet-agent/agent.crt -noout -fingerprint -sha256 2>/dev/null \
       | cut -d= -f2 | tr -d ':' | tr 'A-Z' 'a-z' || echo "(no encontrado)"
     ;;
   set)
