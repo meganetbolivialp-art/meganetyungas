@@ -312,23 +312,44 @@ async function withRouterLock<T>(routerId: string, fn: () => Promise<T>): Promis
   }
 }
 
-// Circuit breaker por router: tras 2 fallos consecutivos, entra en "cooldown" de 15s
+// Circuit breaker por router: tras 3 fallos consecutivos, entra en "cooldown" corto
 // donde las llamadas fallan rápido sin martillar la API (evita el storm de retries visto
-// cuando el tunnel OVPN parpadea).
-type Breaker = { fails: number; openUntil: number };
+// cuando el tunnel OVPN parpadea). Al vencer el cooldown se permite una sonda ("half-open"):
+// si funciona, el circuito se cierra; si falla, se vuelve a abrir con backoff.
+type Breaker = { fails: number; openUntil: number; opens: number; probing?: boolean };
 const routerBreakers = new Map<string, Breaker>();
-const BREAKER_THRESHOLD = 2;
-const BREAKER_COOLDOWN_MS = 15_000;
+const BREAKER_THRESHOLD = 3;
+const BREAKER_COOLDOWN_MS = 10_000;
+const BREAKER_MAX_COOLDOWN_MS = 60_000;
 // Credenciales inválidas: cooldown largo. Evita repetir /login con la misma contraseña
 // equivocada (llena el log del MikroTik con "login failure" y dispara sus bloqueos).
 const AUTH_COOLDOWN_MS = 10 * 60_000;
 const AUTH_FAIL_RE = /(login failed|cannot log in|invalid user name or password|not allowed)/i;
-
+const AUTH_MARK = "__auth_fail__";
 
 function breakerFor(id: string): Breaker {
   let b = routerBreakers.get(id);
-  if (!b) { b = { fails: 0, openUntil: 0 }; routerBreakers.set(id, b); }
+  if (!b) { b = { fails: 0, openUntil: 0, opens: 0 }; routerBreakers.set(id, b); }
   return b;
+}
+
+function openError(router: MtRouter, br: Breaker): Error {
+  const secs = Math.max(1, Math.ceil((br.openUntil - Date.now()) / 1000));
+  const authPaused = br.openUntil - Date.now() > BREAKER_MAX_COOLDOWN_MS;
+  return new Error(
+    authPaused
+      ? `Router ${router.name}: conexión pausada por credenciales API rechazadas. Corregí usuario/contraseña y reintentá.`
+      : `Router ${router.name} no responde ahora mismo (reintento automático en ${secs}s). Verificá el túnel VPN o la API del router.`,
+  );
+}
+
+/** Permite que una acción manual del usuario reintente ya mismo (cierra el cooldown corto). */
+export function resetRouterBreaker(routerId: string) {
+  const br = routerBreakers.get(routerId);
+  if (!br) return;
+  // No se limpian pausas por credenciales inválidas (cooldown largo).
+  if (br.openUntil - Date.now() > BREAKER_MAX_COOLDOWN_MS) return;
+  br.fails = 0; br.openUntil = 0; br.opens = 0; br.probing = false;
 }
 
 // Reintenta hasta 3 veces ante fallos transitorios de red / timeout / socket cerrado.
@@ -336,25 +357,25 @@ function breakerFor(id: string): Breaker {
 async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Promise<T>): Promise<T> {
   const transient = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|read ECONN|socket hang up)/i;
   const br = breakerFor(router.id);
-  if (br.openUntil > Date.now()) {
-    throw new Error(`circuit open (router ${router.name} en cooldown ${Math.ceil((br.openUntil - Date.now())/1000)}s)`);
-  }
+  if (br.openUntil > Date.now()) throw openError(router, br);
   return withRouterLock(router.id, async () => {
     // Doble check dentro del lock por si otro caller ya abrió el circuito.
-    if (br.openUntil > Date.now()) {
-      throw new Error(`circuit open (router ${router.name} en cooldown)`);
-    }
+    if (br.openUntil > Date.now()) throw openError(router, br);
+    // Tras un cooldown vencido, la primera llamada es una sonda: un solo intento.
+    const halfOpen = br.fails >= BREAKER_THRESHOLD;
+    const maxAttempts = halfOpen ? 1 : 3;
     let lastErr: unknown;
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const out = await withSessionOnce(router, fn);
         br.fails = 0;
         br.openUntil = 0;
+        br.opens = 0;
         return out;
       } catch (e) {
         lastErr = e;
         const msg = (e as Error).message || "";
-        if (!transient.test(msg) || attempt === 3) break;
+        if (!transient.test(msg) || attempt === maxAttempts) break;
         console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
         await new Promise((r) => setTimeout(r, 500 * attempt));
       }
@@ -366,11 +387,12 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
       throw new Error(`Credenciales API inválidas para ${router.name}. Corregí usuario/contraseña del router antes de reintentar.`);
     }
     if (br.fails >= BREAKER_THRESHOLD) {
-      br.openUntil = Date.now() + BREAKER_COOLDOWN_MS;
-      console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${BREAKER_COOLDOWN_MS/1000}s tras ${br.fails} fallos`);
+      br.opens += 1;
+      const wait = Math.min(BREAKER_COOLDOWN_MS * br.opens, BREAKER_MAX_COOLDOWN_MS);
+      br.openUntil = Date.now() + wait;
+      console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${wait / 1000}s tras ${br.fails} fallos`);
     }
     throw lastErr;
-
   });
 }
 
