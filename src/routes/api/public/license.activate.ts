@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { signLicenseToken } from "@/lib/license-crypto.server";
+import { verifiedClientIp, parseLicenseKey, parseHostname } from "@/lib/license-request.server";
 
 export const Route = createFileRoute("/api/public/license/activate")({
   server: {
@@ -8,10 +9,12 @@ export const Route = createFileRoute("/api/public/license/activate")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         let body: any;
         try { body = await request.json(); } catch { return json({ ok: false, error: "invalid_body" }, 400); }
-        const key = String(body?.key ?? "").trim().toUpperCase();
-        const hostname = String(body?.hostname ?? "").slice(0, 200);
-        const ip = clientIp(request) ?? String(body?.ip ?? "").slice(0, 64) ?? null;
+        const key = parseLicenseKey(body?.key);
+        const hostname = parseHostname(body?.hostname);
+        // Solo la IP verificada por la infraestructura: nunca la del cuerpo ni de cabeceras falsificables.
+        const ip = verifiedClientIp(request);
         if (!key) return json({ ok: false, error: "missing_key" }, 400);
+
 
         const { data: lic } = await supabaseAdmin.from("licenses").select("*").eq("key", key).maybeSingle();
         if (!lic) {
