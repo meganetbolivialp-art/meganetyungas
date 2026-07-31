@@ -82,7 +82,13 @@ function MonitorPage() {
   };
 
   useEffect(() => {
-    supabase.from("routers").select("*").eq("id", routerId).single().then(({ data }) => setRouter(data));
+    // Nunca traer api_password/api_user al navegador: solo columnas seguras.
+    supabase
+      .from("routers")
+      .select("id,name,ip_address,api_port,simulated,morosos_profile,walled_garden_ip,status")
+      .eq("id", routerId)
+      .single()
+      .then(({ data }) => setRouter(data));
   }, [routerId]);
 
   useEffect(() => {
