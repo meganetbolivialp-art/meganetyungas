@@ -1,1 +1,5 @@
-UPDATE public.routers SET ip_address = '10.10.0.2', api_user = 'admin_meganet', api_password = '535u6j52066g41', api_port = 8728, simulated = false, updated_at = now() WHERE id = 'eb79988b-9df8-4e0f-ba21-33bca4d4916a';
+-- REDACTADO POR SEGURIDAD.
+-- Esta migración contenía credenciales API reales de un router MikroTik en texto plano.
+-- Cargá el usuario y la contraseña del router desde el panel (pantalla de Routers).
+-- No-op intencional.
+SELECT 1;
