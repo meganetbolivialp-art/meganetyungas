@@ -457,7 +457,10 @@ export const testRouterConnection = createServerFn({ method: "POST" })
     if (error || !r) throw new Error("Router no encontrado");
     const started = Date.now();
     try {
-      const { mikrotik } = await import("./mikrotik.server");
+      const mtMod = await import("./mikrotik.server");
+      const { mikrotik } = mtMod;
+      // Prueba manual: siempre intenta de verdad, sin quedar bloqueada por el cooldown.
+      mtMod.resetRouterBreaker?.(r.id);
       const res = await mikrotik.ping(r as any);
       const elapsed = Date.now() - started;
       await context.supabase.from("routers")
