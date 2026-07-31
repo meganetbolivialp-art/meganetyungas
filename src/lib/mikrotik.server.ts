@@ -325,7 +325,6 @@ const BREAKER_MAX_COOLDOWN_MS = 60_000;
 // equivocada (llena el log del MikroTik con "login failure" y dispara sus bloqueos).
 const AUTH_COOLDOWN_MS = 10 * 60_000;
 const AUTH_FAIL_RE = /(login failed|cannot log in|invalid user name or password|not allowed)/i;
-const AUTH_MARK = "__auth_fail__";
 
 function breakerFor(id: string): Breaker {
   let b = routerBreakers.get(id);
