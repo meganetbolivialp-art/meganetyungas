@@ -1,1 +1,6 @@
-UPDATE public.routers SET api_user = 'admin', api_password = 'mega1234', ip_address = '10.10.0.2', api_port = 8728, simulated = false, updated_at = now() WHERE id = 'eb79988b-9df8-4e0f-ba21-33bca4d4916a';
+-- REDACTADO POR SEGURIDAD.
+-- Esta migración contenía credenciales API reales de un router MikroTik en texto plano.
+-- Las credenciales se administran ahora únicamente desde el panel (pantalla de Routers),
+-- que las guarda directamente en la base sin dejarlas en el historial del repositorio.
+-- No-op intencional.
+SELECT 1;

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { signLicenseToken } from "@/lib/license-crypto.server";
+import { verifiedClientIp, parseLicenseKey, parseHostname } from "@/lib/license-request.server";
 
 export const Route = createFileRoute("/api/public/license/activate")({
   server: {
@@ -8,10 +9,12 @@ export const Route = createFileRoute("/api/public/license/activate")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         let body: any;
         try { body = await request.json(); } catch { return json({ ok: false, error: "invalid_body" }, 400); }
-        const key = String(body?.key ?? "").trim().toUpperCase();
-        const hostname = String(body?.hostname ?? "").slice(0, 200);
-        const ip = clientIp(request) ?? String(body?.ip ?? "").slice(0, 64) ?? null;
+        const key = parseLicenseKey(body?.key);
+        const hostname = parseHostname(body?.hostname);
+        // Solo la IP verificada por la infraestructura: nunca la del cuerpo ni de cabeceras falsificables.
+        const ip = verifiedClientIp(request);
         if (!key) return json({ ok: false, error: "missing_key" }, 400);
+
 
         const { data: lic } = await supabaseAdmin.from("licenses").select("*").eq("key", key).maybeSingle();
         if (!lic) {
@@ -75,10 +78,8 @@ function json(data: any, status = 200) {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }
-function clientIp(req: Request): string | null {
-  const h = req.headers;
-  return (h.get("cf-connecting-ip") || h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0].trim() || null);
-}
+
+
 async function log(sb: any, license_id: string | null, license_key: string, event: string, ip: string | null, hostname: string, result: string, message?: string) {
   await sb.from("license_activations").insert({ license_id, license_key, event, ip, hostname, result, message: message ?? null });
 }
