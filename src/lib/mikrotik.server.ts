@@ -171,17 +171,28 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
       clearTimeout(t);
       resolve(socket);
     };
+    const connectTls = (): tls.TLSSocket => {
+      const baseOptions: tls.ConnectionOptions = {
+        host: targetHost,
+        port: targetPort,
+        servername: /^[\d.]+$/.test(targetHost) ? undefined : targetHost,
+      };
+      // Self-signed agent certificates are accepted only when the panel pins
+      // their SHA-256 fingerprint (verified manually after the handshake), which
+      // keeps the channel authenticated without a public CA. Some serverless
+      // runtimes do not implement `rejectUnauthorized`, so it is only used when
+      // supported and the pinned-fingerprint check remains the real gate.
+      if (!pinnedFingerprint) return tls.connect(baseOptions);
+      try {
+        return tls.connect({ ...baseOptions, rejectUnauthorized: false });
+      } catch {
+        return tls.connect(baseOptions);
+      }
+    };
     const socket: net.Socket = useTls
-      ? tls.connect({
-          host: targetHost,
-          port: targetPort,
-          servername: /^[\d.]+$/.test(targetHost) ? undefined : targetHost,
-          // Self-signed agent certificates are accepted only when the panel
-          // pins their SHA-256 fingerprint, which keeps the channel
-          // authenticated without a public CA.
-          rejectUnauthorized: pinnedFingerprint ? false : true,
-        })
+      ? connectTls()
       : net.createConnection({ host: targetHost, port: targetPort });
+
     socket.setKeepAlive(true, 5000);
     socket.setNoDelay(true);
     const t = setTimeout(() => {
