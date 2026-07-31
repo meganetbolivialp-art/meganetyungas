@@ -297,7 +297,10 @@ export const pingRouter = createServerFn({ method: "POST" })
     const { data: r, error } = await context.supabase.from("routers").select("*").eq("id", data.routerId).single();
     if (error || !r) throw new Error("Router no encontrado");
     const prevStatus = (r as any).status;
-    const { mikrotik } = await import("./mikrotik.server");
+    const mtMod = await import("./mikrotik.server");
+    const { mikrotik } = mtMod;
+    // Acción manual: permitir reintento inmediato aunque el circuito esté en cooldown.
+    mtMod.resetRouterBreaker?.(r.id);
     let res: any;
     try {
       res = await mikrotik.ping(r as any);
@@ -454,7 +457,10 @@ export const testRouterConnection = createServerFn({ method: "POST" })
     if (error || !r) throw new Error("Router no encontrado");
     const started = Date.now();
     try {
-      const { mikrotik } = await import("./mikrotik.server");
+      const mtMod = await import("./mikrotik.server");
+      const { mikrotik } = mtMod;
+      // Prueba manual: siempre intenta de verdad, sin quedar bloqueada por el cooldown.
+      mtMod.resetRouterBreaker?.(r.id);
       const res = await mikrotik.ping(r as any);
       const elapsed = Date.now() - started;
       await context.supabase.from("routers")
