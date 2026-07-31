@@ -78,10 +78,8 @@ function json(data: any, status = 200) {
     headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }
-function clientIp(req: Request): string | null {
-  const h = req.headers;
-  return (h.get("cf-connecting-ip") || h.get("x-real-ip") || h.get("x-forwarded-for")?.split(",")[0].trim() || null);
-}
+
+
 async function log(sb: any, license_id: string | null, license_key: string, event: string, ip: string | null, hostname: string, result: string, message?: string) {
   await sb.from("license_activations").insert({ license_id, license_key, event, ip, hostname, result, message: message ?? null });
 }
