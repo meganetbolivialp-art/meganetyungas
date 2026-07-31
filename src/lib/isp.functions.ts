@@ -462,8 +462,14 @@ export const testRouterConnection = createServerFn({ method: "POST" })
         .eq("id", r.id);
       return { ok: true as const, mode: r.simulated ? "simulated" : "real", latency_ms: res.latency_ms, elapsed_ms: elapsed };
     } catch (e) {
-      await context.supabase.from("routers").update({ status: "offline" }).eq("id", r.id);
-      return { ok: false as const, mode: r.simulated ? "simulated" : "real", error: (e as Error).message, elapsed_ms: Date.now() - started };
+      const message = (e as Error).message;
+      const bridgeError = /(agente .*|agent handshake failed|TLS fingerprint mismatch|unauthorized)/i.test(message);
+      // Un fallo del puente panel→VPS no demuestra que el MikroTik esté caído.
+      // Conservamos el último estado para evitar falsos "Desconectado".
+      if (!bridgeError) {
+        await context.supabase.from("routers").update({ status: "offline" }).eq("id", r.id);
+      }
+      return { ok: false as const, mode: r.simulated ? "simulated" : "real", error: message, bridge_error: bridgeError, elapsed_ms: Date.now() - started };
     }
   });
 
@@ -893,12 +899,24 @@ export const pingAllRouters = createServerFn({ method: "POST" })
             .eq("id", r.id);
           return { id: r.id, name: r.name, ok: true, latency_ms: res.latency_ms, elapsed_ms: Date.now() - started };
         } catch (e) {
-          await context.supabase.from("routers").update({ status: "offline" }).eq("id", r.id);
-          return { id: r.id, name: r.name, ok: false, error: (e as Error).message, elapsed_ms: Date.now() - started };
+          const message = (e as Error).message;
+          const bridgeError = /(agente .*|agent handshake failed|TLS fingerprint mismatch|unauthorized)/i.test(message);
+          // El estado del túnel/agent es independiente del estado del router.
+          // Solo marcamos offline cuando sí alcanzamos el puente y falla el equipo.
+          if (!bridgeError) {
+            await context.supabase.from("routers").update({ status: "offline" }).eq("id", r.id);
+          }
+          return { id: r.id, name: r.name, ok: false, bridge_error: bridgeError, error: message, elapsed_ms: Date.now() - started };
         }
       }),
     );
-    return { results, at: Date.now() };
+    const bridgeFailure = results.length > 0 && results.every((result) => !result.ok && result.bridge_error);
+    return {
+      results,
+      bridge_error: bridgeFailure,
+      error: bridgeFailure ? "El token del puente VPN no coincide con el agente del VPS." : undefined,
+      at: Date.now(),
+    };
   });
 
 // ---------- Kick sesión PPPoE ----------

@@ -168,6 +168,8 @@ function RoutersPage() {
       });
       if (pingResult?.configuration_required) {
         setConnectionNotice({ kind: "configuration", message: "Los equipos están dentro de la VPN, pero el puente seguro entre Lovable y el VPS todavía no está configurado." });
+      } else if (pingResult?.bridge_error) {
+        setConnectionNotice({ kind: "configuration", message: pingResult.error ?? "El puente VPN no pudo autenticar con el agente del VPS. Los routers conservarán su último estado conocido." });
       } else if (pingResult) {
         setConnectionNotice(null);
       }
@@ -285,6 +287,7 @@ function RoutersPage() {
     try {
       const res = await testFn({ data: { routerId: r.id } });
       if (res.ok) toast.success(`${r.name}: conexión OK (${res.elapsed_ms}ms)`);
+      else if (res.bridge_error) toast.error(`Puente VPN: ${res.error}. No se cambió el estado de ${r.name}.`);
       else toast.error(`${r.name}: ${res.error}`);
       load();
     } catch (e) {
