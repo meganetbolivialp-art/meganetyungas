@@ -15,7 +15,7 @@ export type PendingOp =
   | "removeFromCutoffList"
   | "kickPPPoESession";
 
-const OFFLINE_RE = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|socket hang up|circuit open)/i;
+const OFFLINE_RE = /(timeout|ECONNRESET|EPIPE|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|socket hang up|circuit open|no responde ahora mismo)/i;
 
 export function isOfflineError(err: unknown): boolean {
   const msg = (err as Error)?.message ?? String(err);
