@@ -123,11 +123,14 @@ function DashboardHome() {
     })();
   }, []);
 
-  // Poll live PPPoE count from Mikrotik every 15s
+  // Poll live PPPoE count from Mikrotik every 15s (solo con sesión activa)
   useEffect(() => {
     let alive = true;
     const tick = async () => {
       try {
+        // Sin sesión hydratada el serverFn responde 401 → evitamos la llamada
+        const { data } = await supabase.auth.getSession();
+        if (!data.session?.access_token) return;
         const r = await fetchLive();
         if (alive) setLiveOnline(r.total);
       } catch { /* ignore */ }
