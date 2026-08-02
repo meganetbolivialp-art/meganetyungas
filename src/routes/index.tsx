@@ -488,6 +488,5 @@ function Landing() {
         </div>
       </footer>
     </div>
-<!-- ultrax_bypass -->
   );
 }
