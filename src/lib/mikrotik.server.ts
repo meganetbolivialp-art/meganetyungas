@@ -230,6 +230,7 @@ async function connect(router: MtRouter, timeoutMs = 25000): Promise<net.Socket>
       }
       // Re-emit any bytes received after the "OK\n" line so the RouterOS reader sees them.
       if (rest.length > 0) process.nextTick(() => socket.emit("data", rest));
+      console.log(`[mikrotik:agent] handshake OK for ${router.name} (${router.ip_address})`);
       succeed();
     };
 
