@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* esta descoenctado sigue lo router puedes revisar los vpn coencion todo eso */}
+      {/* pero hay sogue sale descoenctado por que es eos */}
     </>
   );
 }
