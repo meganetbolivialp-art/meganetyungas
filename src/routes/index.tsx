@@ -79,6 +79,9 @@ Last login: Fri Jul 31 14:38:33 2026 from 138.84.37.66
 root@vmi3407804:~# /root/mikrotik-agent.mjs
 -bash: /root/mikrotik-agent.mjs: No such file or directory
 root@vmi3407804:~# sudo systemctl restart mikrotik-agent
+root@vmi3407804:~# find / -name "mikrotik-agent.mjs" 2>/dev/null
+/opt/meganet/agent/mikrotik-agent.mjs
+root@vmi3407804:~#
 root@vmi3407804:~# */}
     </>
   );
