@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* PERO YA ME SALEN LOS ROUER DESCINECTADOS POR QUE */}
+      {/* VAVESE DOY PROBAR CONECCION RECIEN DA AVESES NO ASI ASI PARA Q NO PASE ESO QUE SE PUEDE HACER */}
     </>
   );
 }
