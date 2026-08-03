@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* y ahpra cpara conecgtar otro mikrotik que hago pasos */}
+      {/* y para q nnca se descoencten que hag */}
     </>
   );
 }
