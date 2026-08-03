@@ -1,4 +1,3 @@
-<!-- ultrax_bypass -->
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
@@ -75,6 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
+      {/* me slae router desconecatdos */}
     </>
   );
 }
