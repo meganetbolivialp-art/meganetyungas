@@ -74,23 +74,12 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* ROUTER GUARDADO: COLOPM
-IP VPN reservada: 10.8.0.13
-Nombre certificado: colopm
-
-El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:
-http://157.173.118.181:3940/provision
-
-Error: HTTP 401: Unauthorized
-
-En el VPS verificá:
-sudo ss -ltnp | grep 3940
-curl -i http://127.0.0.1:3940/provision -X POST \
-  -H 'Authorization: Bearer TU_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"colopm","ip":"10.8.0.13"}'
-
-Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router. sigue me sale eso o qu tengo que hacer para crear o que pasos */}
+      {/* cket from your customer control panel.
+Last login: Fri Jul 31 14:38:33 2026 from 138.84.37.66
+root@vmi3407804:~# /root/mikrotik-agent.mjs
+-bash: /root/mikrotik-agent.mjs: No such file or directory
+root@vmi3407804:~# sudo systemctl restart mikrotik-agent
+root@vmi3407804:~# */}
     </>
   );
 }
