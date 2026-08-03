@@ -74,7 +74,23 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* y para agregar otro vpn no hay añguna forma de hace rmas rapido talves dierecto en lovable boton o algo as */}
+      {/* ROUTER GUARDADO: colo
+IP VPN reservada: 10.8.0.13
+Nombre certificado: colo
+
+El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:
+http://157.173.118.181:3940/provision
+
+Error: HTTP 401: Unauthorized
+
+En el VPS verificá:
+sudo ss -ltnp | grep 3940
+curl -i http://127.0.0.1:3940/provision -X POST \
+  -H 'Authorization: Bearer TU_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"colo","ip":"10.8.0.13"}'
+
+Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router.   UN ARCHIVO ME DESCARGO Y ESO TENIA ADENTRO */}
     </>
   );
 }
