@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* PASMAE LOS COMANDOS PAA REVISAR EN VPS */}
+      {/* DEPSUES AAUTOMATICO SE VUEVE EN VER DE TABEIN */}
     </>
   );
 }
