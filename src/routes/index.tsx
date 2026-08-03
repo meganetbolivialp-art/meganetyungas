@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* pero hay sogue sale descoenctado por que es eos */}
+      {/* Error: Mikrotik MERCEDES: El router MERCEDES (10.8.0.11:8728) no responde a través de la VPN. Verificá que el túnel OVPN esté levantado en el router y que /ip service api esté habilitado para 10.8.0.0/24.  eso me sale al sincronisar */}
     </>
   );
 }
