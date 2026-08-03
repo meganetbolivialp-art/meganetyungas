@@ -24,10 +24,11 @@ export const oneClickProvisionRouter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { name: string; location?: string }) => d)
   .handler(async ({ data, context }) => {
-    const rawUrl = process.env.MEGANET_AGENT_URL;
-    const agentToken = process.env.MEGANET_AGENT_TOKEN;
+    // Acepta las variables nuevas (MEGANET_AGENT_*) o las ya configuradas del puente VPN (MIKROTIK_AGENT_*)
+    const rawUrl = process.env['MEGANET_AGENT_URL'] || process.env['MIKROTIK_AGENT_HOST'];
+    const agentToken = process.env['MEGANET_AGENT_TOKEN'] || process.env['MIKROTIK_AGENT_TOKEN'];
     if (!rawUrl || !agentToken) {
-      throw new Error("Faltan MEGANET_AGENT_URL o MEGANET_AGENT_TOKEN en secretos del panel.");
+      throw new Error("Falta configurar el agente del VPS (URL o token) en los secretos del panel.");
     }
     const agentUrl = normalizeProvisionAgentUrl(rawUrl);
 
