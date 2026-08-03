@@ -74,28 +74,62 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* # sudo grep -i "error\|fail\|timeout" /var/log/syslog | tail -n 20
-2026-08-03T23:31:50.942602+02:00 vmi3407804 ovpn-server[291955]: Options error: You must define TUN/TAP device (--dev)
-2026-08-03T23:31:50.944111+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
-2026-08-03T23:31:50.944224+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
-2026-08-03T23:31:50.946507+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
-2026-08-03T23:31:56.185390+02:00 vmi3407804 ovpn-server[291959]: Options error: You must define TUN/TAP device (--dev)
-2026-08-03T23:31:56.187765+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
-2026-08-03T23:31:56.187944+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
-2026-08-03T23:31:56.189943+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
-2026-08-03T23:32:01.529993+02:00 vmi3407804 ovpn-server[291965]: Options error: You must define TUN/TAP device (--dev)
-2026-08-03T23:32:01.532869+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
-2026-08-03T23:32:01.533036+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
-2026-08-03T23:32:01.534685+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
-2026-08-03T23:32:06.700762+02:00 vmi3407804 ovpn-server[291969]: Options error: You must define TUN/TAP device (--dev)
-2026-08-03T23:32:06.701304+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
-2026-08-03T23:32:06.705909+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
-2026-08-03T23:32:06.706142+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
-2026-08-03T23:32:11.944425+02:00 vmi3407804 ovpn-server[291976]: Options error: You must define TUN/TAP device (--dev)
-2026-08-03T23:32:11.959667+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
-2026-08-03T23:32:11.959862+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
-2026-08-03T23:32:11.959925+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
-root@vmi3407804:~# */}
+      {/* root@vmi3407804:~# cat /etc/openvpn/server.conf
+keepalive 10 30
+root@vmi3407804:~# echo "dev tun" | sudo tee -a /etc/openvpn/server.conf
+sudo systemctl restart openvpn@server
+dev tun
+root@vmi3407804:~# sudo systemctl status openvpn@server
+● openvpn@server.service - OpenVPN connection to server
+     Loaded: loaded (/usr/lib/systemd/system/openvpn@.service; enabled-runtime; preset: enabled)
+     Active: active (running) since Mon 2026-08-03 23:33:35 CEST; 7s ago
+       Docs: man:openvpn(8)
+             https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
+             https://community.openvpn.net/openvpn/wiki/HOWTO
+   Main PID: 292063 (openvpn)
+     Status: "Pre-connection initialization successful"
+      Tasks: 1 (limit: 10)
+     Memory: 1.3M (peak: 1.5M)
+        CPU: 80ms
+     CGroup: /system.slice/system-openvpn.slice/openvpn@server.service
+             └─292063 /usr/sbin/openvpn --daemon ovpn-server --status /run/openvpn/server.status 10 --cd /etc/o>
+
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: library versions: OpenSSL 3.0.13 30 Jan 2024, LZO 2.10
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: DCO version: N/A
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--cipher none' was specified. This me>
+Aug 03 23:33:35 vmi3407804 systemd[1]: Started openvpn@server.service - OpenVPN connection to server.
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--auth none' was specified. This mean>
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: All encryption and authentication feat>
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: TUN/TAP device tun1 opened
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: Could not determine IPv4/IPv6 protocol. Using AF_INET
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link local (bound): [AF_INET][undef]:1194
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link remote: [AF_UNSPEC]
+...skipping...
+● openvpn@server.service - OpenVPN connection to server
+     Loaded: loaded (/usr/lib/systemd/system/openvpn@.service; enabled-runtime; preset: enabled)
+     Active: active (running) since Mon 2026-08-03 23:33:35 CEST; 7s ago
+       Docs: man:openvpn(8)
+             https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
+             https://community.openvpn.net/openvpn/wiki/HOWTO
+   Main PID: 292063 (openvpn)
+     Status: "Pre-connection initialization successful"
+      Tasks: 1 (limit: 10)
+     Memory: 1.3M (peak: 1.5M)
+        CPU: 80ms
+     CGroup: /system.slice/system-openvpn.slice/openvpn@server.service
+             └─292063 /usr/sbin/openvpn --daemon ovpn-server --status /run/openvpn/server.status 10 --cd /etc/o>
+
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: library versions: OpenSSL 3.0.13 30 Jan 2024, LZO 2.10
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: DCO version: N/A
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--cipher none' was specified. This me>
+Aug 03 23:33:35 vmi3407804 systemd[1]: Started openvpn@server.service - OpenVPN connection to server.
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--auth none' was specified. This mean>
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: All encryption and authentication feat>
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: TUN/TAP device tun1 opened
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: Could not determine IPv4/IPv6 protocol. Using AF_INET
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link local (bound): [AF_INET][undef]:1194
+Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link remote: [AF_UNSPEC]
+ */}
     </>
   );
 }
