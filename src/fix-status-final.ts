@@ -3,7 +3,7 @@ import { mikrotik } from './lib/mikrotik.server';
 
 async function run() {
   console.log("--- SYNC FINAL DE ESTADO DE ROUTERS ---");
-  const { data: routers, error } = await supabase.from('routers').select('*').eq('is_simulated', false);
+  const { data: routers, error } = await supabase.from('routers').select('*').eq('simulated', false);
   
   if (error || !routers) {
     console.error("Error al leer routers:", error);
