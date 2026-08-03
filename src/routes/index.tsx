@@ -74,23 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* solo me descarga eso archivo ROUTER GUARDADO: dw
-IP VPN reservada: 10.8.0.14
-Nombre certificado: dw
-
-El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:
-http://157.173.118.181:3940/provision
-
-Error: HTTP 401: Unauthorized
-
-En el VPS verificá:
-sudo ss -ltnp | grep 3940
-curl -i http://127.0.0.1:3940/provision -X POST \
-  -H 'Authorization: Bearer TU_TOKEN' \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"dw","ip":"10.8.0.14"}'
-
-Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router.  CON ESE CONTINIDO */}
+      {/* PERO YA ME SALEN LOS ROUER DESCINECTADOS POR QUE */}
     </>
   );
 }
