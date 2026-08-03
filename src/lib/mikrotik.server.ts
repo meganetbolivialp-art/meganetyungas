@@ -126,7 +126,7 @@ function isLoopbackHost(host: string) {
   return host === "127.0.0.1" || host === "::1" || host === "localhost";
 }
 
-async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket> {
+async function connect(router: MtRouter, timeoutMs = 25000): Promise<net.Socket> {
   const agentHost = process.env.MIKROTIK_AGENT_HOST;
   const agentPort = process.env.MIKROTIK_AGENT_PORT ? Number(process.env.MIKROTIK_AGENT_PORT) : 8777;
   const agentToken = process.env.MIKROTIK_AGENT_TOKEN;
@@ -230,6 +230,7 @@ async function connect(router: MtRouter, timeoutMs = 15000): Promise<net.Socket>
       }
       // Re-emit any bytes received after the "OK\n" line so the RouterOS reader sees them.
       if (rest.length > 0) process.nextTick(() => socket.emit("data", rest));
+      console.log(`[mikrotik:agent] handshake OK for ${router.name} (${router.ip_address})`);
       succeed();
     };
 
