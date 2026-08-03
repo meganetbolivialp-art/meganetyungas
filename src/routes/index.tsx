@@ -74,7 +74,28 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* YA APLIQUE ESI AL MIKROTIK PERO SIGEU ASI */}
+      {/* # sudo grep -i "error\|fail\|timeout" /var/log/syslog | tail -n 20
+2026-08-03T23:31:50.942602+02:00 vmi3407804 ovpn-server[291955]: Options error: You must define TUN/TAP device (--dev)
+2026-08-03T23:31:50.944111+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
+2026-08-03T23:31:50.944224+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
+2026-08-03T23:31:50.946507+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
+2026-08-03T23:31:56.185390+02:00 vmi3407804 ovpn-server[291959]: Options error: You must define TUN/TAP device (--dev)
+2026-08-03T23:31:56.187765+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
+2026-08-03T23:31:56.187944+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
+2026-08-03T23:31:56.189943+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
+2026-08-03T23:32:01.529993+02:00 vmi3407804 ovpn-server[291965]: Options error: You must define TUN/TAP device (--dev)
+2026-08-03T23:32:01.532869+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
+2026-08-03T23:32:01.533036+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
+2026-08-03T23:32:01.534685+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
+2026-08-03T23:32:06.700762+02:00 vmi3407804 ovpn-server[291969]: Options error: You must define TUN/TAP device (--dev)
+2026-08-03T23:32:06.701304+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
+2026-08-03T23:32:06.705909+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
+2026-08-03T23:32:06.706142+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
+2026-08-03T23:32:11.944425+02:00 vmi3407804 ovpn-server[291976]: Options error: You must define TUN/TAP device (--dev)
+2026-08-03T23:32:11.959667+02:00 vmi3407804 systemd[1]: openvpn@server.service: Main process exited, code=exited, status=1/FAILURE
+2026-08-03T23:32:11.959862+02:00 vmi3407804 systemd[1]: openvpn@server.service: Failed with result 'exit-code'.
+2026-08-03T23:32:11.959925+02:00 vmi3407804 systemd[1]: Failed to start openvpn@server.service - OpenVPN connection to server.
+root@vmi3407804:~# */}
     </>
   );
 }
