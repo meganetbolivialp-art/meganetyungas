@@ -2,8 +2,10 @@ import { supabase } from './integrations/supabase/client';
 import { mikrotik } from './lib/mikrotik.server';
 
 async function run() {
-  console.log("--- SYNC FINAL DE ESTADO DE ROUTERS ---");
-  const { data: routers, error } = await supabase.from('routers').select('*');
+  console.log("--- SYNC FINAL DE ESTADO DE ROUTERS (Usando supabaseAdmin) ---");
+  const { supabaseAdmin } = await import('./integrations/supabase/client.server');
+  
+  const { data: routers, error } = await supabaseAdmin.from('routers').select('*');
   
   if (error || !routers) {
     console.error("Error al leer routers:", error);
@@ -19,7 +21,7 @@ async function run() {
       const result = await mikrotik.ping(router as any);
       console.log(`Resultado: ONLINE ✅ (${result.latency_ms}ms)`);
       
-      const { error: upError } = await supabase.from('routers').update({ 
+      const { error: upError } = await supabaseAdmin.from('routers').update({ 
         status: 'online', 
         last_sync_at: new Date().toISOString() 
       }).eq('id', router.id);
@@ -30,7 +32,7 @@ async function run() {
       console.log(`Resultado: OFFLINE ❌`);
       console.log(`Error: ${(e as Error).message}`);
       
-      await supabase.from('routers').update({ 
+      await supabaseAdmin.from('routers').update({ 
         status: 'offline',
         last_sync_at: new Date().toISOString()
       }).eq('id', router.id);
