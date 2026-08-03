@@ -74,36 +74,23 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* GNU nano 7.2                       /etc/systemd/system/mikrotik-agent.service
-[Unit]
-Description=Meganet MikroTik TLS Agent
-After=network-online.target
-Wants=network-online.target
+      {/* solo me descarga eso archivo ROUTER GUARDADO: dw
+IP VPN reservada: 10.8.0.14
+Nombre certificado: dw
 
-[Service]
-Environment=MIKROTIK_AGENT_TOKEN=c7b3c5e3e60b9164babc9d9108e6bf4821aedb801d4ddd10409e3526f7fe18e5
-Type=simple
-Environment=PORT=8777
-Environment=AGENT_TLS_CERT=/etc/letsencrypt/live/157-173-118-181.nip.io/fullchain.pem
-Environment=AGENT_TLS_KEY=/etc/letsencrypt/live/157-173-118-181.nip.io/privkey.pem
-WorkingDirectory=/opt/meganet/agent
-ExecStart=/usr/bin/node mikrotik-agent.mjs
-Restart=always
-RestartSec=5
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectHome=true
-ProtectSystem=strict
-ReadOnlyPaths=/etc/letsencrypt
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
-LockPersonality=true
+El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:
+http://157.173.118.181:3940/provision
 
-[Install]
-WantedBy=multi-user.target
+Error: HTTP 401: Unauthorized
 
+En el VPS verificá:
+sudo ss -ltnp | grep 3940
+curl -i http://127.0.0.1:3940/provision -X POST \
+  -H 'Authorization: Bearer TU_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"dw","ip":"10.8.0.14"}'
 
-
-asi est que edito hora o esta bien nomas */}
+Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router.  CON ESE CONTINIDO */}
     </>
   );
 }
