@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router"; // DESPUES SALE EN VERDE SIGUE LOS MISMO
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,
