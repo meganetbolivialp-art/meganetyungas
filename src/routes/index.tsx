@@ -74,9 +74,9 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* ROUTER GUARDADO: colo
+      {/* ROUTER GUARDADO: COLOPM
 IP VPN reservada: 10.8.0.13
-Nombre certificado: colo
+Nombre certificado: colopm
 
 El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:
 http://157.173.118.181:3940/provision
@@ -88,9 +88,9 @@ sudo ss -ltnp | grep 3940
 curl -i http://127.0.0.1:3940/provision -X POST \
   -H 'Authorization: Bearer TU_TOKEN' \
   -H 'Content-Type: application/json' \
-  -d '{"name":"colo","ip":"10.8.0.13"}'
+  -d '{"name":"colopm","ip":"10.8.0.13"}'
 
-Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router.   UN ARCHIVO ME DESCARGO Y ESO TENIA ADENTRO */}
+Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router. sigue me sale eso o qu tengo que hacer para crear o que pasos */}
     </>
   );
 }
