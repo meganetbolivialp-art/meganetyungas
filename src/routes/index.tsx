@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* me slae router desconecatdos */}
+      {/* esta descoenctado sigue lo router puedes revisar los vpn coencion todo eso */}
     </>
   );
 }
