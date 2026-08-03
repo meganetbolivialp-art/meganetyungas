@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* AL QU3 ESTABBA REVIDANDO UN RATO ESTAN COENCTADOS Y DESUES SE DESCOENCTAR DESPUES SE COENCTAN ASI ES */}
+      {/* PASMAE LOS COMANDOS PAA REVISAR EN VPS */}
     </>
   );
 }
