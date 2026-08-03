@@ -74,15 +74,36 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* cket from your customer control panel.
-Last login: Fri Jul 31 14:38:33 2026 from 138.84.37.66
-root@vmi3407804:~# /root/mikrotik-agent.mjs
--bash: /root/mikrotik-agent.mjs: No such file or directory
-root@vmi3407804:~# sudo systemctl restart mikrotik-agent
-root@vmi3407804:~# find / -name "mikrotik-agent.mjs" 2>/dev/null
-/opt/meganet/agent/mikrotik-agent.mjs
-root@vmi3407804:~#
-root@vmi3407804:~# */}
+      {/* GNU nano 7.2                       /etc/systemd/system/mikrotik-agent.service
+[Unit]
+Description=Meganet MikroTik TLS Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=MIKROTIK_AGENT_TOKEN=c7b3c5e3e60b9164babc9d9108e6bf4821aedb801d4ddd10409e3526f7fe18e5
+Type=simple
+Environment=PORT=8777
+Environment=AGENT_TLS_CERT=/etc/letsencrypt/live/157-173-118-181.nip.io/fullchain.pem
+Environment=AGENT_TLS_KEY=/etc/letsencrypt/live/157-173-118-181.nip.io/privkey.pem
+WorkingDirectory=/opt/meganet/agent
+ExecStart=/usr/bin/node mikrotik-agent.mjs
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadOnlyPaths=/etc/letsencrypt
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+asi est que edito hora o esta bien nomas */}
     </>
   );
 }
