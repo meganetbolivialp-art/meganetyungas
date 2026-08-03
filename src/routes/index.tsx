@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* VAVESE DOY PROBAR CONECCION RECIEN DA AVESES NO ASI ASI PARA Q NO PASE ESO QUE SE PUEDE HACER */}
+      {/* EL 1 CMO REVISO O PASAME SCRIP PARA EJECUTAR EN MIKROTIK */}
     </>
   );
 }
