@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* DEPSUES AAUTOMATICO SE VUEVE EN VER DE TABEIN */}
+      {/* YA APLIQUE ESI AL MIKROTIK PERO SIGEU ASI */}
     </>
   );
 }
