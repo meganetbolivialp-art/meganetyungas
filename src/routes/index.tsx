@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* y para q nnca se descoencten que hag */}
+      {/* y para agregar otro vpn no hay añguna forma de hace rmas rapido talves dierecto en lovable boton o algo as */}
     </>
   );
 }
