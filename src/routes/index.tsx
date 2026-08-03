@@ -74,7 +74,7 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* EL 1 CMO REVISO O PASAME SCRIP PARA EJECUTAR EN MIKROTIK */}
+      {/* AL QU3 ESTABBA REVIDANDO UN RATO ESTAN COENCTADOS Y DESUES SE DESCOENCTAR DESPUES SE COENCTAN ASI ES */}
     </>
   );
 }
