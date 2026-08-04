@@ -89,8 +89,13 @@ ufw default allow outgoing >/dev/null
 ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
+ufw allow 500/udp >/dev/null
+ufw allow 4500/udp >/dev/null
+ufw allow 1701/udp >/dev/null
+ufw allow 8777/tcp >/dev/null
+ufw allow 3940/tcp >/dev/null
 # NO abrir 5432 (Postgres), 8000 (Kong) ni 3000 (frontend) al público.
-# Todo lo interno pasa por Nginx (80/443) → loopback.
+# Todo lo interno pasa por Nginx (80/443) -> loopback.
 ufw --force enable >/dev/null
 
 # ============================================================================
