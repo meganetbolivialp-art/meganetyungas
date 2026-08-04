@@ -1,5 +1,19 @@
 import { secureString } from "@/lib/secure-random";
-export type ProvisionFiles = { ca: string; crt: string; key: string };
+
+export type OvpnProvisionFiles = { ca: string; crt: string; key: string };
+export type L2tpProvisionFiles = {
+  l2tpUser: string;
+  l2tpPassword: string;
+  ip: string;
+  ipsecSecret: string;
+  endpoint: string;
+};
+export type ProvisionFiles = OvpnProvisionFiles | L2tpProvisionFiles;
+export type VpnType = "ovpn" | "l2tp";
+
+export function isL2tpProvision(value: ProvisionFiles): value is L2tpProvisionFiles {
+  return "l2tpUser" in value && "l2tpPassword" in value;
+}
 
 export function ipToLong(ip: string): number {
   return ip.split(".").reduce((a, o) => (a << 8) + parseInt(o, 10), 0) >>> 0;
@@ -57,6 +71,7 @@ export async function requestProvisionFiles(params: {
   agentToken: string;
   slug: string;
   assignedIp: string;
+  vpnType: VpnType;
 }): Promise<ProvisionFiles> {
   const ctrl = new AbortController();
   const timeout = setTimeout(() => ctrl.abort(), 15000);
@@ -67,11 +82,25 @@ export async function requestProvisionFiles(params: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.agentToken}`,
       },
-      body: JSON.stringify({ name: params.slug, ip: params.assignedIp }),
+      body: JSON.stringify({ name: params.slug, ip: params.assignedIp, type: params.vpnType }),
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-    const provision = (await res.json()) as Partial<ProvisionFiles>;
+    const provision = (await res.json()) as Partial<OvpnProvisionFiles & L2tpProvisionFiles>;
+
+    if (params.vpnType === "l2tp") {
+      if (!provision.l2tpUser || !provision.l2tpPassword || !provision.ip || !provision.ipsecSecret || !provision.endpoint) {
+        throw new Error("Respuesta del agente L2TP incompleta");
+      }
+      return {
+        l2tpUser: provision.l2tpUser,
+        l2tpPassword: provision.l2tpPassword,
+        ip: provision.ip,
+        ipsecSecret: provision.ipsecSecret,
+        endpoint: provision.endpoint,
+      };
+    }
+
     if (!provision.ca || !provision.crt || !provision.key) {
       throw new Error("Respuesta del agente incompleta (falta ca/crt/key)");
     }
@@ -98,47 +127,59 @@ export function buildRouterInstallScript(params: {
   vpsHost: string;
   apiUser: string;
   apiPass: string;
+  provision: ProvisionFiles | null;
+  vpnType: VpnType;
 }) {
   const caFile = `${params.slug}-ca.crt`;
   const crtFile = `${params.slug}.crt`;
   const keyFile = `${params.slug}.key`;
 
+  const vpnCommands =
+    params.vpnType === "l2tp" && params.provision && isL2tpProvision(params.provision)
+      ? [
+          `# 1) L2TP/IPsec client → VPS`,
+          `/interface l2tp-client remove [find name="vpn-panel"]`,
+          `/interface l2tp-client add name=vpn-panel connect-to=${params.provision.endpoint} user=${params.provision.l2tpUser} password="${params.provision.l2tpPassword}" profile=default-encryption use-ipsec=yes ipsec-secret="${params.provision.ipsecSecret}" add-default-route=no disabled=no`,
+          `# 1.1) Asegurar perfil PPP con local/remote-address`,
+          `/ppp profile add name=default-encryption local-address=10.8.0.1 remote-address=10.8.0.0/24 comment="VPN panel" 2>/dev/null`,
+          `/ppp profile set [find name="default-encryption"] local-address=10.8.0.1 remote-address=10.8.0.0/24`,
+          `/interface l2tp-client set [find name="vpn-panel"] profile=default-encryption`,
+        ]
+      : [
+          `# 1) Importar certificados`,
+          `/certificate import file-name=${caFile} passphrase=""`,
+          `/certificate import file-name=${crtFile} passphrase=""`,
+          `/certificate import file-name=${keyFile} passphrase=""`,
+          "",
+          `# 2) OVPN client → VPS`,
+          `/interface ovpn-client remove [find name="ovpn-panel"]`,
+          `/interface ovpn-client add name=ovpn-panel connect-to=${params.vpsHost} port=1194 mode=ip protocol=tcp user=${params.slug} password="" certificate=${params.slug}.crt_0 auth=sha1 cipher=aes256 add-default-route=no disabled=no`,
+        ];
+
   return [
     `# ============================================================`,
     `# MikroSystem — auto-provision para router: ${params.name}`,
     `# IP VPN asignada: ${params.assignedIp}   ·   VPS: ${params.vpsHost}`,
-    `# Subí primero los 3 archivos ${caFile}, ${crtFile}, ${keyFile}`,
-    `# y luego importá este .rsc con:  /import file-name=${params.slug}.rsc`,
+    `# VPN: ${params.vpnType.toUpperCase()}`,
     `# ============================================================`,
-    ``,
-    `# 1) Importar certificados`,
-    `/certificate import file-name=${caFile} passphrase=""`,
-    `/certificate import file-name=${crtFile} passphrase=""`,
-    `/certificate import file-name=${keyFile} passphrase=""`,
-    ``,
-    `# 2) OVPN client → VPS`,
-    `/interface ovpn-client remove [find name="ovpn-panel"]`,
-    `/interface ovpn-client add name=ovpn-panel connect-to=${params.vpsHost} port=1194 \\`,
-    `  mode=ip protocol=tcp user=${params.slug} password="" \\`,
-    `  certificate=${params.slug}.crt_0 auth=sha1 cipher=aes256 \\`,
-    `  add-default-route=no disabled=no`,
-    ``,
+    "",
+    ...vpnCommands,
+    "",
     `# 3) Usuario API para el panel`,
     `/user group add name=panel-api policy=api,read,write,policy,test,sensitive,romon 2>/dev/null`,
     `/user remove [find name="${params.apiUser}"]`,
     `/user add name=${params.apiUser} password="${params.apiPass}" group=panel-api comment="MikroSystem panel"`,
-    ``,
+    "",
     `# 4) Habilitar API`,
     `/ip service set api disabled=no port=8728`,
-    ``,
+    "",
     `# 5) Firewall: permitir API sólo desde el túnel VPN`,
     `/ip firewall filter remove [find comment="mikrosystem-api"]`,
-    `/ip firewall filter add chain=input action=accept protocol=tcp dst-port=8728 \\`,
-    `  in-interface=ovpn-panel comment="mikrosystem-api" place-before=0`,
-    ``,
+    `/ip firewall filter add chain=input action=accept protocol=tcp dst-port=8728 in-interface=vpn-panel comment="mikrosystem-api" place-before=0`,
+    "",
     `:log info "MikroSystem: provisión completa. VPN=${params.assignedIp}"`,
-    `:put "Listo. Verificá /interface ovpn-client print y /user print"`,
-    ``,
+    `:put "Listo. Verificá /interface l2tp-client print o /interface ovpn-client print"`,
+    "",
   ].join("\n");
 }
 
@@ -148,24 +189,22 @@ export function buildManualProvisionGuide(params: {
   assignedIp: string;
   provisionUrl: string;
   provisionError: string;
+  vpnType: VpnType;
 }) {
   return [
     `ROUTER GUARDADO: ${params.name}`,
     `IP VPN reservada: ${params.assignedIp}`,
-    `Nombre certificado: ${params.slug}`,
-    ``,
-    `El router ya quedó agregado en el panel, pero NO se generaron los certificados porque el VPS no respondió:`,
+    `VPN: ${params.vpnType.toUpperCase()}`,
+    "",
+    `El router ya quedó agregado en el panel, pero NO se generaron las credenciales VPN porque el VPS no respondió:`,
     `${params.provisionUrl}`,
-    ``,
+    "",
     `Error: ${params.provisionError}`,
-    ``,
+    "",
     `En el VPS verificá:`,
     `sudo ss -ltnp | grep 3940`,
-    `curl -i http://127.0.0.1:3940/provision -X POST \\`,
-    `  -H 'Authorization: Bearer TU_TOKEN' \\`,
-    `  -H 'Content-Type: application/json' \\`,
-    `  -d '{"name":"${params.slug}","ip":"${params.assignedIp}"}'`,
-    ``,
-    `Cuando /provision responda, abrí de nuevo el asistente para generar los certificados del siguiente router.`,
+    `curl -i http://127.0.0.1:3940/provision -X POST -H 'Authorization: Bearer TU_TOKEN' -H 'Content-Type: application/json' -d '{"name":"${params.slug}","ip":"${params.assignedIp}","type":"${params.vpnType}"}'`,
+    "",
+    `Cuando /provision responda, abrí de nuevo el asistente para generar el script del siguiente router.`,
   ].join("\n");
 }
