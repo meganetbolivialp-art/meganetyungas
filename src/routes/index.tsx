@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"; // ASLO UNS REVICIONPROFUNDA PARA Q FUNCIONE
+import { createFileRoute, Link } from "@tanstack/react-router"; // MEJOR CABIAREMOS A L2TP POR QU N MIKROWISP USO ESO Y ES SUPER ESTABE
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,
