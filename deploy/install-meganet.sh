@@ -724,10 +724,16 @@ Description=Meganet MikroTik Agent
 After=network.target
 [Service]
 Environment=MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
-Environment=PORT=8777
-Environment=AGENT_BIND_HOST=0.0.0.0
-Environment=AGENT_TLS_CERT=/etc/meganet-agent/agent.crt
-Environment=AGENT_TLS_KEY=/etc/meganet-agent/agent.key
+Environment=MIKROTIK_AGENT_PORT=8777
+Environment=MIKROTIK_AGENT_BIND_HOST=0.0.0.0
+Environment=MIKROTIK_AGENT_TLS_CERT=/etc/meganet-agent/agent.crt
+Environment=MIKROTIK_AGENT_TLS_KEY=/etc/meganet-agent/agent.key
+Environment=PROVISION_PORT=3940
+Environment=PROVISION_BIND_HOST=0.0.0.0
+Environment=ADD_ROUTER_SCRIPT=/opt/meganet/l2tp-add-router.sh
+Environment=L2TP_NETWORK=10.8.0.0/24
+Environment=L2TP_SERVER_IP=10.8.0.1
+EnvironmentFile=-/opt/meganet/.env.l2tp
 WorkingDirectory=$INSTALL_DIR/agent
 ExecStart=/usr/bin/node mikrotik-agent.mjs
 Restart=always
