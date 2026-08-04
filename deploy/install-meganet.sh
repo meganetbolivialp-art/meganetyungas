@@ -784,6 +784,12 @@ MIKROTIK_AGENT_PORT:  8777
 MIKROTIK_AGENT_TOKEN: $AGENT_TOKEN
 MIKROTIK_AGENT_TLS:   1
 MIKROTIK_AGENT_TLS_FINGERPRINT: $AGENT_TLS_FP
+PROVISION_PORT:       3940
+
+------ VPN L2TP/IPsec (instalar aparte) ------
+  sudo bash /opt/meganet-deploy/deploy/install-l2tp-contabo.sh
+  sudo bash /opt/meganet-deploy/deploy/l2tp-add-router.sh <nombre> <ip-fija>
+  Puerto agente /provision: 3940
 
 ------ Comandos útiles ------
   Ver logs Supabase:   cd $INSTALL_DIR/supabase && docker compose logs -f
@@ -791,6 +797,7 @@ MIKROTIK_AGENT_TLS_FINGERPRINT: $AGENT_TLS_FP
   Backup manual:       /etc/cron.daily/meganet-backup
   Restaurar dump:      docker exec -i meganet-supabase-db-1 psql -U postgres < archivo.sql
   Estado agente:       systemctl status mikrotik-agent
+  Logs agente:         journalctl -u mikrotik-agent -f
 END
 chmod 600 "$CREDS_FILE"
 
