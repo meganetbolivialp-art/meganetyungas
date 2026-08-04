@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"; // MEJOR CABIAREMOS A L2TP POR QU N MIKROWISP USO ESO Y ES SUPER ESTABE
+import { createFileRoute, Link } from "@tanstack/react-router"; // OSEA CAMBIAR DE VPN: L2TP ES MAS ESTABLE COMO EN MIKROWISP
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,
