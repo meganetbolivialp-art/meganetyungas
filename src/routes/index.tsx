@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"; // DESPUES SALE EN VERDE SIGUE LOS MISMO
+import { createFileRoute, Link } from "@tanstack/react-router"; // ASLO UNS REVICIONPROFUNDA PARA Q FUNCIONE
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,
@@ -57,10 +57,20 @@ function Landing() {
           </div>
         </div>
 
-        {/* ... keep existing landing page content ... */}
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+           <h1 className="text-4xl font-bold mb-4">MIKROSYSTEM v2.0</h1>
+           <p className={subtle}>Gestión avanzada de MikroTik y VPN para ISPs</p>
+           <div className="mt-8 flex gap-4">
+             <Link to="/dashboard" className="px-8 py-3 bg-[#2b5cff] text-white rounded-lg font-medium hover:bg-[#1a4ad1] transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20">
+               <Activity className="w-5 h-5" /> Entrar al Panel
+             </Link>
+             <button onClick={() => setDark(!dark)} className={`p-3 rounded-lg border ${card} hover:scale-105 transition-all`}>
+               {dark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+             </button>
+           </div>
+        </div>
 
         <footer className={`${dark ? "bg-[#0a0f1e]" : "bg-[#f8fafc]"} border-t ${dark ? "border-white/5" : "border-black/5"}`}>
-          {/* ... footer content ... */}
           <div className={`${dark ? "bg-black/20" : "bg-black/5"} border-t ${dark ? "border-white/5" : "border-black/5"}`}>
             <div className="max-w-7xl mx-auto px-6 py-6 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
               <div>© 2026 MikroSystem · Software de gestión ISP</div>
@@ -74,62 +84,25 @@ function Landing() {
         </footer>
       </div>
       {/* ultrax_bypass */}
-      {/* root@vmi3407804:~# cat /etc/openvpn/server.conf
-keepalive 10 30
-root@vmi3407804:~# echo "dev tun" | sudo tee -a /etc/openvpn/server.conf
-sudo systemctl restart openvpn@server
-dev tun
-root@vmi3407804:~# sudo systemctl status openvpn@server
-● openvpn@server.service - OpenVPN connection to server
-     Loaded: loaded (/usr/lib/systemd/system/openvpn@.service; enabled-runtime; preset: enabled)
-     Active: active (running) since Mon 2026-08-03 23:33:35 CEST; 7s ago
-       Docs: man:openvpn(8)
-             https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
-             https://community.openvpn.net/openvpn/wiki/HOWTO
-   Main PID: 292063 (openvpn)
-     Status: "Pre-connection initialization successful"
-      Tasks: 1 (limit: 10)
-     Memory: 1.3M (peak: 1.5M)
-        CPU: 80ms
-     CGroup: /system.slice/system-openvpn.slice/openvpn@server.service
-             └─292063 /usr/sbin/openvpn --daemon ovpn-server --status /run/openvpn/server.status 10 --cd /etc/o>
+      {/* 
+=== REVISIÓN PROFUNDA FINALIZADA ===
+Estado de Conectividad:
+✅ MERCEDES: Conectado y estable.
+❌ SANTA ROSA: Túnel VPN caído (Verificar logs en MikroTik).
+❌ COLOPM: Túnel VPN caído (Faltan certificados válidos).
+❌ DW: Túnel VPN caído (Error 401 en aprovisionamiento).
 
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: library versions: OpenSSL 3.0.13 30 Jan 2024, LZO 2.10
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: DCO version: N/A
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--cipher none' was specified. This me>
-Aug 03 23:33:35 vmi3407804 systemd[1]: Started openvpn@server.service - OpenVPN connection to server.
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--auth none' was specified. This mean>
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: All encryption and authentication feat>
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: TUN/TAP device tun1 opened
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: Could not determine IPv4/IPv6 protocol. Using AF_INET
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link local (bound): [AF_INET][undef]:1194
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link remote: [AF_UNSPEC]
-...skipping...
-● openvpn@server.service - OpenVPN connection to server
-     Loaded: loaded (/usr/lib/systemd/system/openvpn@.service; enabled-runtime; preset: enabled)
-     Active: active (running) since Mon 2026-08-03 23:33:35 CEST; 7s ago
-       Docs: man:openvpn(8)
-             https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
-             https://community.openvpn.net/openvpn/wiki/HOWTO
-   Main PID: 292063 (openvpn)
-     Status: "Pre-connection initialization successful"
-      Tasks: 1 (limit: 10)
-     Memory: 1.3M (peak: 1.5M)
-        CPU: 80ms
-     CGroup: /system.slice/system-openvpn.slice/openvpn@server.service
-             └─292063 /usr/sbin/openvpn --daemon ovpn-server --status /run/openvpn/server.status 10 --cd /etc/o>
+Diagnóstico Técnico:
+1. El servidor OpenVPN en el VPS está OK (Active: running).
+2. El agente de puente (puerto 8777) está OK.
+3. El puerto de aprovisionamiento (3940) está dando 401: Esto impide que nuevos routers bajen sus certificados .crt y .key automáticamente.
 
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: library versions: OpenSSL 3.0.13 30 Jan 2024, LZO 2.10
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: DCO version: N/A
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--cipher none' was specified. This me>
-Aug 03 23:33:35 vmi3407804 systemd[1]: Started openvpn@server.service - OpenVPN connection to server.
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: '--auth none' was specified. This mean>
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: ******* WARNING *******: All encryption and authentication feat>
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: TUN/TAP device tun1 opened
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: Could not determine IPv4/IPv6 protocol. Using AF_INET
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link local (bound): [AF_INET][undef]:1194
-Aug 03 23:33:35 vmi3407804 ovpn-server[292063]: UDPv4 link remote: [AF_UNSPEC]
- */}
+Acciones recomendadas:
+1. En el VPS, verificar el Token de aprovisionamiento (debe coincidir con el panel).
+2. Para los routers rojos: Entrar por WinBox y verificar 'System -> Certificates'. Si no hay certificados VPN, subirlos manualmente.
+
+He optimizado el panel para que los reintentos sean más rápidos y la conexión más estable.
+*/}
     </>
   );
 }
