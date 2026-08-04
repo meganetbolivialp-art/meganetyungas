@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"; // CONSTRYEAMOS CON SERVIDOR DE VPN L2TP YA NO OVPN
+import { createFileRoute, Link } from "@tanstack/react-router"; // QUE VPN ES RECOMENDABLE UTLIZAR
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,
