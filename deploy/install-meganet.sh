@@ -391,6 +391,11 @@ if [[ -n "$GIT_REPO" ]]; then
   git clone "$GIT_REPO" frontend-src 2>/dev/null || (cd frontend-src && git pull)
   cd frontend-src
 
+  # Scripts de deploy accesibles en el VPS (L2TP, VPN, agente, helpers)
+  cp -r deploy /opt/meganet-deploy/ 2>/dev/null || true
+  mkdir -p /opt/meganet
+  ln -sf /opt/meganet-deploy/deploy/l2tp-add-router.sh /opt/meganet/l2tp-add-router.sh 2>/dev/null || true
+
   cat > .env.production <<EOF
 VITE_SUPABASE_URL=$SITE_URL
 VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY
