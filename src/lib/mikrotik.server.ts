@@ -383,7 +383,7 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
         const msg = (e as Error).message || "";
         if (!transient.test(msg) || attempt === maxAttempts) break;
         console.warn(`[mikrotik] ${router.name} intento ${attempt} falló (${msg}), reintentando…`);
-        await new Promise((r) => setTimeout(r, 500 * attempt));
+        await new Promise((r) => setTimeout(r, 200 * attempt));
       }
     }
     br.fails += 1;
