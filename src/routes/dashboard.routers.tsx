@@ -592,11 +592,11 @@ function RoutersPage() {
               <button disabled={wizardBusy} onClick={() => setWizard(null)} className="p-1 hover:bg-white/10 rounded"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-xs text-muted-foreground">Reserva la próxima IP libre en la VPN (10.8.0.12+), genera certificados en el VPS y descarga <b>4 archivos</b>: <code>ca.crt</code>, <code>.crt</code>, <code>.key</code> y <code>.rsc</code> auto-instalable.</p>
+              <p className="text-xs text-muted-foreground">Reserva la próxima IP libre en la VPN (10.8.0.12+), crea el usuario L2TP/IPsec en el VPS y descarga <b>2 archivos</b>: <code>*.txt</code> con credenciales y <code>.rsc</code> auto-instalable.</p>
               <Field label="Nombre del router *"><input autoFocus value={wizard.name} onChange={e => setWizard({ ...wizard, name: e.target.value })} className={inputCls} placeholder="SUCURSAL2" /></Field>
               <Field label="Ubicación"><input value={wizard.location} onChange={e => setWizard({ ...wizard, location: e.target.value })} className={inputCls} placeholder="POP Norte" /></Field>
               <div className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded">
-                Luego subí los 3 archivos al MikroTik (Files) y ejecutá en Terminal:<br/>
+                Luego subí el archivo <code>.rsc</code> al MikroTik (Files) y ejecutá en Terminal:<br/>
                 <code>/import file-name={(wizard.name || "router").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0,15)}.rsc</code>
               </div>
             </div>
@@ -608,7 +608,7 @@ function RoutersPage() {
                   setWizardBusy(true);
                   try {
                     const res: any = await oneClickFn({ data: { name: wizard.name.trim(), location: wizard.location.trim() || undefined } });
-                    // Descargar los 4 archivos
+                    // Descargar los archivos generados
                     for (const [fname, content] of Object.entries(res.files as Record<string, string>)) {
                       const blob = new Blob([content], { type: "application/octet-stream" });
                       const url = URL.createObjectURL(blob);
@@ -618,9 +618,9 @@ function RoutersPage() {
                       await new Promise(r => setTimeout(r, 250));
                     }
                     if (res.provisioned) {
-                      toast.success(`Router creado con IP ${res.ip}. Subí los 4 archivos al MikroTik.`);
+                      toast.success(`Router creado con IP ${res.ip} (VPN L2TP). Subí el .rsc al MikroTik.`);
                     } else {
-                      toast.warning(`Router guardado con IP ${res.ip}, pero el VPS no generó certificados. Se descargó una guía.`);
+                      toast.warning(`Router guardado con IP ${res.ip}, pero el VPS no generó credenciales. Se descargó una guía.`);
                     }
                     setWizard(null);
                     await load();

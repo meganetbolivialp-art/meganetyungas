@@ -161,7 +161,7 @@ async function connect(router: MtRouter, timeoutMs = 35000): Promise<net.Socket>
       // El puente respondió, pero no pudo abrir el router: el problema está en el
       // túnel VPN o en la API del MikroTik, no en el agente del VPS.
       if (targetUnreachable.test(base)) {
-        return `El router ${router.name} (${router.ip_address}:${router.api_port || 8728}) no responde a través de la VPN. Verificá que el túnel OVPN esté levantado en el router y que /ip service api esté habilitado para 10.8.0.0/24.`;
+        return `El router ${router.name} (${router.ip_address}:${router.api_port || 8728}) no responde a través de la VPN. Verificá que el túnel VPN (OVPN/L2TP) esté levantado en el router y que /ip service api esté habilitado para 10.8.0.0/24.`;
       }
       return `${base} (agente ${targetHost}:${targetPort} → router ${router.ip_address}:${router.api_port || 8728}). Revisá que meganet-agent esté activo y escuchando en PORT=${targetPort}.`;
     };
