@@ -1,35 +1,61 @@
 #!/usr/bin/env bash
-# Script de reparación para Meganet Web
+# Script de reparo para Meganet Web (Caminhos Corrigidos)
 G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; N='\033[0m'
 log() { echo -e "${G}[✓]${N} $*"; }
 warn() { echo -e "${Y}[!]${N} $*"; }
 err() { echo -e "${R}[✗]${N} $*"; exit 1; }
 
-INSTALL_DIR="/opt/meganet"
-cd "$INSTALL_DIR/frontend-src" || err "No se encontró el directorio /opt/meganet/frontend-src"
+# Tentar encontrar onde o código frontend está
+if [[ -d "/opt/meganet-deploy/frontend-src" ]]; then
+    FRONTEND_DIR="/opt/meganet-deploy"
+elif [[ -d "/opt/meganet/frontend-src" ]]; then
+    FRONTEND_DIR="/opt/meganet"
+else
+    # Se não existir, vamos criar em /opt/meganet e clonar se necessário
+    mkdir -p /opt/meganet
+    FRONTEND_DIR="/opt/meganet"
+fi
 
-log "Reinstalando dependencias..."
-bun install || err "Error en bun install"
+cd "$FRONTEND_DIR" || err "Não foi possível acessar $FRONTEND_DIR"
+
+log "Usando diretório: $FRONTEND_DIR"
+
+# Se a pasta frontend-src não existir dentro do diretório, precisamos clonar ou renomear
+if [[ ! -d "frontend-src" ]]; then
+    warn "Pasta frontend-src não encontrada em $FRONTEND_DIR. Verificando repositório Git..."
+    # Se estivermos no diretório do git clonado
+    if [[ -d ".git" ]]; then
+        log "Diretório atual é um repo git. Criando link simbólico..."
+        ln -s . frontend-src
+    else
+        err "Código fonte não encontrado. Certifique-se de que o comando 'git clone' funcionou."
+    fi
+fi
+
+cd frontend-src || err "Erro ao acessar frontend-src"
+
+log "Instalando dependências..."
+bun install || err "Erro no bun install"
 
 log "Compilando frontend..."
-NITRO_PRESET=node-server bun run build || err "Error en la compilación"
+NITRO_PRESET=node-server bun run build || err "Erro no build"
 
-log "Configurando servicio systemd..."
+log "Configurando serviço systemd..."
 cat > /etc/systemd/system/meganet-web.service <<UNIT
 [Unit]
 Description=Meganet Web Panel
-After=network.target
+After=network.target postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=$INSTALL_DIR/frontend-src
-EnvironmentFile=$INSTALL_DIR/frontend-src/.env.production
+WorkingDirectory=$(pwd)
+EnvironmentFile=$(pwd)/.env.production
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
 Environment=NITRO_HOST=127.0.0.1
 Environment=NITRO_PORT=3000
-ExecStart=/usr/bin/node $INSTALL_DIR/frontend-src/.output/server/index.mjs
+ExecStart=/usr/bin/node $(pwd)/.output/server/index.mjs
 Restart=always
 RestartSec=10
 
@@ -41,9 +67,5 @@ systemctl daemon-reload
 systemctl enable meganet-web
 systemctl restart meganet-web
 
-log "Verificando servicio..."
+log "Serviço Meganet Web reiniciado com sucesso!"
 systemctl status meganet-web --no-pager
-
-log "--- DIAGNÓSTICO DOCKER ---"
-docker ps --format "table {{.Names}}\t{{.Status}}"
-warn "Si ves contenedores en 'Restarting', ejecuta: docker logs meganet-supabase-auth-1"
