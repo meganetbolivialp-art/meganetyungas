@@ -388,14 +388,16 @@ curl -s -X POST "http://localhost:8000/auth/v1/admin/users" \
 warn "PASO 6/8 — Desplegando frontend"
 
 if [[ -n "$GIT_REPO" ]]; then
+  log "Clonando repositorio: $GIT_REPO"
   git clone "$GIT_REPO" frontend-src 2>/dev/null || (cd frontend-src && git pull)
   cd frontend-src
 
-  # Scripts de deploy accesibles en el VPS (L2TP, VPN, agente, helpers)
+  # Asegurar que deploy esté en la raíz del VPS para futuros usos
   cp -r deploy /opt/meganet-deploy/ 2>/dev/null || true
   mkdir -p /opt/meganet
   ln -sf /opt/meganet-deploy/deploy/l2tp-add-router.sh /opt/meganet/l2tp-add-router.sh 2>/dev/null || true
 
+  log "Generando archivo .env.production..."
   cat > .env.production <<EOF
 VITE_SUPABASE_URL=$SITE_URL
 VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY
@@ -408,21 +410,23 @@ MIKROTIK_AGENT_PORT=8777
 MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 EOF
 
+  log "Instalando dependencias con Bun..."
   command -v bun &>/dev/null || npm i -g bun >/dev/null 2>&1
-  bun install
-  # CRITICAL: build for Node self-host, not Cloudflare Workers (default preset)
-  NITRO_PRESET=node-server bun run build
+  bun install || err "Error al instalar dependencias de Node"
 
-  # systemd service (bind loopback only; Nginx expone al público)
+  log "Compilando frontend (NITRO_PRESET=node-server)..."
+  NITRO_PRESET=node-server bun run build || err "Error en la compilación del frontend"
+
+  log "Creando servicio meganet-web.service..."
   cat > /etc/systemd/system/meganet-web.service <<UNIT
 [Unit]
 Description=Meganet Web Panel
-After=network.target
+After=network.target postgresql.service
 
 [Service]
 Type=simple
 WorkingDirectory=$(pwd)
-EnvironmentFile=-$(pwd)/.env.production
+EnvironmentFile=$(pwd)/.env.production
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
@@ -430,17 +434,24 @@ Environment=NITRO_HOST=127.0.0.1
 Environment=NITRO_PORT=3000
 ExecStart=/usr/bin/node $(pwd)/.output/server/index.mjs
 Restart=always
-RestartSec=5
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 UNIT
   systemctl daemon-reload
-  systemctl enable --now meganet-web
+  systemctl enable meganet-web
   systemctl restart meganet-web
   cd ..
 else
-  warn "Repo no proporcionado. Sube el build a $INSTALL_DIR/frontend/dist"
+  warn "GIT_REPO no configurado. Intentando buscar build existente..."
+  if [[ -f "frontend-src/.output/server/index.mjs" ]]; then
+    log "Build encontrado. Reinstalando servicio..."
+    # (reutilizar lógica de creación de servicio si existe el build)
+    systemctl restart meganet-web || true
+  else
+    warn "No se encontró código ni build. Sube el código a $INSTALL_DIR/frontend-src"
+  fi
 fi
 
 # ============================================================================
