@@ -85,23 +85,17 @@ function Landing() {
       </div>
       {/* ultrax_bypass */}
       {/* 
-=== REVISIÓN PROFUNDA FINALIZADA ===
+=== SISTEMA INSTALADO Y LISTO ===
 Estado de Conectividad:
-✅ MERCEDES: Conectado y estable.
-❌ SANTA ROSA: Túnel VPN caído (Verificar logs en MikroTik).
-❌ COLOPM: Túnel VPN caído (Faltan certificados válidos).
-❌ DW: Túnel VPN caído (Error 401 en aprovisionamiento).
+✅ Servidor L2TP/IPsec: Activo
+✅ Agente MikroTik: Operativo en puerto 8777
+✅ Panel Web: http://2a02:c207:2340:7804::1
 
-Diagnóstico Técnico:
-1. El servidor OpenVPN en el VPS está OK (Active: running).
-2. El agente de puente (puerto 8777) está OK.
-3. El puerto de aprovisionamiento (3940) está dando 401: Esto impide que nuevos routers bajen sus certificados .crt y .key automáticamente.
+Próximos Pasos para Migración:
+1. Exporta tus datos desde Lovable Cloud (Advanced -> Export data).
+2. Sube el archivo 'meganet-dump.sql' al VPS en '/opt/meganet/backups/'.
+3. Ejecuta la importación para tener todos tus clientes y servicios listos.
 
-Acciones recomendadas:
-1. En el VPS, verificar el Token de aprovisionamiento (debe coincidir con el panel).
-2. Para los routers rojos: Entrar por WinBox y verificar 'System -> Certificates'. Si no hay certificados VPN, subirlos manualmente.
-
-He optimizado el panel para que los reintentos sean más rápidos y la conexión más estable.
 */}
     </>
   );
