@@ -1,46 +1,46 @@
 #!/usr/bin/env bash
-# Script de reparo para Meganet Web (Caminhos Corrigidos)
+# Updated Meganet Web Repair Script (Robust Bun detection)
 G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; N='\033[0m'
 log() { echo -e "${G}[✓]${N} $*"; }
 warn() { echo -e "${Y}[!]${N} $*"; }
 err() { echo -e "${R}[✗]${N} $*"; exit 1; }
 
-# Tentar encontrar onde o código frontend está
-if [[ -d "/opt/meganet-deploy/frontend-src" ]]; then
-    FRONTEND_DIR="/opt/meganet-deploy"
-elif [[ -d "/opt/meganet/frontend-src" ]]; then
-    FRONTEND_DIR="/opt/meganet"
-else
-    # Se não existir, vamos criar em /opt/meganet e clonar se necessário
-    mkdir -p /opt/meganet
-    FRONTEND_DIR="/opt/meganet"
-fi
-
-cd "$FRONTEND_DIR" || err "Não foi possível acessar $FRONTEND_DIR"
-
-log "Usando diretório: $FRONTEND_DIR"
-
-# Se a pasta frontend-src não existir dentro do diretório, precisamos clonar ou renomear
-if [[ ! -d "frontend-src" ]]; then
-    warn "Pasta frontend-src não encontrada em $FRONTEND_DIR. Verificando repositório Git..."
-    # Se estivermos no diretório do git clonado
-    if [[ -d ".git" ]]; then
-        log "Diretório atual é um repo git. Criando link simbólico..."
-        ln -s . frontend-src
-    else
-        err "Código fonte não encontrado. Certifique-se de que o comando 'git clone' funcionou."
+# 1. Ensure Bun is installed
+if ! command -v bun &>/dev/null; then
+    log "Installing Bun..."
+    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+    # If standard install fails or is not in path for sudo, try npm
+    if ! command -v bun &>/dev/null; then
+        warn "Standard Bun install failed, trying via npm..."
+        npm install -g bun >/dev/null 2>&1 || err "Could not install Bun. Please install it manually."
     fi
 fi
 
-cd frontend-src || err "Erro ao acessar frontend-src"
+# 2. Find frontend directory
+if [[ -d "/opt/meganet-deploy" ]]; then
+    BASE_DIR="/opt/meganet-deploy"
+elif [[ -d "/opt/meganet" ]]; then
+    BASE_DIR="/opt/meganet"
+else
+    err "Source code not found in /opt/meganet or /opt/meganet-deploy"
+fi
 
-log "Instalando dependências..."
-bun install || err "Erro no bun install"
+cd "$BASE_DIR"
+log "Using base directory: $BASE_DIR"
 
-log "Compilando frontend..."
-NITRO_PRESET=node-server bun run build || err "Erro no build"
+if [[ ! -d "frontend-src" ]]; then
+    ln -s . frontend-src
+fi
 
-log "Configurando serviço systemd..."
+cd frontend-src
+log "Installing dependencies and building..."
+# Use absolute path for bun if possible
+BUN_BIN=$(command -v bun)
+$BUN_BIN install && NITRO_PRESET=node-server $BUN_BIN run build || err "Build failed"
+
+log "Configuring service..."
 cat > /etc/systemd/system/meganet-web.service <<UNIT
 [Unit]
 Description=Meganet Web Panel
@@ -55,7 +55,7 @@ Environment=HOST=127.0.0.1
 Environment=PORT=3000
 Environment=NITRO_HOST=127.0.0.1
 Environment=NITRO_PORT=3000
-ExecStart=/usr/bin/node $(pwd)/.output/server/index.mjs
+ExecStart=$(command -v node) $(pwd)/.output/server/index.mjs
 Restart=always
 RestartSec=10
 
@@ -66,6 +66,4 @@ UNIT
 systemctl daemon-reload
 systemctl enable meganet-web
 systemctl restart meganet-web
-
-log "Serviço Meganet Web reiniciado com sucesso!"
-systemctl status meganet-web --no-pager
+log "Success! The panel should be online at http://144.91.78.4"
