@@ -89,7 +89,7 @@ function Landing() {
 Estado de Conectividad:
 ✅ Servidor L2TP/IPsec: Activo
 ✅ Agente MikroTik: Operativo en puerto 8777
-✅ Panel Web: http://2a02:c207:2340:7804::1
+✅ Panel Web: http://144.91.78.4
 
 Próximos Pasos para Migración:
 1. Exporta tus datos desde Lovable Cloud (Advanced -> Export data).
