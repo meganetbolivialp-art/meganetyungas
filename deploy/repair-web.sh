@@ -71,4 +71,4 @@ UNIT
 systemctl daemon-reload
 systemctl enable meganet-web
 systemctl restart meganet-web
-log "Success! The panel should be online at http://144.91.78.4"
+log "Success! The panel should be online at http://157.173.118.181"
