@@ -5,17 +5,20 @@ log() { echo -e "${G}[✓]${N} $*"; }
 warn() { echo -e "${Y}[!]${N} $*"; }
 err() { echo -e "${R}[✗]${N} $*"; exit 1; }
 
-# 1. Ensure Bun is installed
+# 1. Ensure Bun is installed and in PATH
 if ! command -v bun &>/dev/null; then
     log "Installing Bun..."
-    curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1
+    curl -fsSL https://bun.sh/install | bash
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
-    if ! command -v bun &>/dev/null; then
-        warn "Standard Bun install failed, trying via npm..."
-        npm install -g bun >/dev/null 2>&1 || err "Could not install Bun. Please install it manually."
-    fi
+    # Adiciona ao .bashrc para futuras sessões
+    grep -q "BUN_INSTALL" ~/.bashrc || echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc
+    grep -q "BUN_INSTALL/bin" ~/.bashrc || echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc
 fi
+
+# 2. Cleanup port 3000 if stuck
+log "Cleaning up port 3000..."
+sudo fuser -k 3000/tcp 2>/dev/null || true
 
 # 2. Find frontend directory (look for package.json)
 if [[ -f "package.json" ]]; then
