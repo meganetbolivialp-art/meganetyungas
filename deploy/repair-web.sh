@@ -56,10 +56,10 @@ Type=simple
 WorkingDirectory=$BASE_DIR
 EnvironmentFile=$BASE_DIR/.env.production
 Environment=NODE_ENV=production
-Environment=HOST=127.0.0.1
-Environment=PORT=3000
 Environment=NITRO_HOST=127.0.0.1
 Environment=NITRO_PORT=3000
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
 ExecStart=$(command -v node) $BASE_DIR/.output/server/index.mjs
 Restart=always
 RestartSec=10
