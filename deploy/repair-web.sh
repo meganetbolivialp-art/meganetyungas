@@ -23,16 +23,19 @@ if [[ -d "/opt/meganet-deploy" ]]; then
     BASE_DIR="/opt/meganet-deploy"
 elif [[ -d "/opt/meganet" ]]; then
     BASE_DIR="/opt/meganet"
+elif [[ -f "package.json" ]]; then
+    BASE_DIR="$(pwd)"
 else
-    err "Source code not found in /opt/meganet or /opt/meganet-deploy"
+    # Try one level up if we are in 'deploy'
+    if [[ -f "../package.json" ]]; then
+        BASE_DIR="$(cd .. && pwd)"
+    else
+        err "Source code (package.json) not found in /opt/meganet, /opt/meganet-deploy or current directory"
+    fi
 fi
 
 cd "$BASE_DIR"
 log "Using base directory: $BASE_DIR"
-
-if [[ ! -d "frontend-src" ]]; then
-    ln -s . frontend-src
-fi
 
 cd frontend-src
 log "Installing dependencies and building..."
