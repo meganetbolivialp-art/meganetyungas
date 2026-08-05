@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Updated Meganet Web Repair Script (Robust Bun detection)
+# Updated Meganet Web Repair Script (Fixing package.json and .env missing issues)
 G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; N='\033[0m'
 log() { echo -e "${G}[✓]${N} $*"; }
 warn() { echo -e "${Y}[!]${N} $*"; }
@@ -11,38 +11,40 @@ if ! command -v bun &>/dev/null; then
     curl -fsSL https://bun.sh/install | bash >/dev/null 2>&1
     export BUN_INSTALL="$HOME/.bun"
     export PATH="$BUN_INSTALL/bin:$PATH"
-    # If standard install fails or is not in path for sudo, try npm
     if ! command -v bun &>/dev/null; then
         warn "Standard Bun install failed, trying via npm..."
         npm install -g bun >/dev/null 2>&1 || err "Could not install Bun. Please install it manually."
     fi
 fi
 
-# 2. Find frontend directory
-if [[ -d "/opt/meganet-deploy" ]]; then
+# 2. Find frontend directory (look for package.json)
+if [[ -f "package.json" ]]; then
+    BASE_DIR="$(pwd)"
+elif [[ -f "../package.json" ]]; then
+    BASE_DIR="$(cd .. && pwd)"
+elif [[ -d "/opt/meganet-deploy" ]]; then
     BASE_DIR="/opt/meganet-deploy"
 elif [[ -d "/opt/meganet" ]]; then
     BASE_DIR="/opt/meganet"
-elif [[ -f "package.json" ]]; then
-    BASE_DIR="$(pwd)"
 else
-    # Try one level up if we are in 'deploy'
-    if [[ -f "../package.json" ]]; then
-        BASE_DIR="$(cd .. && pwd)"
-    else
-        err "Source code (package.json) not found in /opt/meganet, /opt/meganet-deploy or current directory"
-    fi
+    err "Source code (package.json) not found. Please run this script inside the project folder."
 fi
 
 cd "$BASE_DIR"
-log "Using base directory: $BASE_DIR"
+log "Using project directory: $BASE_DIR"
 
-cd frontend-src
+# 3. Create necessary files if missing
+if [[ ! -f ".env.production" ]]; then
+    log "Creating empty .env.production..."
+    touch .env.production
+fi
+
+# 4. Build
 log "Installing dependencies and building..."
-# Use absolute path for bun if possible
 BUN_BIN=$(command -v bun)
 $BUN_BIN install && NITRO_PRESET=node-server $BUN_BIN run build || err "Build failed"
 
+# 5. Configuring service
 log "Configuring service..."
 cat > /etc/systemd/system/meganet-web.service <<UNIT
 [Unit]
@@ -51,14 +53,14 @@ After=network.target postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=$(pwd)
-EnvironmentFile=$(pwd)/.env.production
+WorkingDirectory=$BASE_DIR
+EnvironmentFile=$BASE_DIR/.env.production
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3000
 Environment=NITRO_HOST=127.0.0.1
 Environment=NITRO_PORT=3000
-ExecStart=$(command -v node) $(pwd)/.output/server/index.mjs
+ExecStart=$(command -v node) $BASE_DIR/.output/server/index.mjs
 Restart=always
 RestartSec=10
 
