@@ -197,7 +197,8 @@ function PromisesPage() {
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1">
                       <Link
-                        to="/dashboard/cobrar" search={{}}
+                        to="/dashboard/cobrar"
+                        search={{ clientId: undefined }}
                         className="px-2 py-1 text-xs rounded bg-emerald-600 text-white hover:bg-emerald-700"
                         title="Cobrar"
                       >Cobrar</Link>
