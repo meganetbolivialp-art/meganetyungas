@@ -111,10 +111,40 @@ function AuthPage() {
           33% { transform: translate(40px,-30px) scale(1.1); }
           66% { transform: translate(-30px,25px) scale(0.95); }
         }
+        .auth-up { animation: authUp .7s ease-out backwards; }
+        @keyframes authUp { from { opacity: 0; transform: translateY(20px); } }
+        .auth-shine { background: linear-gradient(90deg,#ff7a2b,#ffd08a,#4ea3ff,#ff7a2b); background-size: 300% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: authShine 6s linear infinite; }
+        @keyframes authShine { to { background-position: 300% center; } }
+        .auth-card > div { position: relative; }
+        .auth-card > div::before { content: ""; position: absolute; inset: -1px; border-radius: 1.5rem; padding: 1px; background: conic-gradient(from var(--a, 0deg), transparent 60%, #ff7a2b, #4ea3ff, transparent); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: authSpin 6s linear infinite; pointer-events: none; }
+        @property --a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+        @keyframes authSpin { to { --a: 360deg; } }
+        @media (prefers-reduced-motion: reduce) { .auth-up, .auth-shine, .auth-card > div::before { animation: none; } }
       `}</style>
 
-      <div className="relative z-10 w-full max-w-[420px]">
-        <div className="relative rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] px-7 py-9 sm:px-9 sm:py-11">
+      <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 gap-10 items-center">
+        <div className="hidden lg:block auth-up">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#ff7a2b]/40 bg-[#ff7a2b]/10 px-3 py-1 text-xs font-semibold text-[#ffb27a]">
+            <span className="w-2 h-2 rounded-full bg-[#25d366] animate-pulse" /> Sistema en línea
+          </span>
+          <h2 className="mt-5 text-5xl font-black leading-[1.05] tracking-tight">
+            Tu red <span className="auth-shine">MEGANET</span><br />bajo control
+          </h2>
+          <p className="mt-4 text-white/70 text-lg max-w-md">Clientes, cobros en Bs, cortes y routers MikroTik en un solo panel.</p>
+          <ul className="mt-8 space-y-3">
+            {["Cortes y reactivación automática", "Recibos y facturas en bolivianos", "Alertas de nodos caídos al instante"].map((t, i) => (
+              <li key={t} className="auth-up flex items-center gap-3 text-white/85" style={{ animationDelay: `${200 + i * 120}ms` }}>
+                <span className="grid place-items-center w-8 h-8 rounded-lg bg-white/10 border border-white/15 text-[#ff7a2b]">✓</span>{t}
+              </li>
+            ))}
+          </ul>
+          <a href="https://wa.me/59160000159?text=Hola%2C%20necesito%20soporte%20con%20MikroSystem" target="_blank" rel="noreferrer"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#25d366] px-5 py-3 font-semibold text-white shadow-lg hover:-translate-y-0.5 transition">
+            Soporte WhatsApp 60000159
+          </a>
+        </div>
+        <div className="w-full max-w-[420px] mx-auto auth-up auth-card">
+        <div className="relative rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] px-7 py-9 sm:px-9 sm:py-11">
           <div className="pointer-events-none absolute inset-x-6 -top-px h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
           <div className="flex flex-col items-center mb-8 select-none">
@@ -172,7 +202,7 @@ function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#2196f3] to-[#1976d2] hover:from-[#1e88e5] hover:to-[#1565c0] disabled:opacity-60 transition shadow-[0_10px_30px_-10px_rgba(33,150,243,0.8)]"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-[#ff7a2b] to-[#ff5722] hover:-translate-y-0.5 disabled:opacity-60 transition shadow-[0_10px_30px_-10px_rgba(255,122,43,0.8)]"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -206,8 +236,9 @@ function AuthPage() {
         </div>
 
         <p className="mt-5 text-center text-[11px] text-white/40 tracking-wide">
-          © MEGANET · Fibra Óptica
+          © MEGANET · Fibra Óptica · <a href="https://wa.me/59160000159" className="hover:text-white">WhatsApp 60000159</a>
         </p>
+        </div>
       </div>
 
       <InvisibleRescueTrigger onOpen={() => setShowRescue(true)} />
