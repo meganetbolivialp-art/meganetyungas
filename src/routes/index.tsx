@@ -34,9 +34,9 @@ const features = [
 ];
 
 const plans = [
-  { n: "Básico", p: 150, c: "Hasta 200 clientes", f: ["1 router MikroTik", "Cortes y reactivación", "Recibos", "Soporte WhatsApp"] },
-  { n: "Profesional", p: 300, c: "Hasta 1.000 clientes", f: ["5 routers", "Facturas automáticas", "Mapa de red", "Alertas de nodos", "Operadores ilimitados"], hot: true },
-  { n: "Empresa", p: 550, c: "Clientes ilimitados", f: ["Routers ilimitados", "Todo lo de Profesional", "Instalación incluida", "Soporte prioritario 24/7"] },
+  { n: "Básico", p: 250, c: "Hasta 200 clientes", f: ["1 router MikroTik", "Cortes y reactivación", "Recibos", "Soporte WhatsApp"] },
+  { n: "Profesional", p: 700, c: "Hasta 500 clientes", f: ["5 routers", "Facturas automáticas", "Mapa de red", "Alertas de nodos", "Operadores ilimitados"], hot: true },
+  { n: "Empresa", p: 1600, c: "Clientes ilimitados", f: ["Routers ilimitados", "Todo lo de Profesional", "Instalación incluida", "Soporte prioritario 24/7"] },
 ];
 
 function Landing() {
