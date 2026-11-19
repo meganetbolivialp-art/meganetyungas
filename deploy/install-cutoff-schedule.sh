@@ -25,6 +25,26 @@ curl -fsS --max-time 120 \
 SCRIPT
 chmod 700 /usr/local/sbin/meganet-run-cutoffs
 
+cat > /usr/local/sbin/meganet-run-auto-invoices <<'SCRIPT'
+#!/usr/bin/env bash
+set -u
+ENV_FILE="${MEGANET_ENV:-/opt/meganet-deploy/.env.production}"
+SECRET="$(sed -n 's/^CRON_SECRET=//p' "$ENV_FILE" | tail -1)"
+[[ -n "$SECRET" ]] || exit 0
+curl -fsS --max-time 120 \
+  -X POST "http://127.0.0.1:3000/api/public/hooks/auto-invoices" \
+  -H "Authorization: Bearer $SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}' >> /var/log/meganet-auto-invoices.log 2>&1
+SCRIPT
+chmod 700 /usr/local/sbin/meganet-run-auto-invoices
+
+cat > /etc/cron.d/meganet-auto-invoices <<'CRON'
+# Facturas automáticas del mes (solo genera el día configurado, una vez por mes).
+7 * * * * root /usr/local/sbin/meganet-run-auto-invoices
+CRON
+chmod 644 /etc/cron.d/meganet-auto-invoices
+
 cat > /etc/cron.d/meganet-cutoffs <<'CRON'
 # Cortes por deuda y reintentos de reactivación en los routers.
 */5 * * * * root /usr/local/sbin/meganet-run-cutoffs

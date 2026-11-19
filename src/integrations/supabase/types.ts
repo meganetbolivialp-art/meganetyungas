@@ -110,6 +110,30 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_settings: {
+        Row: {
+          auto_enabled: boolean
+          generate_day: number
+          id: boolean
+          last_auto_run_month: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_enabled?: boolean
+          generate_day?: number
+          id?: boolean
+          last_auto_run_month?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_enabled?: boolean
+          generate_day?: number
+          id?: boolean
+          last_auto_run_month?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       branches: {
         Row: {
           address: string | null

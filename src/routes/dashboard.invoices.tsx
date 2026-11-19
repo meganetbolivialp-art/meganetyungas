@@ -34,6 +34,18 @@ function InvoicesPage() {
   const [routerOpts, setRouterOpts] = useState<{ id: string; name: string }[]>([]);
   const [genRouter, setGenRouter] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [auto, setAuto] = useState<{ auto_enabled: boolean; generate_day: number; last_auto_run_month: string | null } | null>(null);
+  const [savingAuto, setSavingAuto] = useState(false);
+  useEffect(() => { supabase.from("billing_settings").select("auto_enabled, generate_day, last_auto_run_month").eq("id", true).maybeSingle().then(({ data }) => setAuto(data)); }, []);
+  const saveAuto = async (next: { auto_enabled: boolean; generate_day: number }) => {
+    setSavingAuto(true);
+    const { data, error } = await supabase.from("billing_settings").update(next).eq("id", true).select("auto_enabled, generate_day, last_auto_run_month");
+    setSavingAuto(false);
+    if (error) { toast.error(error.message); return; }
+    if (!data?.length) { toast.error("Solo un administrador puede cambiar la facturación automática"); return; }
+    setAuto(data[0]);
+    toast.success(next.auto_enabled ? `Facturas automáticas activadas: día ${next.generate_day} de cada mes` : "Facturas automáticas desactivadas");
+  };
   useEffect(() => { supabase.from("routers").select("id, name").order("name").then(({ data }) => setRouterOpts(data ?? [])); }, []);
   const generate = async () => {
     const label = genRouter ? routerOpts.find((r) => r.id === genRouter)?.name : "todos los clientes";
@@ -122,6 +134,24 @@ function InvoicesPage() {
           <div className="text-2xl font-bold text-destructive">Bs {totals.overdue.toFixed(2)}</div>
         </div>
       </div>
+
+      {auto && (
+        <div className="mb-4 rounded-lg border bg-card p-4 flex flex-wrap items-center gap-3 text-sm">
+          <label className="inline-flex items-center gap-2 font-medium cursor-pointer">
+            <input type="checkbox" checked={auto.auto_enabled} disabled={savingAuto} onChange={(e) => saveAuto({ auto_enabled: e.target.checked, generate_day: auto.generate_day })} />
+            Generar facturas automáticamente cada mes
+          </label>
+          <label className="inline-flex items-center gap-2">
+            el día
+            <select aria-label="Día de facturación automática" value={auto.generate_day} disabled={savingAuto} onChange={(e) => saveAuto({ auto_enabled: auto.auto_enabled, generate_day: Number(e.target.value) })} className="px-2 py-1 rounded-md border bg-background">
+              {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </label>
+          <span className="text-muted-foreground text-xs">
+            {auto.last_auto_run_month ? `Último mes generado: ${auto.last_auto_run_month}` : "Aún no se generó ningún mes automáticamente"}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex gap-1 p-1 rounded-md bg-muted">

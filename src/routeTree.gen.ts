@@ -60,6 +60,7 @@ import { Route as DashboardVouchersRouteImport } from './routes/dashboard.vouche
 import { Route as DashboardWorkOrdersRouteImport } from './routes/dashboard.work-orders'
 import { Route as DashboardClientsClientIdRouteImport } from './routes/dashboard.clients_.$clientId'
 import { Route as DashboardInvoicesInvoiceIdRouteImport } from './routes/dashboard.invoices_.$invoiceId'
+import { Route as ApiPublicHooksAutoInvoicesRouteImport } from './routes/api/public/hooks/auto-invoices'
 import { Route as ApiPublicHooksBillingRouteImport } from './routes/api/public/hooks/billing'
 import { Route as ApiPublicHooksDetectCutoffLeaksRouteImport } from './routes/api/public/hooks/detect-cutoff-leaks'
 import { Route as ApiPublicHooksMercadopagoRouteImport } from './routes/api/public/hooks/mercadopago'
@@ -327,6 +328,12 @@ const DashboardInvoicesInvoiceIdRoute =
     path: '/invoices/$invoiceId',
     getParentRoute: () => DashboardRoute,
   } as any)
+const ApiPublicHooksAutoInvoicesRoute =
+  ApiPublicHooksAutoInvoicesRouteImport.update({
+    id: '/api/public/hooks/auto-invoices',
+    path: '/api/public/hooks/auto-invoices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksBillingRoute = ApiPublicHooksBillingRouteImport.update({
   id: '/api/public/hooks/billing',
   path: '/api/public/hooks/billing',
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/auto-invoices': typeof ApiPublicHooksAutoInvoicesRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
   '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
   '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
@@ -486,6 +494,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/clients/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/auto-invoices': typeof ApiPublicHooksAutoInvoicesRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
   '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
   '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
@@ -548,6 +557,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/clients_/$clientId': typeof DashboardClientsClientIdRoute
   '/dashboard/invoices_/$invoiceId': typeof DashboardInvoicesInvoiceIdRoute
+  '/api/public/hooks/auto-invoices': typeof ApiPublicHooksAutoInvoicesRoute
   '/api/public/hooks/billing': typeof ApiPublicHooksBillingRoute
   '/api/public/hooks/detect-cutoff-leaks': typeof ApiPublicHooksDetectCutoffLeaksRoute
   '/api/public/hooks/mercadopago': typeof ApiPublicHooksMercadopagoRoute
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/dashboard/clients/$clientId'
     | '/dashboard/invoices/$invoiceId'
+    | '/api/public/hooks/auto-invoices'
     | '/api/public/hooks/billing'
     | '/api/public/hooks/detect-cutoff-leaks'
     | '/api/public/hooks/mercadopago'
@@ -671,6 +682,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/clients/$clientId'
     | '/dashboard/invoices/$invoiceId'
+    | '/api/public/hooks/auto-invoices'
     | '/api/public/hooks/billing'
     | '/api/public/hooks/detect-cutoff-leaks'
     | '/api/public/hooks/mercadopago'
@@ -732,6 +744,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/dashboard/clients_/$clientId'
     | '/dashboard/invoices_/$invoiceId'
+    | '/api/public/hooks/auto-invoices'
     | '/api/public/hooks/billing'
     | '/api/public/hooks/detect-cutoff-leaks'
     | '/api/public/hooks/mercadopago'
@@ -749,6 +762,7 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SuspendidoRoute: typeof SuspendidoRoute
+  ApiPublicHooksAutoInvoicesRoute: typeof ApiPublicHooksAutoInvoicesRoute
   ApiPublicHooksBillingRoute: typeof ApiPublicHooksBillingRoute
   ApiPublicHooksDetectCutoffLeaksRoute: typeof ApiPublicHooksDetectCutoffLeaksRoute
   ApiPublicHooksMercadopagoRoute: typeof ApiPublicHooksMercadopagoRoute
@@ -1117,6 +1131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardInvoicesInvoiceIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/api/public/hooks/auto-invoices': {
+      id: '/api/public/hooks/auto-invoices'
+      path: '/api/public/hooks/auto-invoices'
+      fullPath: '/api/public/hooks/auto-invoices'
+      preLoaderRoute: typeof ApiPublicHooksAutoInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/billing': {
       id: '/api/public/hooks/billing'
       path: '/api/public/hooks/billing'
@@ -1285,6 +1306,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SuspendidoRoute: SuspendidoRoute,
+  ApiPublicHooksAutoInvoicesRoute: ApiPublicHooksAutoInvoicesRoute,
   ApiPublicHooksBillingRoute: ApiPublicHooksBillingRoute,
   ApiPublicHooksDetectCutoffLeaksRoute: ApiPublicHooksDetectCutoffLeaksRoute,
   ApiPublicHooksMercadopagoRoute: ApiPublicHooksMercadopagoRoute,
