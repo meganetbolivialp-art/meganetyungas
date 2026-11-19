@@ -45,15 +45,12 @@ export const createOperator = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Cada operador necesita su PROPIO correo. Nunca reutilizar una cuenta existente:
+    // eso cambiaba la contraseña de otra persona (incluido el administrador).
     const found = await findAuthUserByEmail(supabaseAdmin, data.email);
-    let uid = found?.id as string | undefined;
-    if (uid) {
-      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(uid, {
-        password: data.password,
-        user_metadata: { full_name: data.full_name },
-      });
-      if (updateErr) throw new Error(normalizePasswordAuthError(updateErr.message));
-    } else {
+    if (found) throw new Error("Ese correo ya pertenece a otra cuenta. Usá un correo distinto para cada operador.");
+    let uid = "";
+    {
       const { data: created, error: authErr } = await supabaseAdmin.auth.admin.createUser({
         email: data.email,
         password: data.password,
@@ -128,9 +125,7 @@ export const updateOperator = createServerFn({ method: "POST" })
       // ¿ya existe una cuenta de acceso con ese email? (por si quedó a medias)
       const found = await findAuthUserByEmail(supabaseAdmin, email);
       if (found) {
-        userId = found.id;
-        const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(found.id, { password });
-        if (authErr) throw new Error(normalizePasswordAuthError(authErr.message));
+        throw new Error("Ese correo ya pertenece a otra cuenta. Usá un correo distinto para este operador.");
       } else {
         const { data: created, error: authErr } = await supabaseAdmin.auth.admin.createUser({
           email, password, email_confirm: true, user_metadata: { full_name: existing.full_name },
@@ -148,6 +143,10 @@ export const updateOperator = createServerFn({ method: "POST" })
     const { error: upErr } = await supabaseAdmin.from("employees").update(patch).eq("id", data.id);
     if (upErr) throw new Error(upErr.message);
 
+    if (data.patch.email && existing.user_id && data.patch.email !== existing.email) {
+      const other = await findAuthUserByEmail(supabaseAdmin, data.patch.email);
+      if (other && other.id !== existing.user_id) throw new Error("Ese correo ya pertenece a otra cuenta.");
+    }
     if (existing.user_id && (data.patch.password || data.patch.email)) {
       const attrs: any = {};
       if (data.patch.password) {
@@ -160,7 +159,7 @@ export const updateOperator = createServerFn({ method: "POST" })
       if (authErr) throw new Error(normalizePasswordAuthError(authErr.message));
     }
 
-    if (existing.user_id && data.patch.operator_type && data.patch.operator_type !== existing.operator_type) {
+    if (existing.user_id && existing.user_id !== context.userId && data.patch.operator_type && data.patch.operator_type !== existing.operator_type) {
       const newRole = roleForOperatorType(data.patch.operator_type);
       await supabaseAdmin.from("user_roles").delete().eq("user_id", existing.user_id);
       await supabaseAdmin.from("user_roles").insert({ user_id: existing.user_id, role: newRole });
@@ -207,7 +206,8 @@ export const deleteOperator = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("employees").select("user_id").eq("id", data.id).maybeSingle();
     await supabaseAdmin.from("employees").delete().eq("id", data.id);
-    if (row?.user_id) {
+    // Nunca borrar la cuenta con la que estás conectado (ni la de otro administrador).
+    if (row?.user_id && row.user_id !== context.userId) {
       await supabaseAdmin.auth.admin.deleteUser(row.user_id).catch(() => {});
     }
     return { ok: true };
