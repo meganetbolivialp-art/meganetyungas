@@ -420,11 +420,19 @@ elif [[ -d "/opt/meganet-deploy/supabase/migrations" ]]; then
   log "Instalación nueva: creando tablas y funciones desde las migraciones..."
   while IFS= read -r migration; do
     echo "  -> $(basename "$migration")"
-    dbq -q < "$migration" >/dev/null \
-      || err "Falló la migración $(basename "$migration")"
+    if ! dbq -q --single-transaction < "$migration" >/dev/null 2>/tmp/meganet-mig.err; then
+      # Migración repetida (objetos ya creados): aplicar sentencia por sentencia
+      # sin detenerse, para crear solo lo que falte.
+      docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" -e PGOPTIONS="-c search_path=public,extensions" "$DB_C" \
+        psql -h 127.0.0.1 -U supabase_admin -d postgres -q -v ON_ERROR_STOP=0 < "$migration" >/dev/null 2>/tmp/meganet-mig.err || true
+      grep "ERROR" /tmp/meganet-mig.err | grep -v "already exists" | grep -v "duplicate key" | sed 's/^/     aviso: /' || true
+    fi
   done < <(find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort)
   # Las migraciones históricas incluyen admin@admin.com/admin; no dejar ese acceso conocido.
   dbq -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
+  for t in profiles user_roles clients plans payments routers; do
+    dbq -tAc "SELECT to_regclass('public.$t')" | grep -q "$t" || err "Falta la tabla $t después de las migraciones"
+  done
   log "Base de datos inicial creada"
 else
   err "No hay dump ni migraciones en /opt/meganet-deploy/supabase/migrations"
