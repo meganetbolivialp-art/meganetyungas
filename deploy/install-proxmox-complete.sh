@@ -39,8 +39,14 @@ command -v apt-get >/dev/null 2>&1 || fail "Usa una VM Ubuntu 22.04/24.04 o Debi
 command -v systemctl >/dev/null 2>&1 || fail "La VM necesita systemd."
 verify_package
 
-if [[ -f "$INSTALL_DIR/supabase/docker-compose.yml" && "${MEGANET_REINSTALL:-0}" != "1" ]]; then
-  fail "Ya existe una instalación en $INSTALL_DIR. Usa una VM limpia; para sobrescribir la configuración ejecuta con MEGANET_REINSTALL=1."
+if [[ -f "$INSTALL_DIR/supabase/docker-compose.yml" ]]; then
+  if [[ -f "$INSTALL_DIR/CREDENCIALES.txt" && "${MEGANET_REINSTALL:-0}" != "1" ]]; then
+    fail "Meganet ya está instalado y funcionando en $INSTALL_DIR. Para reinstalar desde cero ejecuta con MEGANET_REINSTALL=1."
+  fi
+  log "Limpiando un intento de instalación anterior que quedó incompleto"
+  (cd "$INSTALL_DIR/supabase" && docker compose down -v --remove-orphans) >/dev/null 2>&1 || true
+  systemctl stop meganet-web mikrotik-agent >/dev/null 2>&1 || true
+  rm -rf "$INSTALL_DIR"
 fi
 
 MEMORY_KB="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"

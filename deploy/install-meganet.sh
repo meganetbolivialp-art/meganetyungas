@@ -163,7 +163,6 @@ services:
     restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./init/99-meganet-roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-meganet-roles.sql:ro
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: postgres
@@ -335,47 +334,72 @@ services:
 KONG
 sed -i "s|ANON_KEY_PLACEHOLDER|$ANON_KEY|g; s|SERVICE_ROLE_KEY_PLACEHOLDER|$SERVICE_ROLE_KEY|g" supabase/kong.yml
 
-# Roles iniciales Postgres
+# Roles/contraseñas de servicios: se aplican DESPUÉS de que la imagen termine
+# su propia inicialización (montar scripts dentro de initdb la rompía).
 mkdir -p supabase/init
-cat > supabase/init/99-meganet-roles.sql <<SQL
-DO \$\$ BEGIN
-  CREATE ROLE anon NOLOGIN NOINHERIT;
-EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
-DO \$\$ BEGIN
-  CREATE ROLE authenticated NOLOGIN NOINHERIT;
-EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
-DO \$\$ BEGIN
-  CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;
-EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
-DO \$\$ BEGIN
-  CREATE ROLE authenticator LOGIN NOINHERIT PASSWORD '$POSTGRES_PASSWORD';
-EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
+cat > supabase/init/meganet-roles.sql <<SQL
+DO \$\$ BEGIN CREATE ROLE anon NOLOGIN NOINHERIT; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
+DO \$\$ BEGIN CREATE ROLE authenticated NOLOGIN NOINHERIT; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
+DO \$\$ BEGIN CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
+DO \$\$ BEGIN CREATE ROLE authenticator LOGIN NOINHERIT; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
 GRANT anon, authenticated, service_role TO authenticator;
-ALTER USER authenticator WITH PASSWORD '$POSTGRES_PASSWORD';
-ALTER USER supabase_auth_admin WITH PASSWORD '$POSTGRES_PASSWORD';
-ALTER USER supabase_storage_admin WITH PASSWORD '$POSTGRES_PASSWORD';
-ALTER USER supabase_admin WITH PASSWORD '$POSTGRES_PASSWORD';
-ALTER USER postgres WITH PASSWORD '$POSTGRES_PASSWORD';
+DO \$\$ BEGIN CREATE PUBLICATION supabase_realtime; EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
+DO \$\$ DECLARE r text; BEGIN
+  FOREACH r IN ARRAY ARRAY['authenticator','supabase_auth_admin','supabase_storage_admin','pgbouncer','supabase_functions_admin','postgres'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN
+      EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', r, '$POSTGRES_PASSWORD');
+    END IF;
+  END LOOP;
+END \$\$;
 SQL
+chmod 600 supabase/init/meganet-roles.sql
 
-log "Levantando Supabase (esto tarda 2-3 min)..."
+DB_C=meganet-supabase-db-1
+dbq() { docker exec -i -e PGPASSWORD="$POSTGRES_PASSWORD" -e PGOPTIONS="-c search_path=public,extensions" "$DB_C" psql -h 127.0.0.1 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 "$@"; }
+
+log "Iniciando base de datos (primera vez tarda 1-2 min)..."
 cd supabase
-docker compose --env-file .env up -d
+docker compose --env-file .env up -d db
 cd ..
 
 echo -n "Esperando Postgres"
 DB_READY=0
-for i in {1..200}; do
-  if docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
-     "SELECT 1 FROM pg_roles WHERE rolname='postgres'" 2>/dev/null | grep -q 1 \
-     && docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
-     "SELECT 1 FROM information_schema.tables WHERE table_schema='auth' AND table_name='users'" 2>/dev/null | grep -q 1; then
+for i in {1..120}; do
+  if dbq -tAc "SELECT 1 FROM pg_roles WHERE rolname='supabase_auth_admin'" 2>/dev/null | grep -q 1; then
     DB_READY=1; break
   fi
   echo -n "."; sleep 3
 done
 echo ""
-[[ "$DB_READY" == 1 ]] || { docker logs --tail 40 meganet-supabase-auth-1 2>&1 || true; err "Postgres no terminó de inicializar (rol postgres / auth.users). Revisa: docker logs meganet-supabase-db-1"; }
+if [[ "$DB_READY" != 1 ]]; then
+  docker logs --tail 60 "$DB_C" 2>&1 || true
+  err "La base de datos no arrancó. Arriba está el detalle."
+fi
+sleep 3
+log "Configurando accesos internos de la base de datos..."
+dbq -q < supabase/init/meganet-roles.sql >/dev/null || err "No se pudieron configurar los roles de la base de datos"
+
+log "Levantando el resto de servicios (Auth, API, Storage, Studio)..."
+cd supabase
+docker compose --env-file .env up -d
+cd ..
+
+echo -n "Esperando servicio de usuarios (Auth)"
+AUTH_SCHEMA=0
+for i in {1..100}; do
+  if dbq -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='auth' AND table_name='users'" 2>/dev/null | grep -q 1; then
+    AUTH_SCHEMA=1; break
+  fi
+  # Si Auth quedó en reinicio por un fallo previo, reintentarlo
+  if (( i % 20 == 0 )); then (cd supabase && docker compose --env-file .env restart auth >/dev/null 2>&1) || true; fi
+  echo -n "."; sleep 3
+done
+echo ""
+if [[ "$AUTH_SCHEMA" != 1 ]]; then
+  docker logs --tail 40 meganet-supabase-auth-1 2>&1 || true
+  err "El servicio Auth no creó sus tablas. Arriba está el detalle."
+fi
+sleep 5
 
 # ============================================================================
 #  5. IMPORTAR ESQUEMA DE LOVABLE CLOUD
@@ -384,17 +408,16 @@ warn "PASO 5/8 — Importando esquema Meganet"
 
 if [[ -f "$INSTALL_DIR/backups/meganet-dump.sql" ]]; then
   log "Restaurando dump previo..."
-  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin < "$INSTALL_DIR/backups/meganet-dump.sql"
+  dbq < "$INSTALL_DIR/backups/meganet-dump.sql"
 elif [[ -d "/opt/meganet-deploy/supabase/migrations" ]]; then
   log "Instalación nueva: creando tablas y funciones desde las migraciones..."
   while IFS= read -r migration; do
     echo "  -> $(basename "$migration")"
-    docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin -d postgres < "$migration" \
+    dbq -q < "$migration" >/dev/null \
       || err "Falló la migración $(basename "$migration")"
   done < <(find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort)
   # Las migraciones históricas incluyen admin@admin.com/admin; no dejar ese acceso conocido.
-  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin -d postgres \
-    -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
+  dbq -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
   log "Base de datos inicial creada"
 else
   err "No hay dump ni migraciones en /opt/meganet-deploy/supabase/migrations"
