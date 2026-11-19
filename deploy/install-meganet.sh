@@ -491,7 +491,10 @@ VITE_SUPABASE_PROJECT_ID=meganet
 SUPABASE_URL=http://localhost:8000
 SUPABASE_PUBLISHABLE_KEY=$ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
-# El panel está dentro de la VPN: conecta directo a cada MikroTik (sin agente).
+MIKROTIK_AGENT_HOST=127.0.0.1
+MIKROTIK_AGENT_PORT=8777
+MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
+MIKROTIK_AGENT_TLS=1
 EOF
   chmod 600 .env.production
 
@@ -622,6 +625,13 @@ if [[ ! -f /etc/meganet-agent/agent.crt ]]; then
   chmod 600 /etc/meganet-agent/agent.key
 fi
 AGENT_TLS_FP=$(openssl x509 -in /etc/meganet-agent/agent.crt -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr 'A-Z' 'a-z')
+# El agente usa TLS: el panel debe hablarle cifrado y con la huella fijada
+for ENVF in /opt/meganet/frontend*/.env.production /opt/meganet/frontend/*/.env.production; do
+  [[ -f "$ENVF" ]] || continue
+  sed -i '/^MIKROTIK_AGENT_TLS/d' "$ENVF"
+  printf 'MIKROTIK_AGENT_TLS=1\nMIKROTIK_AGENT_TLS_FINGERPRINT=%s\n' "$AGENT_TLS_FP" >> "$ENVF"
+done
+systemctl restart meganet-web 2>/dev/null || true
 
 cat > /etc/systemd/system/mikrotik-agent.service <<UNIT
 [Unit]
