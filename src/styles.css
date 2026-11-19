@@ -219,3 +219,47 @@
 }
 
 
+
+/* ===== Animaciones y pulido global ===== */
+@keyframes mw-fade-up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@keyframes mw-pop { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:none; } }
+@keyframes mw-shimmer { from { background-position:-200% 0; } to { background-position:200% 0; } }
+
+@layer components {
+  .mw-page-enter { animation: mw-fade-up .35s cubic-bezier(.2,.7,.2,1) both; }
+  .mw-page-enter > * { animation: mw-fade-up .4s cubic-bezier(.2,.7,.2,1) both; }
+  .mw-page-enter > *:nth-child(2) { animation-delay: .05s; }
+  .mw-page-enter > *:nth-child(3) { animation-delay: .1s; }
+  .mw-page-enter > *:nth-child(4) { animation-delay: .15s; }
+  .mw-page-enter > *:nth-child(n+5) { animation-delay: .2s; }
+
+  .mw-panel { border-radius: .5rem; transition: box-shadow .2s, transform .2s; }
+  .mw-panel:hover { box-shadow: 0 6px 18px -8px rgba(15,23,42,.18); }
+  .mw-panel-header { border-radius: .5rem .5rem 0 0; }
+  .mw-btn { border-radius: .375rem; }
+  .mw-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px -4px rgba(15,23,42,.25); }
+  .mw-btn:active, button:active { transform: scale(.97); }
+  .mw-input, .input { border-radius: .375rem; }
+  .mw-badge { border-radius: 999px; }
+  .mw-table tbody tr { transition: background-color .15s; }
+  .mw-skeleton { background: linear-gradient(90deg, var(--color-muted) 25%, var(--color-border) 50%, var(--color-muted) 75%); background-size:200% 100%; animation: mw-shimmer 1.4s infinite; border-radius:.375rem; }
+}
+
+[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper] > * { animation: mw-pop .18s ease-out both; }
+button, a { transition: background-color .15s, color .15s, transform .12s, box-shadow .15s; }
+
+/* Compacto en tablet y celular */
+@media (max-width: 1023px) {
+  .mw-table thead th { padding: .45rem .5rem; font-size: 10px; }
+  .mw-table tbody td { padding: .4rem .5rem; }
+  .mw-panel-header { padding: .5rem .75rem; }
+}
+@media (max-width: 639px) {
+  h1 { font-size: 1.15rem !important; }
+  .mw-btn { height: 34px; padding: 0 .6rem; }
+  .mw-panel { border-radius: .6rem; }
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

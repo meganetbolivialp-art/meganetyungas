@@ -442,8 +442,8 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-3 md:p-5">
-          {children}
+        <main className="flex-1 overflow-auto p-2.5 sm:p-3 lg:p-5">
+          <div key={path} className="mw-page-enter mx-auto w-full max-w-[1600px]">{children}</div>
         </main>
         
       </div>
