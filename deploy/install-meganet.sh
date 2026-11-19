@@ -58,7 +58,9 @@ ask ADMIN_USER "Email del admin inicial" "admin@meganet.bo"
 ask ADMIN_PASS "Contraseña admin (mín 8 chars)" "MeganetAdmin2026!"
 ask GIT_REPO   "URL del repo Git del frontend (déjalo vacío para skip)" ""
 
-VPS_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
+# En Proxmox/LAN usar la IP local de la VM (ej. 192.168.100.10), no la pública
+VPS_IP="${SERVER_IP:-$(hostname -I | awk '{print $1}')}"
+[[ -z "$VPS_IP" ]] && VPS_IP=$(curl -s -4 ifconfig.me)
 [[ -z "$DOMAIN" ]] && DOMAIN="$VPS_IP" && USE_IP=1 || USE_IP=0
 
 INSTALL_DIR="/opt/meganet"
@@ -387,7 +389,7 @@ cd ..
 echo -n "Esperando servicio de usuarios (Auth)"
 AUTH_SCHEMA=0
 for i in {1..100}; do
-  if dbq -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='auth' AND table_name='users'" 2>/dev/null | grep -q 1; then
+  if dbq -tAc "SELECT 1 FROM information_schema.columns WHERE table_schema='auth' AND table_name='users' AND column_name='email_confirmed_at'" 2>/dev/null | grep -q 1; then
     AUTH_SCHEMA=1; break
   fi
   # Si Auth quedó en reinicio por un fallo previo, reintentarlo
