@@ -201,6 +201,19 @@ if [[ -f "$NGINX_SITE" ]] && ! grep -q "meganet-corte" "$NGINX_SITE"; then
   else cp "$NGINX_SITE.bak-corte" "$NGINX_SITE"; warn "No se pudo activar la pantalla de corte en nginx (se restauró)"; fi
 fi
 
+# ---- Acceso por cualquier dirección (LAN, VPN, puerto redirigido) ----
+# El navegador recibía la IP de la LAN para iniciar sesión; desde fuera fallaba ("Failed to fetch").
+# nginx reescribe esa dirección por la que el usuario está usando realmente.
+if [[ -f "$NGINX_SITE" ]] && ! grep -q "meganet-anyhost" "$NGINX_SITE"; then
+  PUB_URL=$(grep -E '^VITE_SUPABASE_URL=' "$DEPLOY_DIR/.env.production" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | sed 's%/*$%%')
+  if [[ -n "$PUB_URL" ]]; then
+    cp "$NGINX_SITE" "$NGINX_SITE.bak-anyhost"
+    sed -i "0,/proxy_pass http:\/\/127.0.0.1:3000;\$/s%proxy_pass http://127.0.0.1:3000;\$%proxy_pass http://127.0.0.1:3000;\n        # meganet-anyhost\n        proxy_set_header Accept-Encoding \"\";\n        sub_filter_types application/javascript text/javascript application/json;\n        sub_filter_once off;\n        sub_filter '$PUB_URL' '\$scheme://\$http_host';%" "$NGINX_SITE"
+    if nginx -t 2>/dev/null; then systemctl reload nginx; log "Panel accesible por VPN / puerto redirigido"
+    else cp "$NGINX_SITE.bak-anyhost" "$NGINX_SITE"; warn "No se pudo activar acceso por VPN (se restauró)"; fi
+  fi
+fi
+
 systemctl daemon-reload
 systemctl restart mikrotik-agent 2>/dev/null || warn "mikrotik-agent no está activo"
 systemctl restart meganet-web 2>/dev/null || err "meganet-web no se pudo reiniciar"
