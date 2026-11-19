@@ -30,6 +30,9 @@ export function getPasswordPolicyError(password: string) {
 
 export function normalizePasswordAuthError(message: string) {
   const lower = message.toLowerCase();
+  if (lower.includes("pwned") || lower.includes("leaked") || lower.includes("weak") || lower.includes("guess")) {
+    return "Esa contraseña es muy conocida o fácil de adivinar. Usa el botón Generar o escribe una más única.";
+  }
   if (
     lower.includes("password") ||
     lower.includes("weak") ||
