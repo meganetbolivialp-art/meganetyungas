@@ -29,7 +29,7 @@ Con `GIT_REPO=""` el script omite el clone y usa el código ya subido en
 ### Método B — Con Personal Access Token
 
 ```bash
-export GH_TOKEN=ghp_xxxxxxxxxxxx   # PAT con scope 'repo'
+export GH_TOKEN=[REDACTED]   # PAT con scope 'repo'
 curl -fsSL -H "Authorization: token $GH_TOKEN" \
   https://raw.githubusercontent.com/meganetbolivialp-art/control-shine-hub/main/deploy/install-full.sh \
   | sudo -E GIT_REPO="https://$GH_TOKEN@github.com/meganetbolivialp-art/control-shine-hub.git" bash

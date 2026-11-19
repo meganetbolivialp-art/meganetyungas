@@ -2,6 +2,23 @@
 
 El panel se instala en una VM Ubuntu/Debian de Proxmox. La VM y cada MikroTik se conectan como **clientes independientes** al servidor Pritunl/OpenVPN ya existente; no se instala otro servidor VPN en Proxmox.
 
+## Instalación completa con un solo archivo
+
+En una VM limpia Ubuntu 22.04/24.04 o Debian 12, sube `meganet-proxmox-completo.run` y el perfil `.ovpn` de Pritunl a `/root`. Después ejecuta:
+
+```bash
+cd /root
+sudo bash meganet-proxmox-completo.run
+```
+
+El instalador detecta el perfil automáticamente e instala OpenVPN, Docker, la base de datos, el panel, Nginx y el agente MikroTik. No necesita GitHub ni tokens. Si no encuentra `/root/meganet-dump.sql`, crea una base nueva con todas las tablas. Para indicar el perfil y una copia de datos manualmente:
+
+```bash
+sudo bash meganet-proxmox-completo.run /root/MEGANET-PROXMOX.ovpn /root/meganet-dump.sql
+```
+
+Al finalizar, las credenciales quedan en `/opt/meganet/CREDENCIALES.txt` con permisos de solo lectura para root.
+
 ## Arquitectura
 
 ```text
@@ -28,7 +45,13 @@ Para MikroTik RouterOS v7, el servidor/perfil debe ser compatible con **OpenVPN 
 
 ## 2. Conectar la VM de Proxmox
 
-Descarga de Pritunl el perfil `.ovpn` de `MEGANET-PROXMOX`, súbelo a la VM y ejecuta:
+Descarga de Pritunl el perfil `.ovpn` de `MEGANET-PROXMOX`, súbelo a `/root` en la VM y ejecuta:
+
+```bash
+sudo bash /opt/meganet-deploy/deploy/install-proxmox-openvpn-client.sh
+```
+
+El instalador busca automáticamente el perfil `.ovpn`; si encuentra varios, te permite elegir el correspondiente a la VM. También puedes indicar la ruta manualmente:
 
 ```bash
 sudo bash /opt/meganet-deploy/deploy/install-proxmox-openvpn-client.sh /root/MEGANET-PROXMOX.ovpn

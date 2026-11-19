@@ -20,6 +20,15 @@ log()  { echo -e "${G}[✓]${N} $*"; }
 warn() { echo -e "${Y}[!]${N} $*"; }
 err()  { echo -e "${R}[✗]${N} $*" >&2; exit 1; }
 ask()  { local var="$1"; local prompt="$2"; local def="${3:-}"
+  local current="${!var:-}"
+  if [[ -n "$current" ]]; then
+    eval "$var=\"$current\""
+    return
+  fi
+  if [[ "${MEGANET_UNATTENDED:-0}" == "1" || ! -t 0 ]]; then
+    eval "$var=\"$def\""
+    return
+  fi
   if [[ -n "$def" ]]; then read -rp "$(echo -e ${B}?${N} $prompt [$def]: )" val
   else read -rp "$(echo -e ${B}?${N} $prompt: )" val; fi
   eval "$var=\"${val:-$def}\""
@@ -89,13 +98,9 @@ ufw default allow outgoing >/dev/null
 ufw allow 22/tcp >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
-ufw allow 500/udp >/dev/null
-ufw allow 4500/udp >/dev/null
-ufw allow 1701/udp >/dev/null
-ufw allow 8777/tcp >/dev/null
-ufw allow 3940/tcp >/dev/null
-# NO abrir 5432 (Postgres), 8000 (Kong) ni 3000 (frontend) al público.
-# Todo lo interno pasa por Nginx (80/443) -> loopback.
+# OpenVPN/Pritunl es cliente saliente: no necesita puertos VPN entrantes.
+# NO abrir 5432, 8000, 3000, 3001, 8777 ni 3940 al público.
+# Todo lo interno pasa por Nginx (80/443) o por loopback.
 ufw --force enable >/dev/null
 
 # ============================================================================
@@ -367,35 +372,63 @@ warn "PASO 5/8 — Importando esquema Meganet"
 
 if [[ -f "$INSTALL_DIR/backups/meganet-dump.sql" ]]; then
   log "Restaurando dump previo..."
-  docker exec -i meganet-supabase-db-1 psql -U postgres < "$INSTALL_DIR/backups/meganet-dump.sql"
+  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres < "$INSTALL_DIR/backups/meganet-dump.sql"
+elif [[ -d "/opt/meganet-deploy/supabase/migrations" ]]; then
+  log "Instalación nueva: creando tablas y funciones desde las migraciones..."
+  while IFS= read -r migration; do
+    echo "  -> $(basename "$migration")"
+    docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "$migration" \
+      || err "Falló la migración $(basename "$migration")"
+  done < <(find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort)
+  # Las migraciones históricas incluyen admin@admin.com/admin; no dejar ese acceso conocido.
+  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres -d postgres \
+    -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
+  log "Base de datos inicial creada"
 else
-  warn "No hay dump previo. Sube tu dump a $INSTALL_DIR/backups/meganet-dump.sql y ejecuta:"
-  warn "  docker exec -i meganet-supabase-db-1 psql -U postgres < $INSTALL_DIR/backups/meganet-dump.sql"
-  warn "Puedes obtenerlo desde Lovable: Cloud → Advanced settings → Export data"
+  err "No hay dump ni migraciones en /opt/meganet-deploy/supabase/migrations"
 fi
 
 # Crear admin inicial
 log "Creando usuario admin..."
-sleep 5
-curl -s -X POST "http://localhost:8000/auth/v1/admin/users" \
+AUTH_READY=0
+for _ in {1..45}; do
+  if curl -fsS --max-time 3 "http://localhost:8000/auth/v1/health" >/dev/null 2>&1; then
+    AUTH_READY=1
+    break
+  fi
+  sleep 2
+done
+[[ "$AUTH_READY" == "1" ]] || err "El servicio de autenticación no respondió a tiempo"
+curl -fsS --max-time 20 -X POST "http://localhost:8000/auth/v1/admin/users" \
   -H "apikey: $SERVICE_ROLE_KEY" \
   -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\",\"email_confirm\":true}" >/dev/null || true
+  -d "{\"email\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\",\"email_confirm\":true}" >/dev/null \
+  || err "No se pudo crear el usuario administrador"
 
 # ============================================================================
 #  6. FRONTEND
 # ============================================================================
 warn "PASO 6/8 — Desplegando frontend"
 
-if [[ -n "$GIT_REPO" ]]; then
-  log "Clonando repositorio: $GIT_REPO"
-  git clone "$GIT_REPO" frontend-src 2>/dev/null || (cd frontend-src && git pull)
+# El paquete autocontenido ya incluye el código en /opt/meganet-deploy.
+if [[ -z "$GIT_REPO" && -f "/opt/meganet-deploy/package.json" && ! -e "$INSTALL_DIR/frontend-src" ]]; then
+  ln -s /opt/meganet-deploy "$INSTALL_DIR/frontend-src"
+fi
+
+if [[ -n "$GIT_REPO" || -f "$INSTALL_DIR/frontend-src/package.json" ]]; then
+  if [[ -n "$GIT_REPO" ]]; then
+    log "Clonando repositorio: $GIT_REPO"
+    git clone "$GIT_REPO" frontend-src 2>/dev/null || (cd frontend-src && git pull)
+  else
+    log "Usando el código incluido en $INSTALL_DIR/frontend-src"
+  fi
   cd frontend-src
 
-  # Asegurar que deploy esté en la raíz del VPS para futuros usos
-  cp -r deploy /opt/meganet-deploy/ 2>/dev/null || true
-  mkdir -p /opt/meganet
+  mkdir -p /opt/meganet-deploy /opt/meganet
+  if [[ "$(readlink -f "$PWD")" != "/opt/meganet-deploy" ]]; then
+    cp -r deploy /opt/meganet-deploy/ 2>/dev/null || true
+  fi
   ln -sf /opt/meganet-deploy/deploy/openvpn-add-router.sh /opt/meganet/openvpn-add-router.sh 2>/dev/null || true
   ln -sf /opt/meganet-deploy/deploy/l2tp-add-router.sh /opt/meganet/l2tp-add-router.sh 2>/dev/null || true
 
@@ -411,6 +444,7 @@ MIKROTIK_AGENT_HOST=127.0.0.1
 MIKROTIK_AGENT_PORT=8777
 MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 EOF
+  chmod 600 .env.production
 
   log "Instalando dependencias con Bun..."
   command -v bun &>/dev/null || npm i -g bun >/dev/null 2>&1
@@ -423,7 +457,8 @@ EOF
   cat > /etc/systemd/system/meganet-web.service <<UNIT
 [Unit]
 Description=Meganet Web Panel
-After=network.target postgresql.service
+After=network-online.target docker.service
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -446,14 +481,7 @@ UNIT
   systemctl restart meganet-web
   cd ..
 else
-  warn "GIT_REPO no configurado. Intentando buscar build existente..."
-  if [[ -f "frontend-src/.output/server/index.mjs" ]]; then
-    log "Build encontrado. Reinstalando servicio..."
-    # (reutilizar lógica de creación de servicio si existe el build)
-    systemctl restart meganet-web || true
-  else
-    warn "No se encontró código ni build. Sube el código a $INSTALL_DIR/frontend-src"
-  fi
+  err "No se encontró el código fuente en $INSTALL_DIR/frontend-src"
 fi
 
 # ============================================================================
@@ -553,11 +581,11 @@ After=network.target
 [Service]
 Environment=MIKROTIK_AGENT_TOKEN=$AGENT_TOKEN
 Environment=MIKROTIK_AGENT_PORT=8777
-Environment=MIKROTIK_AGENT_BIND_HOST=0.0.0.0
+Environment=MIKROTIK_AGENT_BIND_HOST=127.0.0.1
 Environment=MIKROTIK_AGENT_TLS_CERT=/etc/meganet-agent/agent.crt
 Environment=MIKROTIK_AGENT_TLS_KEY=/etc/meganet-agent/agent.key
 Environment=PROVISION_PORT=3940
-Environment=PROVISION_BIND_HOST=0.0.0.0
+Environment=PROVISION_BIND_HOST=127.0.0.1
 Environment=OPENVPN_ADD_ROUTER_SCRIPT=/opt/meganet/openvpn-add-router.sh
 Environment=L2TP_ADD_ROUTER_SCRIPT=/opt/meganet/l2tp-add-router.sh
 Environment=OPENVPN_CLIENT_DIR=/etc/openvpn/clients
