@@ -7,11 +7,13 @@ import { AdminLayout } from "@/components/admin-layout";
 import {
   listCutoffs, cutoffKpis, bulkReactivate,
   setPaymentPromise, setDontCut, runScheduledSuspensions,
-  listAtRisk, notifyPreCutoff,
+  listAtRisk, notifyPreCutoff, listManualCutoffCandidates, manualSuspendByRouter,
+  type ManualCutoffCandidate,
 } from "@/lib/cutoffs.functions";
 import { listCutoffPolicies, applyCutoffPolicy } from "@/lib/cutoff-policies.functions";
 import { reactivateService } from "@/lib/isp.functions";
-import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText, AlertTriangle, Send } from "lucide-react";
+import { usePermissions } from "@/hooks/use-permissions";
+import { ShieldCheck, ShieldOff, Clock, CheckCircle2, XCircle, Search, PlayCircle, CalendarClock, Zap, FileText, AlertTriangle, Send, Scissors, Router, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/cutoffs")({
   head: () => ({
@@ -53,7 +55,21 @@ export function CutoffsPageContent() {
   const applyPolicy = useServerFn(applyCutoffPolicy);
   const atRiskFn = useServerFn(listAtRisk);
   const notifyFn = useServerFn(notifyPreCutoff);
+  const manualListFn = useServerFn(listManualCutoffCandidates);
+  const manualSuspendFn = useServerFn(manualSuspendByRouter);
+  const { can } = usePermissions();
   const [riskOpen, setRiskOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualRouterId, setManualRouterId] = useState("");
+  const [manualSel, setManualSel] = useState<Set<string>>(new Set());
+  const [forceExceptions, setForceExceptions] = useState(false);
+  const [forceConfirmed, setForceConfirmed] = useState(false);
+  const [manualBusy, setManualBusy] = useState(false);
+  const manualQ = useQuery({
+    queryKey: ["manual-cutoff-candidates"],
+    queryFn: () => manualListFn(),
+    enabled: manualOpen,
+  });
   const riskQ = useQuery({
     queryKey: ["at-risk", 24],
     queryFn: () => atRiskFn({ data: { hours: 24 } }),
@@ -81,6 +97,70 @@ export function CutoffsPageContent() {
       (r.plan_name ?? "").toLowerCase().includes(t)
     );
   }, [listQ.data, q]);
+
+  const manualCandidates = useMemo(
+    () => (manualQ.data?.candidates ?? []).filter((candidate) => candidate.router_id === manualRouterId),
+    [manualQ.data, manualRouterId],
+  );
+  const manualSelectedRows = manualCandidates.filter((candidate) => manualSel.has(candidate.service_id));
+  const manualForcedCount = manualSelectedRows.filter((candidate) => candidate.exception !== null).length;
+  const manualSelectable = manualCandidates.filter((candidate) => candidate.exception === null || forceExceptions);
+
+  const toggleManual = (candidate: ManualCutoffCandidate) => {
+    if (candidate.exception !== null && !forceExceptions) return;
+    const next = new Set(manualSel);
+    if (next.has(candidate.service_id)) next.delete(candidate.service_id);
+    else next.add(candidate.service_id);
+    setManualSel(next);
+    setForceConfirmed(false);
+  };
+
+  const toggleAllManual = () => {
+    const next = new Set(manualSel);
+    const allSelected = manualSelectable.length > 0 && manualSelectable.every((candidate) => next.has(candidate.service_id));
+    for (const candidate of manualSelectable) {
+      if (allSelected) next.delete(candidate.service_id);
+      else next.add(candidate.service_id);
+    }
+    setManualSel(next);
+    setForceConfirmed(false);
+  };
+
+  const closeManual = () => {
+    setManualOpen(false);
+    setManualRouterId("");
+    setManualSel(new Set());
+    setForceExceptions(false);
+    setForceConfirmed(false);
+  };
+
+  const executeManualCut = async (serviceIds: string[]) => {
+    if (!manualRouterId || serviceIds.length === 0 || manualBusy) return;
+    const rows = manualCandidates.filter((candidate) => serviceIds.includes(candidate.service_id));
+    const forced = rows.filter((candidate) => candidate.exception !== null);
+    if (forced.length > 0 && (!forceExceptions || !forceConfirmed)) {
+      toast.error("Confirma expresamente el corte de las excepciones seleccionadas");
+      return;
+    }
+    const routerName = manualQ.data?.routers.find((router: { id: string; name: string }) => router.id === manualRouterId)?.name ?? "el nodo";
+    if (!confirm(`¿Cortar ahora ${rows.length} servicio(s) de ${routerName}?\n\nSe adelantará la hora programada${forced.length ? ` y se forzarán ${forced.length} excepción(es)` : ""}.`)) return;
+    setManualBusy(true);
+    try {
+      const result = await manualSuspendFn({
+        data: { routerId: manualRouterId, serviceIds, forceExceptions },
+      });
+      toast.success(`Cortes aplicados: ${result.suspended}${result.queued ? ` · en cola: ${result.queued}` : ""}${result.failed ? ` · fallaron: ${result.failed}` : ""}`);
+      if (result.skipped.length > 0) toast.warning(result.skipped.slice(0, 3).join(" · "));
+      refresh();
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      await manualQ.refetch();
+      if (result.suspended > 0) closeManual();
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setManualBusy(false);
+    }
+  };
 
   const toggleAll = () => {
     if (sel.size === filtered.length) setSel(new Set());
@@ -167,6 +247,14 @@ export function CutoffsPageContent() {
           <p className="text-sm text-muted-foreground">Clientes suspendidos por deuda o corte manual</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {can("cortes", "cut") && (
+            <button
+              onClick={() => setManualOpen(true)}
+              className="inline-flex items-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-2 rounded-md text-sm font-semibold"
+            >
+              <Scissors className="w-4 h-4" /> Cortar ahora por nodo
+            </button>
+          )}
           <button
             onClick={() => setRiskOpen(true)}
             className="inline-flex items-center gap-2 bg-[#f59e0b] hover:bg-[#d97706] text-white px-3 py-2 rounded-md text-sm font-semibold"
@@ -343,6 +431,182 @@ export function CutoffsPageContent() {
           </table>
         </div>
       </div>
+
+      {manualOpen && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm p-2 md:p-6 grid place-items-center" onClick={closeManual}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Corte inmediato por nodo"
+            data-modal-open
+            className="bg-card border rounded-xl shadow-2xl w-full max-w-6xl max-h-[94vh] min-w-0 overflow-hidden flex flex-col"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="p-4 md:p-5 border-b flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold flex items-center gap-2"><Scissors className="w-5 h-5 text-destructive" /> Cortar ahora por nodo</h2>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">Adelanta cortes por deuda sin esperar la hora configurada.</p>
+              </div>
+              <button onClick={closeManual} disabled={manualBusy} className="px-3 py-1.5 text-sm border rounded-md hover:bg-muted disabled:opacity-40">Cerrar</button>
+            </div>
+
+            <div className="p-4 md:p-5 space-y-4 overflow-y-auto">
+              <div className="grid md:grid-cols-[minmax(240px,1fr)_auto] gap-3 items-end">
+                <label className="text-sm font-semibold">
+                  Nodo / router
+                  <div className="relative mt-1">
+                    <Router className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <select
+                      value={manualRouterId}
+                      onChange={(event) => {
+                        setManualRouterId(event.target.value);
+                        setManualSel(new Set());
+                        setForceExceptions(false);
+                        setForceConfirmed(false);
+                      }}
+                      className="w-full border rounded-md pl-9 pr-3 py-2.5 bg-background font-normal"
+                    >
+                      <option value="">Selecciona un nodo…</option>
+                      {(manualQ.data?.routers ?? []).map((router: { id: string; name: string; status: string | null }) => (
+                        <option key={router.id} value={router.id}>{router.name}{router.status === "offline" ? " (desconectado)" : ""}</option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+                {manualRouterId && (
+                  <div className="text-sm bg-muted rounded-md px-4 py-2.5">
+                    <b>{manualCandidates.length}</b> cliente(s) con corte habilitado · <b>Bs {manualCandidates.reduce((sum, candidate) => sum + candidate.debt, 0).toFixed(2)}</b> vencidos
+                  </div>
+                )}
+              </div>
+
+              {manualRouterId && manualCandidates.some((candidate) => candidate.exception !== null) && (
+                <label className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/10 rounded-md p-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={forceExceptions}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setForceExceptions(checked);
+                      setForceConfirmed(false);
+                      if (!checked) {
+                        setManualSel(new Set(Array.from(manualSel).filter((id) => manualCandidates.find((candidate) => candidate.service_id === id)?.exception === null)));
+                      }
+                    }}
+                  />
+                  <span>
+                    <b>Permitir forzar excepciones</b>
+                    <span className="block text-xs text-muted-foreground mt-0.5">Habilita la selección de clientes con promesa vigente o marca “no cortar”. Después deberás confirmarlo otra vez.</span>
+                  </span>
+                </label>
+              )}
+
+              {manualQ.isLoading ? (
+                <div className="py-12 text-center text-sm text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" /> Buscando deudas y cortes pendientes…</div>
+              ) : manualQ.isError ? (
+                <div className="py-8 text-center text-sm text-destructive">{(manualQ.error as Error).message}</div>
+              ) : !manualRouterId ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">Elige un nodo para ver los clientes que puedes cortar ahora.</div>
+              ) : manualCandidates.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground"><CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500" /> Este nodo no tiene clientes activos con deuda fuera de gracia.</div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[850px]">
+                      <thead className="bg-muted text-xs uppercase text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-3 text-left w-10">
+                            <input
+                              type="checkbox"
+                              aria-label="Seleccionar todos los clientes disponibles"
+                              checked={manualSelectable.length > 0 && manualSelectable.every((candidate) => manualSel.has(candidate.service_id))}
+                              onChange={toggleAllManual}
+                            />
+                          </th>
+                          <th className="px-3 py-3 text-left">Cliente</th>
+                          <th className="px-3 py-3 text-left">Servicio</th>
+                          <th className="px-3 py-3 text-right">Deuda vencida</th>
+                          <th className="px-3 py-3 text-left">Corte programado</th>
+                          <th className="px-3 py-3 text-left">Condición</th>
+                          <th className="px-3 py-3 text-right">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {manualCandidates.map((candidate) => {
+                          const blocked = candidate.exception !== null && !forceExceptions;
+                          return (
+                            <tr key={candidate.service_id} className="border-t hover:bg-muted/30">
+                              <td className="px-3 py-3">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Seleccionar ${candidate.full_name}`}
+                                  checked={manualSel.has(candidate.service_id)}
+                                  disabled={blocked || manualBusy}
+                                  onChange={() => toggleManual(candidate)}
+                                />
+                              </td>
+                              <td className="px-3 py-3">
+                                <div className="font-semibold uppercase">{candidate.full_name}</div>
+                                <div className="text-xs text-muted-foreground">{candidate.document ?? "Sin documento"} · {candidate.phone ?? "Sin teléfono"}</div>
+                              </td>
+                              <td className="px-3 py-3">
+                                <div>{candidate.plan_name}</div>
+                                <div className="text-xs font-mono text-muted-foreground">{candidate.ip_address ?? candidate.pppoe_user ?? "Sin IP"}</div>
+                              </td>
+                              <td className="px-3 py-3 text-right">
+                                <b className="text-destructive">Bs {candidate.debt.toFixed(2)}</b>
+                                <div className="text-xs text-muted-foreground">{candidate.overdue_invoices} factura(s)</div>
+                              </td>
+                              <td className="px-3 py-3 whitespace-nowrap">
+                                {candidate.scheduled_date.split("-").reverse().join("/")} · {String(candidate.cut_hour).padStart(2, "0")}:00
+                                <span className="block text-xs text-primary font-medium">Puedes cortarlo ahora</span>
+                              </td>
+                              <td className="px-3 py-3">
+                                {candidate.exception === "dont_cut" && <span className="text-xs font-bold px-2 py-1 rounded bg-muted">NO CORTAR</span>}
+                                {candidate.exception === "promise" && <span className="text-xs font-bold px-2 py-1 rounded bg-amber-500/15 text-amber-600">PROMESA VIGENTE</span>}
+                                {candidate.exception === null && <span className="text-xs font-bold px-2 py-1 rounded bg-destructive/10 text-destructive">LISTO PARA CORTE</span>}
+                              </td>
+                              <td className="px-3 py-3 text-right">
+                                <button
+                                  onClick={() => executeManualCut([candidate.service_id])}
+                                  disabled={blocked || manualBusy || (candidate.exception !== null && !forceConfirmed)}
+                                  className="inline-flex items-center gap-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground disabled:opacity-40 px-3 py-1.5 rounded-md text-xs font-semibold"
+                                >
+                                  <Scissors className="w-3 h-3" /> Cortar
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {manualForcedCount > 0 && (
+                <label className="flex items-start gap-3 border border-destructive/40 bg-destructive/10 rounded-md p-3 text-sm cursor-pointer">
+                  <input type="checkbox" className="mt-1" checked={forceConfirmed} onChange={(event) => setForceConfirmed(event.target.checked)} />
+                  <span><b>Confirmación adicional obligatoria</b><span className="block text-xs mt-0.5">Confirmo cortar {manualForcedCount} cliente(s) aunque tengan promesa vigente o protección “no cortar”.</span></span>
+                </label>
+              )}
+            </div>
+
+            <div className="p-4 md:p-5 border-t flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-muted-foreground">Si el nodo está desconectado, el corte queda en cola y se aplica al reconectar.</div>
+              <button
+                onClick={() => executeManualCut(Array.from(manualSel))}
+                disabled={manualBusy || manualSel.size === 0 || (manualForcedCount > 0 && !forceConfirmed)}
+                className="inline-flex items-center justify-center gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground disabled:opacity-40 px-4 py-2.5 rounded-md text-sm font-semibold w-full sm:w-auto"
+              >
+                {manualBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scissors className="w-4 h-4" />}
+                {manualBusy ? "Aplicando cortes…" : `Cortar seleccionados (${manualSel.size})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal promesa */}
       {promiseModal && (

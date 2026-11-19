@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { suspendService, reactivateService } from "./isp.functions";
+import {
+  addDaysToDate,
+  canSelectManualCutoff,
+  isManualCutoffDue,
+  manualCutoffException,
+  type ManualCutoffException,
+} from "./manual-cutoff";
+import { errorMessage } from "./error-message";
 
 // ---------- Panel: listado de cortados ----------
 export const listCutoffs = createServerFn({ method: "GET" })
@@ -396,4 +404,195 @@ export const applyReconnectFee = createServerFn({ method: "POST" })
     }).select("id").single();
     if (error) throw new Error(error.message);
     return { ok: true, fee, invoice_id: inv.id };
+  });
+
+// ---------- Corte manual inmediato por nodo ----------
+export type ManualCutoffCandidate = {
+  service_id: string;
+  client_id: string;
+  full_name: string;
+  document: string | null;
+  phone: string | null;
+  plan_name: string;
+  ip_address: string | null;
+  pppoe_user: string | null;
+  router_id: string;
+  router_name: string;
+  router_status: string | null;
+  debt: number;
+  overdue_invoices: number;
+  scheduled_date: string;
+  cut_hour: number;
+  exception: ManualCutoffException;
+};
+
+function boliviaToday() {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "America/La_Paz",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+async function loadManualCutoffCandidates(supabase: any) {
+  const today = boliviaToday();
+  const [{ data: invoices, error: invoiceError }, { data: routers, error: routerError }, { data: defaultPolicy }] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select(`id, amount, due_date, status,
+        services!inner(id, status, auto_suspend, ip_address, pppoe_user, router_id,
+          routers(id, name, status), plans(name),
+          clients!inner(id, full_name, document, phone, dont_cut, payment_promise_until,
+            grace_days_override, branches(default_grace_days),
+            cutoff_policies(grace_days, cut_hour, auto_suspend, is_active)))`)
+      .in("status", ["pending", "overdue"])
+      .lt("due_date", today),
+    supabase.from("routers").select("id, name, status").order("name"),
+    supabase.from("cutoff_policies")
+      .select("grace_days, cut_hour, auto_suspend, is_active")
+      .eq("is_default", true).eq("is_active", true)
+      .order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (invoiceError) throw new Error(invoiceError.message);
+  if (routerError) throw new Error(routerError.message);
+
+  const byService = new Map<string, ManualCutoffCandidate & { eligible: boolean }>();
+  for (const invoice of (invoices ?? []) as any[]) {
+    const service = Array.isArray(invoice.services) ? invoice.services[0] : invoice.services;
+    const client = service && (Array.isArray(service.clients) ? service.clients[0] : service.clients);
+    const router = service && (Array.isArray(service.routers) ? service.routers[0] : service.routers);
+    if (!service || !client || !router) continue;
+
+    const clientPolicy = Array.isArray(client.cutoff_policies) ? client.cutoff_policies[0] : client.cutoff_policies;
+    const branch = Array.isArray(client.branches) ? client.branches[0] : client.branches;
+    const graceDays = client.grace_days_override ?? clientPolicy?.grace_days ?? branch?.default_grace_days ?? defaultPolicy?.grace_days ?? 5;
+    const cutHour = clientPolicy?.cut_hour ?? defaultPolicy?.cut_hour ?? 0;
+    const policyActive = clientPolicy?.is_active ?? defaultPolicy?.is_active ?? true;
+    const policyAutoSuspend = clientPolicy?.auto_suspend ?? defaultPolicy?.auto_suspend ?? true;
+    const plan = Array.isArray(service.plans) ? service.plans[0] : service.plans;
+    const existing = byService.get(service.id);
+    const candidate = existing ?? {
+      service_id: service.id,
+      client_id: client.id,
+      full_name: client.full_name,
+      document: client.document,
+      phone: client.phone,
+      plan_name: plan?.name ?? "Sin plan",
+      ip_address: service.ip_address,
+      pppoe_user: service.pppoe_user,
+      router_id: router.id,
+      router_name: router.name,
+      router_status: router.status,
+      debt: 0,
+      overdue_invoices: 0,
+      scheduled_date: "9999-12-31",
+      cut_hour: cutHour,
+      exception: manualCutoffException({
+        dontCut: Boolean(client.dont_cut),
+        paymentPromiseUntil: client.payment_promise_until,
+        today,
+      }),
+      eligible: false,
+    };
+    candidate.debt += Number(invoice.amount) || 0;
+    candidate.overdue_invoices += 1;
+    if (isManualCutoffDue({
+      serviceStatus: service.status,
+      serviceAutoSuspend: Boolean(service.auto_suspend),
+      policyActive: Boolean(policyActive),
+      policyAutoSuspend: Boolean(policyAutoSuspend),
+      dueDate: invoice.due_date,
+      today,
+      graceDays,
+    })) {
+      candidate.eligible = true;
+      const scheduledDate = addDaysToDate(invoice.due_date, graceDays + 1);
+      if (scheduledDate < candidate.scheduled_date) candidate.scheduled_date = scheduledDate;
+    }
+    byService.set(service.id, candidate);
+  }
+
+  const candidates = Array.from(byService.values())
+    .filter((candidate) => candidate.eligible)
+    .map(({ eligible: _eligible, ...candidate }) => candidate)
+    .sort((a, b) => a.router_name.localeCompare(b.router_name) || a.full_name.localeCompare(b.full_name));
+  return { today, routers: routers ?? [], candidates };
+}
+
+async function assertManualCutoffPermission(context: any, routerId: string) {
+  const [{ data: roles }, { data: employee }] = await Promise.all([
+    context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
+    context.supabase.from("employees").select("permissions, router_ids, status").eq("user_id", context.userId).maybeSingle(),
+  ]);
+  const isAdmin = (roles ?? []).some((row: any) => row.role === "admin");
+  const permissions = (employee?.permissions ?? {}) as Record<string, string[]>;
+  if (!isAdmin && !(permissions.cortes ?? []).includes("cut")) {
+    throw new Error("No tienes permiso para cortar servicios");
+  }
+  if (!isAdmin && Array.isArray(employee?.router_ids) && employee.router_ids.length > 0 && !employee.router_ids.includes(routerId)) {
+    throw new Error("No tienes acceso a este nodo");
+  }
+}
+
+export const listManualCutoffCandidates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => loadManualCutoffCandidates(context.supabase));
+
+export const manualSuspendByRouter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { routerId: string; serviceIds: string[]; forceExceptions?: boolean }) => input)
+  .handler(async ({ data, context }) => {
+    if (!data.routerId) throw new Error("Selecciona un nodo");
+    const requestedIds = Array.from(new Set(data.serviceIds ?? []));
+    if (requestedIds.length === 0) throw new Error("Selecciona al menos un cliente");
+    if (requestedIds.length > 500) throw new Error("Puedes cortar hasta 500 servicios por operación");
+    await assertManualCutoffPermission(context, data.routerId);
+
+    const { candidates } = await loadManualCutoffCandidates(context.supabase);
+    const routerCandidates = candidates.filter((candidate) => candidate.router_id === data.routerId);
+    const byId = new Map(routerCandidates.map((candidate) => [candidate.service_id, candidate]));
+    const skipped: string[] = [];
+    const toRun: ManualCutoffCandidate[] = [];
+    for (const serviceId of requestedIds) {
+      const candidate = byId.get(serviceId);
+      if (!candidate) {
+        skipped.push("Un servicio ya no tiene deuda lista para corte o no pertenece al nodo");
+      } else if (!canSelectManualCutoff(candidate.exception, Boolean(data.forceExceptions))) {
+        skipped.push(`${candidate.full_name}: tiene promesa vigente o protección de corte`);
+      } else {
+        toRun.push(candidate);
+      }
+    }
+
+    let suspended = 0;
+    let queued = 0;
+    let failed = 0;
+    for (const candidate of toRun) {
+      const forced = candidate.exception !== null;
+      const reason = `Corte manual inmediato por nodo ${candidate.router_name}${forced ? " (excepción forzada)" : ""}`;
+      try {
+        const result = await suspendService({ data: { serviceId: candidate.service_id, reason } });
+        await context.supabase.from("services").update({
+          scheduled_suspend_at: null,
+          suspend_reason: reason,
+        }).eq("id", candidate.service_id);
+        suspended += 1;
+        if (result.queued) queued += 1;
+      } catch (error) {
+        failed += 1;
+        skipped.push(`${candidate.full_name}: ${errorMessage(error)}`);
+      }
+    }
+
+    return {
+      ok: true,
+      suspended,
+      queued,
+      failed,
+      forced: toRun.filter((candidate) => candidate.exception !== null).length,
+      skipped,
+    };
   });
