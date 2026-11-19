@@ -636,8 +636,10 @@ export type Database = {
           cut_hour: number
           cut_mode: string
           description: string | null
+          due_day: number | null
           grace_days: number
           id: string
+          invoice_day: number | null
           is_active: boolean
           is_default: boolean
           late_fee: number
@@ -657,8 +659,10 @@ export type Database = {
           cut_hour?: number
           cut_mode?: string
           description?: string | null
+          due_day?: number | null
           grace_days?: number
           id?: string
+          invoice_day?: number | null
           is_active?: boolean
           is_default?: boolean
           late_fee?: number
@@ -678,8 +682,10 @@ export type Database = {
           cut_hour?: number
           cut_mode?: string
           description?: string | null
+          due_day?: number | null
           grace_days?: number
           id?: string
+          invoice_day?: number | null
           is_active?: boolean
           is_default?: boolean
           late_fee?: number
@@ -2673,6 +2679,7 @@ export type Database = {
         Args: { p_month?: number; p_router_id?: string; p_year?: number }
         Returns: number
       }
+      generate_policy_invoices: { Args: { p_today?: string }; Returns: number }
       has_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean

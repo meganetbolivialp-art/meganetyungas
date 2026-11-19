@@ -27,6 +27,8 @@ const empty: Partial<CutoffPolicy> = {
   grace_days: 5,
   cut_hour: 9,
   cut_day: null,
+  invoice_day: null,
+  due_day: null,
   router_ids: [],
   cut_mode: "ip",
   speed_reduced_kbps: null,
@@ -123,7 +125,8 @@ export function CutoffPoliciesPageContent() {
                   {p.description && <div className="text-[11px] text-muted-foreground">{p.description}</div>}
                 </td>
                 <td className="px-3 py-2">{modeLabel(p.cut_mode)}{p.cut_mode === "speed" && p.speed_reduced_kbps ? ` (${p.speed_reduced_kbps}k)` : ""}</td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">{p.cut_day ? `Día ${p.cut_day} del mes` : `${p.grace_days}d de gracia`}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{p.cut_day ? `Día ${p.cut_day} del mes` : `${p.grace_days}d de gracia`}
+                  {p.invoice_day ? <div className="text-[11px] text-muted-foreground">Factura día {p.invoice_day}{p.due_day ? ` · paga día ${p.due_day}` : ""}</div> : null}</td>
                 <td className="px-3 py-2 text-right">{String(p.cut_hour).padStart(2,"0")}:00</td>
                 <td className="px-3 py-2 text-right">{p.prior_notice_hours}h</td>
                 <td className="px-3 py-2 text-right">Bs {Number(p.reconnect_fee).toFixed(2)}</td>
@@ -173,6 +176,15 @@ export function CutoffPoliciesPageContent() {
               <Field label="Descripción" wide>
                 <input className="mw-input" value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} />
               </Field>
+              <Field label="Día que se genera la factura (1-28)">
+                <input type="number" min={1} max={28} placeholder="Manual (sin automático)" className="mw-input" value={editing.invoice_day ?? ""} onChange={e => setEditing({ ...editing, invoice_day: e.target.value === "" ? null : Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
+              </Field>
+              <Field label="Día de pago / vencimiento (1-28)">
+                <input type="number" min={1} max={28} placeholder="El del cliente" className="mw-input" value={editing.due_day ?? ""} onChange={e => setEditing({ ...editing, due_day: e.target.value === "" ? null : Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
+              </Field>
+              {editing.invoice_day && editing.due_day && editing.due_day < editing.invoice_day ? (
+                <p className="md:col-span-2 text-[11px] text-muted-foreground">El día de pago es antes que el día de factura: la factura vencerá el mes siguiente.</p>
+              ) : null}
               <Field label="¿Cuándo corta?">
                 <select className="mw-input" value={editing.cut_day ? "day" : "grace"} onChange={e => setEditing({ ...editing, cut_day: e.target.value === "day" ? (editing.cut_day || 5) : null })}>
                   <option value="grace">Días después del vencimiento</option>

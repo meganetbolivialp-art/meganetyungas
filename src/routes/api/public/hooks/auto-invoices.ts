@@ -21,7 +21,15 @@ export const Route = createFileRoute("/api/public/hooks/auto-invoices")({
         const { data: s, error } = await supabaseAdmin.from("billing_settings").select("*").eq("id", true).maybeSingle();
         if (error || !s) return Response.json({ ok: false, error: error?.message ?? "sin configuración" }, { status: 500 });
         const today = laPazToday();
-        if (!shouldAutoGenerateInvoices(s, today)) return Response.json({ ok: true, skipped: true });
+        // Plantillas con "día que genera factura": cada cliente según su plantilla (una vez por mes).
+        const { data: byPolicy, error: ep } = await supabaseAdmin.rpc("generate_policy_invoices", {});
+        if (ep || byPolicy) {
+          await supabaseAdmin.from("job_runs").insert({
+            job_name: "policy-invoices", status: ep ? "failed" : "success",
+            finished_at: new Date().toISOString(), detail: { created: byPolicy }, error: ep?.message ?? null,
+          });
+        }
+        if (!shouldAutoGenerateInvoices(s, today)) return Response.json({ ok: true, skipped: true, byPolicy });
         const tag = monthTag(today);
         // Marca primero el mes para que dos llamadas seguidas no generen dos veces.
         const { data: claimed } = await supabaseAdmin.from("billing_settings")

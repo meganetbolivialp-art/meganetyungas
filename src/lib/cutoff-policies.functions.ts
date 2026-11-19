@@ -8,6 +8,8 @@ export type CutoffPolicy = {
   grace_days: number;
   cut_hour: number;
   cut_day: number | null;
+  invoice_day: number | null;
+  due_day: number | null;
   router_ids?: string[];
   cut_mode: "ip" | "speed" | "pppoe";
   speed_reduced_kbps: number | null;
@@ -44,7 +46,9 @@ export const upsertCutoffPolicy = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { router_ids: routerIds, ...rest } = data;
     const row: any = { ...rest };
-    if (row.cut_day != null && (row.cut_day < 1 || row.cut_day > 28)) throw new Error("El día de corte debe estar entre 1 y 28");
+    for (const [k, l] of [["cut_day", "corte"], ["invoice_day", "factura"], ["due_day", "pago"]] as const) {
+      if (row[k] != null && (row[k] < 1 || row[k] > 28)) throw new Error(`El día de ${l} debe estar entre 1 y 28`);
+    }
     if (row.is_default) {
       await context.supabase.from("cutoff_policies").update({ is_default: false }).neq("id", row.id ?? "00000000-0000-0000-0000-000000000000");
     }
@@ -93,11 +97,11 @@ export const applyCutoffPolicy = createServerFn({ method: "POST" })
   .inputValidator((d: { policyId: string; clientIds: string[] }) => d)
   .handler(async ({ data, context }) => {
     const { data: pol, error: pe } = await context.supabase
-      .from("cutoff_policies").select("grace_days").eq("id", data.policyId).single();
+      .from("cutoff_policies").select("grace_days, due_day").eq("id", data.policyId).single();
     if (pe || !pol) throw new Error("Plantilla no encontrada");
     const { error } = await context.supabase
       .from("clients")
-      .update({ cutoff_policy_id: data.policyId, grace_days_override: pol.grace_days })
+      .update({ cutoff_policy_id: data.policyId, grace_days_override: pol.grace_days, ...(pol.due_day ? { billing_day: pol.due_day } : {}) })
       .in("id", data.clientIds);
     if (error) throw new Error(error.message);
     for (const cid of data.clientIds) {
