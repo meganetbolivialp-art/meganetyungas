@@ -53,14 +53,14 @@ export function RouterAlertsBell({ canPing }: { canPing: boolean }) {
   return (
     <div className="relative">
       <button onClick={() => setOpen((o) => !o)} title="Alertas de nodos" aria-label="Alertas de nodos"
-        className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground relative">
+        className="w-8 h-8 grid place-items-center rounded-full hover:bg-card text-muted-foreground relative">
         <Bell className="w-4 h-4" />
         {down.length > 0 && (
-          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground grid place-items-center">{down.length}</span>
+          <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full ring-2 ring-card animate-pulse bg-destructive text-[9px] font-bold text-destructive-foreground grid place-items-center">{down.length}</span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-11 w-72 bg-card border shadow-lg rounded-md z-30">
+        <div className="absolute right-0 top-10 w-[min(18rem,calc(100vw-1rem))] bg-card border shadow-lg rounded-md z-30">
           <div className="px-3 py-2 border-b text-sm font-semibold">Estado de nodos</div>
           {down.length === 0 ? (
             <div className="px-3 py-4 text-sm text-muted-foreground">Todos los nodos están en línea ({routers.length}).</div>

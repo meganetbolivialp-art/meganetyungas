@@ -418,12 +418,12 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
           </div>
 
 
-          <div className="flex items-center gap-1 shrink-0">
-            <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
-            <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: undefined }} title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-1 shrink-0 rounded-full border bg-muted/60 p-0.5 sm:px-1">
+            <button title="Enviar mensaje" className="hidden sm:grid w-8 h-8 place-items-center rounded-full hover:bg-card text-muted-foreground"><Send className="w-4 h-4" /></button>
+            <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: undefined }} title="Cobrar" className="w-8 h-8 grid place-items-center rounded-full hover:bg-card text-primary"><DollarSign className="w-4 h-4" /></Link>
             {!permsLoading && (isAdmin || can("red", "view")) && <RouterAlertsBell canPing={isAdmin || can("red", "view")} />}
             <div className="relative ml-1">
-              <button onClick={() => setUserMenu(m => !m)} className="flex items-center gap-2 h-9 px-2 rounded hover:bg-muted">
+              <button onClick={() => setUserMenu(m => !m)} className="flex items-center gap-1.5 h-8 pl-0.5 pr-1 sm:pr-2 rounded-full hover:bg-card">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 grid place-items-center text-white text-xs font-bold shrink-0">
                   {displayName.slice(0,1)}
                 </div>
