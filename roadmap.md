@@ -6,3 +6,5 @@
 - [x] Añadir instalador del cliente OpenVPN para la VM de Proxmox usando un perfil Pritunl.
 - [x] Documentar la conexión del panel y los MikroTik al servidor Pritunl existente.
 - [x] Verificar scripts, pruebas y compilación del panel.
+- [x] Corregir el paquete autocontenido que informa que falta package.json.
+- [x] Validar el instalador corregido y entregar el archivo de reemplazo.

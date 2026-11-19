@@ -65,6 +65,7 @@ if [[ "${1:-}" == "--check" ]]; then
   bash -n "$PROJECT_DIR/deploy/install-proxmox-complete.sh"
   bash -n "$PROJECT_DIR/deploy/install-proxmox-openvpn-client.sh"
   bash -n "$PROJECT_DIR/deploy/install-meganet.sh"
+  bash "$PROJECT_DIR/deploy/install-proxmox-complete.sh" --check
   echo "Paquete correcto: código, instaladores y $MIGRATIONS migraciones incluidos."
   echo "Sintaxis de los tres instaladores verificada. No se instaló ni modificó nada."
   exit 0

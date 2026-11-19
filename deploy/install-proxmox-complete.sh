@@ -3,7 +3,7 @@
 # El paquete .run incluye el código; no necesita GitHub ni tokens.
 set -Eeuo pipefail
 
-SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEPLOY_DIR="/opt/meganet-deploy"
 INSTALL_DIR="/opt/meganet"
 PROFILE="${1:-}"
@@ -22,12 +22,22 @@ on_error() {
 }
 trap 'on_error $LINENO' ERR
 
+verify_package() {
+  [[ -f "$SOURCE_DIR/package.json" ]] || fail "El paquete está incompleto: falta package.json."
+  [[ -f "$SOURCE_DIR/deploy/install-meganet.sh" ]] || fail "El paquete está incompleto: falta install-meganet.sh."
+  [[ -d "$SOURCE_DIR/supabase/migrations" ]] || fail "El paquete está incompleto: faltan las migraciones."
+}
+
+if [[ "${1:-}" == "--check" ]]; then
+  verify_package
+  echo "Estructura del paquete verificada correctamente. No se instaló ni modificó nada."
+  exit 0
+fi
+
 [[ $EUID -eq 0 ]] || fail "Ejecuta como root: sudo bash $0 [perfil.ovpn] [copia.sql]"
 command -v apt-get >/dev/null 2>&1 || fail "Usa una VM Ubuntu 22.04/24.04 o Debian 12."
 command -v systemctl >/dev/null 2>&1 || fail "La VM necesita systemd."
-[[ -f "$SOURCE_DIR/package.json" ]] || fail "El paquete está incompleto: falta package.json."
-[[ -f "$SOURCE_DIR/deploy/install-meganet.sh" ]] || fail "El paquete está incompleto: falta install-meganet.sh."
-[[ -d "$SOURCE_DIR/supabase/migrations" ]] || fail "El paquete está incompleto: faltan las migraciones."
+verify_package
 
 if [[ -f "$INSTALL_DIR/supabase/docker-compose.yml" && "${MEGANET_REINSTALL:-0}" != "1" ]]; then
   fail "Ya existe una instalación en $INSTALL_DIR. Usa una VM limpia; para sobrescribir la configuración ejecuta con MEGANET_REINSTALL=1."
