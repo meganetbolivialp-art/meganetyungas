@@ -54,7 +54,7 @@ function sha256Fingerprint(cert) {
 const onClient = (client) => {
   client.setTimeout(35000, () => client.destroy());
   let pending = Buffer.alloc(0);
-  const reject = (message) => { client.end(`ERR ${message}\n`); };
+  const reject = (message) => { console.warn(`[bridge] rechazado: ${message}`); client.end(`ERR ${message}\n`); };
   const handshake = (chunk) => {
     pending = Buffer.concat([pending, chunk]);
     if (pending.length > MAX_HANDSHAKE) return reject('handshake too large');
