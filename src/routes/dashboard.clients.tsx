@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff, ChevronDown, ChevronUp, Minus, Phone, Mail, CreditCard, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -757,8 +757,8 @@ function ClientsPage() {
               const StatusIcon = statusBadge.icon;
               const isExp = expanded.has(r.id);
               return (
-              <>
-              <tr key={r.id} className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""} ${isExp ? "!bg-sky-50" : ""}`}>
+              <Fragment key={r.id}>
+              <tr className={`border-b border-slate-100 hover:bg-sky-50 transition-colors ${zebra} ${rowTint} ${busy ? "opacity-60" : ""} ${isExp ? "!bg-sky-50" : ""}`}>
                 <td className="px-2 py-1 text-center relative">
                   <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${stripe}`} />
                   <input type="checkbox" className="accent-primary" checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} disabled={busy} />
@@ -861,8 +861,8 @@ function ClientsPage() {
                   </td>
                 </tr>
               )}
-              </>
-              );
+              </Fragment>
+               );
             })}
           </tbody>
         </table>
