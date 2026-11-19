@@ -8,3 +8,5 @@
 - [x] Verificar scripts, pruebas y compilación del panel.
 - [x] Corregir el paquete autocontenido que informa que falta package.json.
 - [x] Validar el instalador corregido y entregar el archivo de reemplazo.
+- [x] Instalar primero el sistema y dejar OpenVPN como paso posterior opcional.
+- [x] Generar y validar el instalador v3 sin dependencia de la VPN.

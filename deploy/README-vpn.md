@@ -4,14 +4,16 @@ El panel se instala en una VM Ubuntu/Debian de Proxmox. La VM y cada MikroTik se
 
 ## Instalación completa con un solo archivo
 
-En una VM limpia Ubuntu 22.04/24.04 o Debian 12, sube `meganet-proxmox-completo.run` y el perfil `.ovpn` de Pritunl a `/root`. Después ejecuta:
+En una VM limpia Ubuntu 22.04/24.04 o Debian 12, sube `meganet-proxmox-completo.run` y ejecuta:
 
 ```bash
 cd /root
 sudo bash meganet-proxmox-completo.run
 ```
 
-El instalador detecta el perfil automáticamente e instala OpenVPN, Docker, la base de datos, el panel, Nginx y el agente MikroTik. No necesita GitHub ni tokens. Si no encuentra `/root/meganet-dump.sql`, crea una base nueva con todas las tablas. Para indicar el perfil y una copia de datos manualmente:
+Primero instala Docker, la base de datos, el panel, Nginx y el agente MikroTik, sin exigir una conexión VPN. No necesita GitHub ni tokens. Si no encuentra `/root/meganet-dump.sql`, crea una base nueva con todas las tablas.
+
+OpenVPN queda como paso posterior: cuando tengas el perfil `.ovpn` de Pritunl, conecta la VM siguiendo la sección **2. Conectar la VM de Proxmox**. También puedes indicar el perfil y una copia de datos para instalar el sistema y conectar la VPN en el mismo comando:
 
 ```bash
 sudo bash meganet-proxmox-completo.run /root/MEGANET-PROXMOX.ovpn /root/meganet-dump.sql

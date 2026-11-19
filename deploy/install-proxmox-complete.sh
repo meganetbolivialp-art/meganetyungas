@@ -56,14 +56,6 @@ log "Copiando Meganet a $DEPLOY_DIR"
 mkdir -p "$DEPLOY_DIR"
 cp -a "$SOURCE_DIR/." "$DEPLOY_DIR/"
 
-# Ejecuta primero la validación del perfil y conecta OpenVPN.
-log "Conectando esta VM al servidor Pritunl"
-if [[ -n "$PROFILE" ]]; then
-  bash "$DEPLOY_DIR/deploy/install-proxmox-openvpn-client.sh" "$PROFILE"
-else
-  bash "$DEPLOY_DIR/deploy/install-proxmox-openvpn-client.sh"
-fi
-
 # Una copia SQL es opcional. Sin ella se crean todas las tablas desde cero.
 if [[ -z "$DUMP_SQL" && -f /root/meganet-dump.sql ]]; then
   DUMP_SQL="/root/meganet-dump.sql"
@@ -85,14 +77,30 @@ export ADMIN_USER="${ADMIN_USER:-admin@meganet.bo}"
 export ADMIN_PASS="${ADMIN_PASS:-Mega$(date +%s%N | sha256sum | head -c 18)!}"
 export GIT_REPO=""
 
+# El sistema es independiente de la VPN: primero se instala todo el panel.
 log "Instalando panel, base de datos, Nginx y agente MikroTik"
 bash "$DEPLOY_DIR/deploy/install-meganet.sh"
+
+# OpenVPN es opcional y se configura solamente cuando se indica un perfil.
+VPN_OK=0
+if [[ -n "$PROFILE" ]]; then
+  log "Sistema instalado; conectando esta VM al servidor Pritunl"
+  if bash "$DEPLOY_DIR/deploy/install-proxmox-openvpn-client.sh" "$PROFILE"; then
+    VPN_OK=1
+  else
+    warn "El sistema está instalado, pero la VPN no pudo conectarse. Podrás reintentarlo después."
+  fi
+else
+  log "Sistema instalado sin VPN; OpenVPN queda como paso posterior"
+fi
 
 log "Verificando los servicios instalados"
 systemctl is-active --quiet docker || fail "Docker no está activo."
 systemctl is-active --quiet nginx || fail "Nginx no está activo."
 systemctl is-active --quiet mikrotik-agent || fail "El agente MikroTik no está activo."
-systemctl is-active --quiet openvpn-client@meganet || fail "OpenVPN no está activo."
+if [[ "$VPN_OK" == "1" ]]; then
+  systemctl is-active --quiet openvpn-client@meganet || fail "OpenVPN no está activo."
+fi
 
 WEB_OK=0
 for _ in {1..45}; do
@@ -114,19 +122,25 @@ VPN_IP="$(ip -4 -o address show scope global | awk '$2 ~ /^(tun|tap)/ {print $4}
 
 echo ""
 echo "============================================================"
-echo " MEGANET Y OPENVPN INSTALADOS CORRECTAMENTE"
+echo " MEGANET INSTALADO CORRECTAMENTE"
 echo "============================================================"
 if [[ -n "$DOMAIN" ]]; then
   echo "Panel:             https://$DOMAIN"
 else
   echo "Panel:             http://$PUBLIC_IP"
 fi
-echo "IP VPN de esta VM: ${VPN_IP:-revisar con ip -4 address show}"
+if [[ "$VPN_OK" == "1" ]]; then
+  echo "IP VPN de esta VM: ${VPN_IP:-revisar con ip -4 address show}"
+else
+  echo "VPN:               PENDIENTE; el sistema ya está instalado"
+  echo "Conectar después:"
+  echo "  sudo bash $DEPLOY_DIR/deploy/install-proxmox-openvpn-client.sh /home/mega/NOMBRE.ovpn"
+fi
 echo "Credenciales:      $INSTALL_DIR/CREDENCIALES.txt"
 echo ""
 echo "Para ver el usuario y la contraseña del administrador:"
 echo "  cat $INSTALL_DIR/CREDENCIALES.txt"
 echo ""
-echo "Después entra al panel y registra cada MikroTik con su IP VPN,"
+echo "Cuando la VPN esté conectada, registra cada MikroTik con su IP VPN,"
 echo "puerto 8728 y Modo simulado desactivado."
 echo "============================================================"
