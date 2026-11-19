@@ -123,7 +123,7 @@ fi
 systemctl is-active --quiet meganet-web || fail "El servicio meganet-web no está activo."
 nginx -t >/dev/null
 
-PUBLIC_IP="$(curl -fsS --max-time 10 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')"
+PUBLIC_IP="${SERVER_IP:-$(hostname -I | awk '{print $1}')}"
 VPN_IP="$(ip -4 -o address show scope global | awk '$2 ~ /^(tun|tap)/ {print $4}' | head -n 1 || true)"
 
 echo ""
