@@ -1,3 +1,4 @@
+import { ZoneInput } from "@/components/zone-input";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { ArrowLeft, Radio, DollarSign, Repeat, FileText, Mail, MessageSquare, User, Wifi, Receipt, ListChecks, Send, Copy, Pencil, Check as CheckIcon, X as XIcon, Trash2, Plus, ChevronRight, Home, Eye, EyeOff, Lock, Calendar, MailOpen, Monitor, MessagesSquare, Ban, Wallet, ReceiptText, LifeBuoy, BarChart3, FileStack, Wrench, Save, MapPin } from "lucide-react";
@@ -1060,10 +1061,9 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
           <MwField label="E-mail">
             <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="mw-input" />
           </MwField>
-          <MwField label="Ubicación">
-            <select className="mw-input">
-              <option>Seleccionar...</option>
-            </select>
+          <MwField label="Zona / Comunidad">
+            <ZoneInput value={form.city} onChange={(v) => setForm({ ...form, city: v })} className="mw-input" />
+            <div className="text-[11px] text-slate-500 mt-1">Agrupa al cliente en el Mapa de red. Escribe una nueva o elige una existente.</div>
           </MwField>
           <MwField label="Nº Código de pago">
             <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="mw-input" />

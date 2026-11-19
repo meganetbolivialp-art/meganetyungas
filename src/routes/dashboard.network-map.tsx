@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { Toolbar, FormPanel, Field, inputCls, Badge, DeleteBtn } from "@/components/ui-kit";
-import { MapPin, Radio, Antenna } from "lucide-react";
+import { MapPin, Radio, Antenna, Users, Ruler } from "lucide-react";
 
 const LeafletMap = lazy(() => import("@/components/leaflet-map").then((m) => ({ default: m.LeafletMap })));
 const LeafletPicker = lazy(() => import("@/components/leaflet-picker").then((m) => ({ default: m.LeafletPicker })));
@@ -151,25 +151,28 @@ function NetworkMapPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
         {[
-          { l: "Clientes geo", v: clients.length, c: "from-blue-500 to-blue-600", i: "👤" },
-          { l: "Nodos", v: nodes.length, c: "from-rose-500 to-rose-600", i: "📡" },
-          { l: "Tramos fibra", v: links.length, c: "from-orange-500 to-orange-600", i: "🧵" },
-          { l: "Metros de fibra", v: stats.totalFiber.toLocaleString(), c: "from-emerald-500 to-emerald-600", i: "📏" },
+          { l: "Clientes en mapa", v: clients.length, c: "from-[#3498db] to-[#1e5f99]", i: Users },
+          { l: "Nodos", v: nodes.length, c: "from-[#e74c3c] to-[#a93226]", i: Antenna },
+          { l: "Tramos fibra", v: links.length, c: "from-[#e67e22] to-[#b9590f]", i: Radio },
+          { l: "Metros de fibra", v: stats.totalFiber.toLocaleString(), c: "from-[#16a394] to-[#0e6e63]", i: Ruler },
         ].map((k) => (
-          <div key={k.l} className="relative overflow-hidden rounded-lg bg-white border border-slate-200 p-3 shadow-sm">
-            <div className={`absolute -right-3 -top-3 w-14 h-14 rounded-full bg-gradient-to-br ${k.c} opacity-10`} />
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">{k.l}</div>
-            <div className="text-xl font-bold text-slate-800 tabular-nums mt-0.5">{k.v}</div>
+          <div key={k.l} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${k.c} text-white p-3 shadow-md flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition-all`}>
+            <div className="w-10 h-10 rounded-lg bg-white/20 grid place-items-center shrink-0"><k.i className="w-5 h-5" /></div>
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-wide opacity-90 font-semibold truncate">{k.l}</div>
+              <div className="text-xl font-extrabold tabular-nums leading-tight">{k.v}</div>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Zonas inteligentes */}
       {zones.length > 0 && (
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm mb-3">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 bg-slate-50">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-3 overflow-hidden">
+          <div className="flex items-center justify-between gap-2 flex-wrap px-3 py-2 border-b border-slate-200 bg-gradient-to-r from-[#f4f8fc] to-white">
             <div className="text-xs font-semibold text-slate-700 flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-primary" /> Zonas ({zones.length})
+              <MapPin className="w-3.5 h-3.5 text-[#3498db]" /> Zonas / Comunidades ({zones.length})
+              <span className="hidden sm:inline text-[11px] font-normal text-slate-500">· se asignan en la ficha del cliente, campo “Zona / Comunidad”</span>
               {zoneFilter && <span className="text-[11px] font-normal text-primary">· filtrando: {zoneFilter}</span>}
             </div>
             {zoneFilter && (
@@ -180,16 +183,16 @@ function NetworkMapPage() {
             {zones.map((z) => {
               const isSel = zoneFilter === z.name;
               const tone = z.health === "down"
-                ? "border-red-300 bg-red-50"
+                ? "border-red-200 bg-gradient-to-br from-red-50 to-white"
                 : z.health === "warn"
-                  ? "border-amber-300 bg-amber-50"
-                  : "border-emerald-200 bg-emerald-50";
+                  ? "border-amber-200 bg-gradient-to-br from-amber-50 to-white"
+                  : "border-emerald-200 bg-gradient-to-br from-emerald-50 to-white";
               const dot = z.health === "down" ? "bg-red-500 animate-pulse" : z.health === "warn" ? "bg-amber-500" : "bg-emerald-500";
               return (
                 <button
                   key={z.name}
                   onClick={() => setZoneFilter(isSel ? null : z.name)}
-                  className={`text-left rounded-md border p-2 transition hover:shadow-sm ${tone} ${isSel ? "ring-2 ring-primary" : ""}`}
+                  className={`text-left rounded-lg border p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md ${tone} ${isSel ? "ring-2 ring-primary" : ""}`}
                   title={`${z.total} clientes · ${z.active} activos · ${z.suspended} suspendidos · ${z.overdue} morosos`}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
@@ -197,12 +200,12 @@ function NetworkMapPage() {
                     <span className="text-[12px] font-semibold text-slate-800 truncate flex-1">{z.name}</span>
                   </div>
                   <div className="text-[10px] text-slate-600 flex gap-2 tabular-nums">
-                    <span>👥 {z.total}</span>
-                    {z.suspended > 0 && <span className="text-red-600">✂ {z.suspended}</span>}
-                    {z.overdue > 0 && <span className="text-amber-700">$ {z.overdue}</span>}
+                    <span className="inline-flex items-center gap-1"><Users className="w-3 h-3" /> {z.total}</span>
+                    {z.suspended > 0 && <span className="text-red-600">{z.suspended} cortados</span>}
+                    {z.overdue > 0 && <span className="text-amber-700">{z.overdue} morosos</span>}
                   </div>
-                  {z.health === "down" && <div className="text-[10px] text-red-700 font-semibold mt-0.5">🚨 Zona caída</div>}
-                  {z.health === "warn" && <div className="text-[10px] text-amber-700 font-semibold mt-0.5">⚠ Revisar</div>}
+                  {z.health === "down" && <div className="text-[10px] text-red-700 font-semibold mt-0.5">Zona con muchos cortes</div>}
+                  {z.health === "warn" && <div className="text-[10px] text-amber-700 font-semibold mt-0.5">Revisar</div>}
                 </button>
               );
             })}

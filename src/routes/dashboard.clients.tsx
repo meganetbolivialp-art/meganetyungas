@@ -1,3 +1,4 @@
+import { ZoneInput } from "@/components/zone-input";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff, ChevronDown, ChevronUp, Minus, Phone, Mail, CreditCard, ExternalLink } from "lucide-react";
@@ -1012,7 +1013,7 @@ function ClientsPage() {
                 <Field label="Email"><input className="input" type="email" value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} /></Field>
                 <Field label="Teléfono"><input className="input" value={editing.phone ?? ""} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></Field>
                 <Field label="Dirección" className="md:col-span-2"><input className="input" value={editing.address ?? ""} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></Field>
-                <Field label="Ciudad"><input className="input" value={editing.city ?? ""} onChange={(e) => setEditing({ ...editing, city: e.target.value })} /></Field>
+                <Field label="Zona / Comunidad"><ZoneInput className="input" value={editing.city ?? ""} onChange={(v) => setEditing({ ...editing, city: v })} /></Field>
                 <Field label="Día de pago"><input className="input" type="number" min={1} max={28} value={editing.billing_day ?? 1} onChange={(e) => setEditing({ ...editing, billing_day: e.target.value })} /></Field>
                 <Field label="Estado">
                   <select className="input" value={editing.status ?? "active"} onChange={(e) => setEditing({ ...editing, status: e.target.value })}>
@@ -1123,12 +1124,8 @@ function Step1({ form, set }: any) {
       <Row label="Dirección principal">
         <input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Av. Unios 4453" className={inp} />
       </Row>
-      <Row label="Ubicación">
-        <select value={form.city} onChange={(e) => set("city", e.target.value)} className={sel}>
-          <option value="">Seleccionar Ubicación</option>
-          <option>La Paz</option><option>Santa Cruz</option><option>Cochabamba</option>
-          <option>Sucre</option><option>Oruro</option><option>Potosí</option><option>Tarija</option>
-        </select>
+      <Row label="Zona / Comunidad">
+        <ZoneInput value={form.city} onChange={(v) => set("city", v)} className={inp} />
       </Row>
       <Row label="Teléfono fijo">
         <input value={form.phone_fixed} onChange={(e) => set("phone_fixed", e.target.value)} placeholder="564567" className={inp} />
