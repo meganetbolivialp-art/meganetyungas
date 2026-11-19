@@ -19,35 +19,16 @@ export const Route = createFileRoute("/dashboard/settings")({
 
 type Tile = { to: string; label: string; icon: any; color?: string };
 
-// Solo módulos realmente implementados en el sistema.
+// Solo ajustes que no están ya en el menú lateral (evita botones duplicados).
 const TILES: Tile[] = [
-  { to: "/dashboard/plans", label: "Planes de internet", icon: Wifi },
-  { to: "/dashboard/employees", label: "Empleados", icon: Users },
-  { to: "/dashboard/messaging", label: "Mensajería", icon: MessageSquare },
   { to: "/dashboard/gateways", label: "Pasarelas de pago", icon: CreditCard },
   { to: "/dashboard/templates", label: "Plantillas de mensajes", icon: Code2 },
-
   { to: "/dashboard/cutoff-policies", label: "Plantillas de corte", icon: ScissorsSquare },
   { to: "/dashboard/bulk-templates", label: "Plantillas de cambios", icon: LayoutTemplate },
-  { to: "/dashboard/bulk-router", label: "Cambios Masivos", icon: Repeat },
   { to: "/dashboard/router-sync", label: "Sincronizar PPP", icon: RefreshCw },
-  { to: "/dashboard/settings-portal", label: "Portal de corte", icon: Signpost },
-  { to: "/dashboard/receipt-settings", label: "Diseño de recibo", icon: ReceiptText },
-
-  { to: "/dashboard/portal-users", label: "Cuentas Portal", icon: User },
-  { to: "/dashboard/tickets", label: "Tickets", icon: LifeBuoy },
   { to: "/dashboard/branches", label: "Sucursales", icon: Building2 },
-  { to: "/dashboard/inventory", label: "Inventario", icon: Package },
-  { to: "/dashboard/work-orders", label: "Órdenes de trabajo", icon: ClipboardList },
-
-  { to: "/dashboard/leads", label: "Leads / CRM", icon: Users2 },
   { to: "/dashboard/payroll", label: "Nómina", icon: Wallet },
-  { to: "/dashboard/vouchers", label: "Hotspot", icon: Wifi },
-  { to: "/dashboard/routers", label: "Routers", icon: Server },
-  
-
   { to: "/dashboard/jobs", label: "Tareas automáticas", icon: RouteIcon },
-  { to: "/dashboard/clients", label: "Importar clientes", icon: Upload },
 ];
 
 function SettingsPage() {

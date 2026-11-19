@@ -23,7 +23,6 @@ const GROUPS: NavGroup[] = [
     { to: "/dashboard/services", label: "Servicios activos", mod: "servicios", action: "view" },
     { to: "/dashboard/leads", label: "CRM Leads", mod: "leads", action: "view" },
     { to: "/dashboard/portal-users", label: "Cuentas Portal", mod: "clientes", action: "view" },
-    { to: "/dashboard/network-map", label: "Mapa clientes", mod: "clientes", action: "view" },
   ]},
 
   { label: "Cobros y cortes", icon: DollarSign, items: [
