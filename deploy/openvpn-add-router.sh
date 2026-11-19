@@ -48,7 +48,6 @@ PROTO=$(grep -E '^proto ' /etc/openvpn/server/server.conf | awk '{print $2}')
 CA=$(cat pki/ca.crt)
 CERT=$(awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/' pki/issued/$NAME.crt)
 KEY=$(cat pki/private/$NAME.key)
-TA=$(cat pki/ta.key)
 
 OVPN_FILE="$OUT_DIR/$NAME.ovpn"
 cat > "$OVPN_FILE" <<EOF
@@ -100,9 +99,9 @@ cat > "$RSC_FILE" <<EOF
 /certificate set [find name="ca.crt_0"] name="ca-meganet"
 /certificate set [find name="$NAME.crt_0"] name="$NAME-meganet"
 
-/interface ovpn-client remove [find name="vpn-panel"]
+/interface ovpn-client remove [find name="ovpn-panel"]
 /interface ovpn-client add \\
-    name=vpn-panel \\
+    name=ovpn-panel \\
     connect-to=$PUBLIC_IP \\
     port=$PORT \\
     protocol=$PROTO \\

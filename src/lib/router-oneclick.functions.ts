@@ -9,6 +9,7 @@ import {
   isL2tpProvision,
   normalizeProvisionAgentUrl,
   randPass,
+  resolveVpnType,
   requestProvisionFiles,
   slugifyRouterName,
   type ProvisionFiles,
@@ -17,7 +18,7 @@ import {
 /**
  * Asistente 1-clic:
  *   1. Reserva próxima IP libre en la VPN (10.8.0.12+)
- *   2. Llama al agente del VPS /provision para generar credenciales L2TP/IPsec (más estable que OVPN)
+ *   2. Llama al agente /provision para generar credenciales OpenVPN (o L2TP opcional)
  *   3. Crea el router en la base aunque el VPS todavía no responda
  *   4. Devuelve el .rsc + credenciales, o una guía si falta el endpoint del VPS
  */
@@ -37,8 +38,8 @@ export const oneClickProvisionRouter = createServerFn({ method: "POST" })
     if (!name) throw new Error("Nombre requerido");
     const slug = slugifyRouterName(name);
 
-    // Por defecto L2TP/IPsec (más estable estilo MikroWisp), se puede forzar ovpn
-    const vpnType = data.vpnType || "l2tp";
+    // OpenVPN es el modo elegido para la instalación en Proxmox con Pritunl.
+    const vpnType = resolveVpnType(data.vpnType);
 
     // 1) Próxima IP libre en 10.8.0.0/24 (empezando en .12; .1 servidor, .11 primer router)
     const { data: existing } = await context.supabase

@@ -2,7 +2,7 @@ import net from 'node:net';
 import tls from 'node:tls';
 import fs from 'node:fs';
 import { timingSafeEqual, createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import http from 'node:http';
 import url from 'node:url';
 
@@ -11,7 +11,7 @@ import url from 'node:url';
 //   1) TCP bridge en MIKROTIK_AGENT_PORT (default 8777) para que el panel remoto
 //      se conecte a la API RouterOS de los routers a través del túnel VPN.
 //   2) HTTP provision en PROVISION_PORT (default 3940) para generar credenciales
-//      L2TP/IPsec de cada router automáticamente (estilo MikroWISP).
+//      OpenVPN de cada router; L2TP queda disponible como opción heredada.
 
 const TOKEN = process.env.MIKROTIK_AGENT_TOKEN || process.env.MEGANET_AGENT_TOKEN || '';
 const BRIDGE_PORT = Number(process.env.MIKROTIK_AGENT_PORT || process.env.PORT || 8777);
@@ -20,7 +20,9 @@ const PROVISION_PORT = Number(process.env.PROVISION_PORT || 3940);
 const PROVISION_HOST = process.env.PROVISION_BIND_HOST || '0.0.0.0';
 const TLS_CERT = process.env.MIKROTIK_AGENT_TLS_CERT || process.env.AGENT_TLS_CERT || '';
 const TLS_KEY = process.env.MIKROTIK_AGENT_TLS_KEY || process.env.AGENT_TLS_KEY || '';
-const ADD_ROUTER_SCRIPT = process.env.ADD_ROUTER_SCRIPT || '/opt/meganet/l2tp-add-router.sh';
+const OPENVPN_ADD_ROUTER_SCRIPT = process.env.OPENVPN_ADD_ROUTER_SCRIPT || process.env.ADD_ROUTER_SCRIPT || '/opt/meganet/openvpn-add-router.sh';
+const L2TP_ADD_ROUTER_SCRIPT = process.env.L2TP_ADD_ROUTER_SCRIPT || '/opt/meganet/l2tp-add-router.sh';
+const OPENVPN_CLIENT_DIR = process.env.OPENVPN_CLIENT_DIR || '/etc/openvpn/clients';
 const L2TP_NETWORK = process.env.L2TP_NETWORK || '10.8.0.0/24';
 const L2TP_SERVER_IP = process.env.L2TP_SERVER_IP || '10.8.0.1';
 const IPSEC_SECRET = process.env.IPSEC_SECRET || process.env.L2TP_IPSEC_SECRET || '';
@@ -110,7 +112,6 @@ function cidrRange(cidr) {
 
 function getPublicIp() {
   try {
-    const { execSync } = require('node:child_process');
     return execSync('curl -4 -s ifconfig.me || hostname -I | awk "{print \$1}"', { encoding: 'utf8', timeout: 5000 }).trim().split(/\s+/)[0];
   } catch {
     return '';
@@ -143,7 +144,7 @@ function provisionL2tp(name, requestedIp, callback) {
   const assignedIp = nextFreeIp(requestedIp);
   if (!assignedIp) return callback(new Error('Sin IPs libres en la VPN L2TP'), null);
 
-  const child = spawn('bash', [ADD_ROUTER_SCRIPT, name, assignedIp], { stdio: 'pipe' });
+  const child = spawn('bash', [L2TP_ADD_ROUTER_SCRIPT, name, assignedIp], { stdio: 'pipe' });
   let stdout = '';
   let stderr = '';
   child.stdout.on('data', (d) => { stdout += d; });
@@ -164,6 +165,33 @@ function provisionL2tp(name, requestedIp, callback) {
       ipsecSecret: IPSEC_SECRET || 'meganet-l2tp',
       endpoint: getPublicIp() || process.env.L2TP_ENDPOINT || '',
     });
+  });
+}
+
+function provisionOvpn(name, requestedIp, callback) {
+  if (!requestedIp) return callback(new Error('OpenVPN requiere una IP VPN fija'), null);
+  const child = spawn('bash', [OPENVPN_ADD_ROUTER_SCRIPT, name, requestedIp], { stdio: 'pipe' });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (d) => { stdout += d; });
+  child.stderr.on('data', (d) => { stderr += d; });
+  child.on('close', (code) => {
+    if (code !== 0) {
+      console.error('[provision] openvpn-add-router.sh failed:', stderr, stdout);
+      return callback(new Error(`add-router script exit ${code}: ${stderr || stdout}`.slice(0, 400)), null);
+    }
+    try {
+      const dir = `${OPENVPN_CLIENT_DIR}/${name}-mikrotik`;
+      callback(null, {
+        type: 'ovpn',
+        ca: fs.readFileSync(`${dir}/ca.crt`, 'utf8'),
+        crt: fs.readFileSync(`${dir}/${name}.crt`, 'utf8'),
+        key: fs.readFileSync(`${dir}/${name}.key`, 'utf8'),
+        ip: requestedIp,
+      });
+    } catch (error) {
+      callback(new Error(`No se pudieron leer los certificados OpenVPN: ${error.message}`), null);
+    }
   });
 }
 
@@ -203,16 +231,18 @@ const provisionServer = http.createServer((req, res) => {
     }
     const name = String(payload.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 15) || 'router';
     const requestedIp = String(payload.ip || '').trim();
-    provisionL2tp(name, /^\d+\.\d+\.\d+\.\d+$/.test(requestedIp) ? requestedIp : '', (err, result) => {
+    const validIp = /^\d+\.\d+\.\d+\.\d+$/.test(requestedIp) ? requestedIp : '';
+    const provision = payload.type === 'l2tp' ? provisionL2tp : provisionOvpn;
+    provision(name, validIp, (err, result) => {
       if (err) return sendJson(res, 500, { error: err.message });
-      console.log(`[provision] ${name} → ${result.ip}`);
+      console.log(`[provision] ${payload.type === 'l2tp' ? 'L2TP' : 'OpenVPN'} ${name} → ${result.ip}`);
       sendJson(res, 200, result);
     });
   });
 });
 
 provisionServer.listen(PROVISION_PORT, PROVISION_HOST, () => {
-  console.log(`[provision] listening on ${PROVISION_HOST}:${PROVISION_PORT} (L2TP/IPsec)`);
+  console.log(`[provision] listening on ${PROVISION_HOST}:${PROVISION_PORT} (OpenVPN, L2TP opcional)`);
 });
 
 // TLS fingerprint del puente (para fijar en el panel)

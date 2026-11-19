@@ -592,7 +592,7 @@ function RoutersPage() {
               <button disabled={wizardBusy} onClick={() => setWizard(null)} className="p-1 hover:bg-white/10 rounded"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-4 space-y-3">
-              <p className="text-xs text-muted-foreground">Reserva la próxima IP libre en la VPN (10.8.0.12+), crea el usuario L2TP/IPsec en el VPS y descarga <b>2 archivos</b>: <code>*.txt</code> con credenciales y <code>.rsc</code> auto-instalable.</p>
+              <p className="text-xs text-muted-foreground">Genera certificados <b>OpenVPN</b>, reserva una IP VPN y descarga los archivos <code>.crt</code>, <code>.key</code> y <code>.rsc</code> para el MikroTik. Si usas un servidor Pritunl externo, crea allí el perfil y agrega el router con <b>Nuevo</b> usando su IP VPN asignada.</p>
               <Field label="Nombre del router *"><input autoFocus value={wizard.name} onChange={e => setWizard({ ...wizard, name: e.target.value })} className={inputCls} placeholder="SUCURSAL2" /></Field>
               <Field label="Ubicación"><input value={wizard.location} onChange={e => setWizard({ ...wizard, location: e.target.value })} className={inputCls} placeholder="POP Norte" /></Field>
               <div className="text-[11px] text-muted-foreground bg-muted/40 p-2 rounded">
@@ -618,7 +618,7 @@ function RoutersPage() {
                       await new Promise(r => setTimeout(r, 250));
                     }
                     if (res.provisioned) {
-                      toast.success(`Router creado con IP ${res.ip} (VPN L2TP). Subí el .rsc al MikroTik.`);
+                      toast.success(`Router creado con IP ${res.ip} (VPN ${String(res.vpnType).toUpperCase()}). Subí los certificados y el .rsc al MikroTik.`);
                     } else {
                       toast.warning(`Router guardado con IP ${res.ip}, pero el VPS no generó credenciales. Se descargó una guía.`);
                     }

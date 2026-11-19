@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router"; // HAREMOS EL 2: VPN L2TP/IPsec
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Wifi, ShieldCheck, Zap, Play, Facebook, Youtube, Moon, Sun,

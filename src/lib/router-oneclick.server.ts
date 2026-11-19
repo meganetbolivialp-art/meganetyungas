@@ -11,6 +11,12 @@ export type L2tpProvisionFiles = {
 export type ProvisionFiles = OvpnProvisionFiles | L2tpProvisionFiles;
 export type VpnType = "ovpn" | "l2tp";
 
+export const DEFAULT_VPN_TYPE: VpnType = "ovpn";
+
+export function resolveVpnType(value?: VpnType | null): VpnType {
+  return value ?? DEFAULT_VPN_TYPE;
+}
+
 export function isL2tpProvision(value: ProvisionFiles): value is L2tpProvisionFiles {
   return "l2tpUser" in value && "l2tpPassword" in value;
 }
@@ -133,6 +139,7 @@ export function buildRouterInstallScript(params: {
   const caFile = `${params.slug}-ca.crt`;
   const crtFile = `${params.slug}.crt`;
   const keyFile = `${params.slug}.key`;
+  const vpnInterface = params.vpnType === "ovpn" ? "ovpn-panel" : "vpn-panel";
 
   const vpnCommands =
     params.vpnType === "l2tp" && params.provision && isL2tpProvision(params.provision)
@@ -175,7 +182,7 @@ export function buildRouterInstallScript(params: {
     "",
     `# 5) Firewall: permitir API sólo desde el túnel VPN`,
     `/ip firewall filter remove [find comment="mikrosystem-api"]`,
-    `/ip firewall filter add chain=input action=accept protocol=tcp dst-port=8728 in-interface=vpn-panel comment="mikrosystem-api" place-before=0`,
+    `/ip firewall filter add chain=input action=accept protocol=tcp dst-port=8728 in-interface=${vpnInterface} comment="mikrosystem-api" place-before=0`,
     "",
     `:log info "MikroSystem: provisión completa. VPN=${params.assignedIp}"`,
     `:put "Listo. Verificá /interface l2tp-client print o /interface ovpn-client print"`,
