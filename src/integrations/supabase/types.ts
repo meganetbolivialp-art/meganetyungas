@@ -1870,6 +1870,60 @@ export type Database = {
           },
         ]
       }
+      receipt_settings: {
+        Row: {
+          address: string
+          company_name: string
+          footer_message: string
+          grayscale_logo: boolean
+          id: boolean
+          legal_note: string
+          logo_url: string | null
+          nit: string
+          phone: string
+          receipt_title: string
+          show_client_document: boolean
+          show_client_phone: boolean
+          show_logo: boolean
+          show_operator: boolean
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          company_name?: string
+          footer_message?: string
+          grayscale_logo?: boolean
+          id?: boolean
+          legal_note?: string
+          logo_url?: string | null
+          nit?: string
+          phone?: string
+          receipt_title?: string
+          show_client_document?: boolean
+          show_client_phone?: boolean
+          show_logo?: boolean
+          show_operator?: boolean
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          company_name?: string
+          footer_message?: string
+          grayscale_logo?: boolean
+          id?: boolean
+          legal_note?: string
+          logo_url?: string | null
+          nit?: string
+          phone?: string
+          receipt_title?: string
+          show_client_document?: boolean
+          show_client_phone?: boolean
+          show_logo?: boolean
+          show_operator?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       router_ip_pools: {
         Row: {
           cidr: string | null

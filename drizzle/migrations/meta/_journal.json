@@ -15,6 +15,13 @@
       "when": 1795104767491,
       "tag": "0001_fix_automatic_cutoffs_and_client_status",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795105805984,
+      "tag": "0002_create_receipt_settings",
+      "breakpoints": true
     }
   ]
 }

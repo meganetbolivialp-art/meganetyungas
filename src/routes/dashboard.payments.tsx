@@ -8,7 +8,6 @@ import { FormPanel, Field, inputCls } from "@/components/ui-kit";
 import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Trash2, Search, Printer, Users, CalendarDays, UserCog } from "lucide-react";
 import { recordPayment } from "@/lib/isp.functions";
 import { getFinanceOperators } from "@/lib/finance.functions";
-import { printReceipt } from "@/lib/print-receipt";
 import { usePaymentReceipt } from "@/components/payment-receipt-provider";
 import { toast } from "sonner";
 
@@ -491,7 +490,7 @@ function PaymentsPage() {
                   <td className="px-3 py-2 text-right font-semibold text-emerald-600 whitespace-nowrap">{bs(r.amount)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button
-                      onClick={() => printReceipt({
+                      onClick={() => presentReceipt({
                         id: r.id,
                         paid_at: r.paid_at,
                         client_name: r.clients?.full_name,

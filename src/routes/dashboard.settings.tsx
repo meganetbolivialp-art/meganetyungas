@@ -4,7 +4,7 @@ import {
   Users, Mail, CreditCard, Code2, User, LifeBuoy, Upload, Repeat,
   LayoutTemplate, Signpost, MessageSquare, Cloud, Package, Building2,
   ClipboardList, Users2, Wallet, RefreshCw, Route as RouteIcon, Wifi,
-  Server, ScissorsSquare,
+  Server, ScissorsSquare, ReceiptText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -32,6 +32,7 @@ const TILES: Tile[] = [
   { to: "/dashboard/bulk-router", label: "Cambios Masivos", icon: Repeat },
   { to: "/dashboard/router-sync", label: "Sincronizar PPP", icon: RefreshCw },
   { to: "/dashboard/settings-portal", label: "Portal de corte", icon: Signpost },
+  { to: "/dashboard/receipt-settings", label: "Diseño de recibo", icon: ReceiptText },
 
   { to: "/dashboard/portal-users", label: "Cuentas Portal", icon: User },
   { to: "/dashboard/tickets", label: "Tickets", icon: LifeBuoy },

@@ -9,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { buildReceiptHtml, type ReceiptData } from "@/lib/print-receipt";
+import { buildReceiptHtml, type ReceiptData, type ReceiptTemplate } from "@/lib/print-receipt";
+import { supabase } from "@/integrations/supabase/client";
 
 type PaymentReceiptContextValue = {
   presentReceipt: (receipt: ReceiptData) => void;
@@ -30,7 +31,31 @@ export function PaymentReceiptProvider({ children }: { children: ReactNode }) {
 
   const presentReceipt = useCallback((data: ReceiptData) => {
     setPrintOpened(false);
-    setReceipt(data);
+    void (async () => {
+      let template = data.template;
+      let operator = data.operator;
+      try {
+        const [settingsResult, userResult] = await Promise.all([
+          template
+            ? Promise.resolve({ data: template })
+            : supabase.from("receipt_settings").select("*").eq("id", true).maybeSingle(),
+          supabase.auth.getUser(),
+        ]);
+        template = (settingsResult.data as ReceiptTemplate | null) ?? template;
+        const user = userResult.data.user;
+        if (!operator && user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email")
+            .eq("id", user.id)
+            .maybeSingle();
+          operator = profile?.full_name ?? profile?.email ?? user.email ?? undefined;
+        }
+      } catch {
+        // El recibo nunca se bloquea por un problema al cargar personalización u operador.
+      }
+      setReceipt({ ...data, template, operator });
+    })();
   }, []);
 
   const requestPrint = useCallback(() => {

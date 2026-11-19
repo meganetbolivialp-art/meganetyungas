@@ -45,6 +45,7 @@ import { Route as DashboardPayrollRouteImport } from './routes/dashboard.payroll
 import { Route as DashboardPlansRouteImport } from './routes/dashboard.plans'
 import { Route as DashboardPortalUsersRouteImport } from './routes/dashboard.portal-users'
 import { Route as DashboardPromisesRouteImport } from './routes/dashboard.promises'
+import { Route as DashboardReceiptSettingsRouteImport } from './routes/dashboard.receipt-settings'
 import { Route as DashboardReportesCortesRouteImport } from './routes/dashboard.reportes-cortes'
 import { Route as DashboardRouterSyncRouteImport } from './routes/dashboard.router-sync'
 import { Route as DashboardRoutersRouteImport } from './routes/dashboard.routers'
@@ -248,6 +249,12 @@ const DashboardPromisesRoute = DashboardPromisesRouteImport.update({
   path: '/promises',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardReceiptSettingsRoute =
+  DashboardReceiptSettingsRouteImport.update({
+    id: '/receipt-settings',
+    path: '/receipt-settings',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardReportesCortesRoute = DashboardReportesCortesRouteImport.update({
   id: '/reportes-cortes',
   path: '/reportes-cortes',
@@ -403,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/plans': typeof DashboardPlansRoute
   '/dashboard/portal-users': typeof DashboardPortalUsersRoute
   '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/receipt-settings': typeof DashboardReceiptSettingsRoute
   '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
   '/dashboard/router-sync': typeof DashboardRouterSyncRoute
   '/dashboard/routers': typeof DashboardRoutersRoute
@@ -462,6 +470,7 @@ export interface FileRoutesByTo {
   '/dashboard/plans': typeof DashboardPlansRoute
   '/dashboard/portal-users': typeof DashboardPortalUsersRoute
   '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/receipt-settings': typeof DashboardReceiptSettingsRoute
   '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
   '/dashboard/router-sync': typeof DashboardRouterSyncRoute
   '/dashboard/routers': typeof DashboardRoutersRoute
@@ -523,6 +532,7 @@ export interface FileRoutesById {
   '/dashboard/plans': typeof DashboardPlansRoute
   '/dashboard/portal-users': typeof DashboardPortalUsersRoute
   '/dashboard/promises': typeof DashboardPromisesRoute
+  '/dashboard/receipt-settings': typeof DashboardReceiptSettingsRoute
   '/dashboard/reportes-cortes': typeof DashboardReportesCortesRoute
   '/dashboard/router-sync': typeof DashboardRouterSyncRoute
   '/dashboard/routers': typeof DashboardRoutersRoute
@@ -585,6 +595,7 @@ export interface FileRouteTypes {
     | '/dashboard/plans'
     | '/dashboard/portal-users'
     | '/dashboard/promises'
+    | '/dashboard/receipt-settings'
     | '/dashboard/reportes-cortes'
     | '/dashboard/router-sync'
     | '/dashboard/routers'
@@ -644,6 +655,7 @@ export interface FileRouteTypes {
     | '/dashboard/plans'
     | '/dashboard/portal-users'
     | '/dashboard/promises'
+    | '/dashboard/receipt-settings'
     | '/dashboard/reportes-cortes'
     | '/dashboard/router-sync'
     | '/dashboard/routers'
@@ -704,6 +716,7 @@ export interface FileRouteTypes {
     | '/dashboard/plans'
     | '/dashboard/portal-users'
     | '/dashboard/promises'
+    | '/dashboard/receipt-settings'
     | '/dashboard/reportes-cortes'
     | '/dashboard/router-sync'
     | '/dashboard/routers'
@@ -999,6 +1012,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPromisesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/receipt-settings': {
+      id: '/dashboard/receipt-settings'
+      path: '/receipt-settings'
+      fullPath: '/dashboard/receipt-settings'
+      preLoaderRoute: typeof DashboardReceiptSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/reportes-cortes': {
       id: '/dashboard/reportes-cortes'
       path: '/reportes-cortes'
@@ -1186,6 +1206,7 @@ interface DashboardRouteChildren {
   DashboardPlansRoute: typeof DashboardPlansRoute
   DashboardPortalUsersRoute: typeof DashboardPortalUsersRoute
   DashboardPromisesRoute: typeof DashboardPromisesRoute
+  DashboardReceiptSettingsRoute: typeof DashboardReceiptSettingsRoute
   DashboardReportesCortesRoute: typeof DashboardReportesCortesRoute
   DashboardRouterSyncRoute: typeof DashboardRouterSyncRoute
   DashboardRoutersRoute: typeof DashboardRoutersRoute
@@ -1234,6 +1255,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPlansRoute: DashboardPlansRoute,
   DashboardPortalUsersRoute: DashboardPortalUsersRoute,
   DashboardPromisesRoute: DashboardPromisesRoute,
+  DashboardReceiptSettingsRoute: DashboardReceiptSettingsRoute,
   DashboardReportesCortesRoute: DashboardReportesCortesRoute,
   DashboardRouterSyncRoute: DashboardRouterSyncRoute,
   DashboardRoutersRoute: DashboardRoutersRoute,
