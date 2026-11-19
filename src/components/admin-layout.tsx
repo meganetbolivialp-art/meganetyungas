@@ -84,7 +84,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [userMenu, setUserMenu] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { isAdmin, can, loading: permsLoading } = usePermissions();
+  const { isAdmin, can, employee, loading: permsLoading } = usePermissions();
   const queryClient = useQueryClient();
 
   const visibleGroups = GROUPS.map(g => {
@@ -275,7 +275,10 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
   }
 
   const sidebarWidth = collapsed ? "md:w-16" : "md:w-[240px]";
-  const displayName = (email.split("@")[0] || "Admin").toUpperCase();
+  const ROLE_LABELS: Record<string, string> = { admin: "Administrador", operator: "Operador", cashier: "Cajero / Cobrador", technician: "Técnico", seller: "Vendedor" };
+  const displayName = (employee?.full_name?.trim() || email.split("@")[0] || "Admin");
+  const roleLabel = isAdmin ? "Administrador" : (ROLE_LABELS[employee?.operator_type ?? ""] ?? "Operador");
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
@@ -312,12 +315,17 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
           <div className="relative h-[130px] border-b border-white/5 overflow-hidden">
             <img src={sidebarBg} alt="" loading="lazy" width={512} height={512} className="absolute inset-0 w-full h-full object-cover opacity-40" />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70" />
-            <div className="relative h-full flex flex-col items-center justify-center gap-1 px-4 text-center">
-              <div className="w-14 h-14 rounded-full bg-white/90 grid place-items-center text-slate-500">
-                <User className="w-8 h-8" />
+            <div key={displayName + roleLabel} className="relative h-full flex flex-col items-center justify-center gap-1.5 px-4 text-center">
+              <div className="mw-avatar-ring relative w-14 h-14 rounded-full p-[2px]">
+                <div className="w-full h-full rounded-full grid place-items-center text-lg font-black text-white" style={{ background: "linear-gradient(135deg,#ff4d2e,#c93a1e)" }}>
+                  {initials || <User className="w-7 h-7" />}
+                </div>
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-black/60 mw-online-dot" title="Conectado" />
               </div>
-              <div className="text-[13px] font-bold text-white leading-tight truncate max-w-full">{displayName}</div>
-              <div className="text-[11px] text-white/70">Administrador</div>
+              <div className="mw-fade-in text-[14px] font-bold text-white leading-tight truncate max-w-full capitalize">{displayName}</div>
+              <div className="mw-fade-in mw-delay inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+                {isAdmin && <span aria-hidden>★</span>}{roleLabel}
+              </div>
             </div>
           </div>
         )}
@@ -425,7 +433,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
             <div className="relative ml-1">
               <button onClick={() => setUserMenu(m => !m)} className="flex items-center gap-1.5 h-8 pl-0.5 pr-1 sm:pr-2 rounded-full hover:bg-card">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 grid place-items-center text-white text-xs font-bold shrink-0">
-                  {displayName.slice(0,1)}
+                  {initials.slice(0,1)}
                 </div>
                 <span className="hidden sm:inline text-xs font-semibold max-w-[100px] truncate">{displayName}</span>
                 <ChevronDown className="hidden sm:inline w-3 h-3 text-muted-foreground" />

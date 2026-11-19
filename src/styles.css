@@ -263,3 +263,14 @@ button, a { transition: background-color .15s, color .15s, transform .12s, box-s
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Tarjeta del operador en el menú lateral */
+@keyframes mw-ring-spin { to { transform: rotate(360deg); } }
+@keyframes mw-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes mw-pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgb(52 211 153 / .7); } 50% { box-shadow: 0 0 0 5px rgb(52 211 153 / 0); } }
+.mw-avatar-ring::before { content: ""; position: absolute; inset: 0; border-radius: 9999px; background: conic-gradient(#ff4d2e, #ffb347, #3b82f6, #ff4d2e); animation: mw-ring-spin 4s linear infinite; }
+.mw-avatar-ring > div { position: relative; }
+.mw-fade-in { animation: mw-fade-in .5s ease-out both; }
+.mw-delay { animation-delay: .15s; }
+.mw-online-dot { animation: mw-pulse-dot 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .mw-avatar-ring::before, .mw-fade-in, .mw-online-dot { animation: none; } }
