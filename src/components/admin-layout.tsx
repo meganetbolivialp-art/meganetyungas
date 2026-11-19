@@ -1,3 +1,4 @@
+import { RouterAlertsBell } from "@/components/router-alerts-bell";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
@@ -420,10 +421,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
           <div className="flex items-center gap-1 shrink-0">
             <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
             <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: undefined }} title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
-            <button className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-400 text-[9px] font-bold text-white grid place-items-center">1</span>
-            </button>
+            {!permsLoading && (isAdmin || can("red", "view")) && <RouterAlertsBell canPing={isAdmin || can("red", "view")} />}
             <div className="relative ml-1">
               <button onClick={() => setUserMenu(m => !m)} className="flex items-center gap-2 h-9 px-2 rounded hover:bg-muted">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 grid place-items-center text-white text-xs font-bold shrink-0">
