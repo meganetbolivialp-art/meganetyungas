@@ -63,8 +63,8 @@ function ErrorComponent({ error }: ErrorComponentProps) {
         <p className="mt-2 text-sm text-muted-foreground">
           Ocurrió un error. Presiona Reintentar o vuelve al inicio.
         </p>
-        <p className="mt-3 break-words rounded bg-muted px-3 py-2 text-left font-mono text-xs text-muted-foreground">
-          {String((error as any)?.message ?? error).slice(0, 300)}
+        <p className="mt-3 whitespace-pre-wrap break-words rounded bg-muted px-3 py-2 text-left font-mono text-xs text-muted-foreground">
+          {(String((error as any)?.message ?? error) + "\n" + String((error as any)?.stack ?? "").split("\n").slice(1, 3).join("\n")).slice(0, 400)}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
