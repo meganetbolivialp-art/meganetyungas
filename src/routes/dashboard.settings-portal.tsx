@@ -7,6 +7,17 @@ import { toast } from "sonner";
 import { reapplyCutoffPortalRules } from "@/lib/isp.functions";
 
 export const Route = createFileRoute("/dashboard/settings-portal")({
+  head: () => ({
+    meta: [
+      { title: "Pantalla de corte — MikroSystem" },
+      { name: "description", content: "Personaliza el aviso que ven los clientes suspendidos." },
+      { property: "og:title", content: "Pantalla de corte — MikroSystem" },
+      { property: "og:description", content: "Aviso de servicio suspendido para clientes morosos." },
+      { name: "robots", content: "noindex" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SettingsPortal,
 });
 
@@ -79,10 +90,10 @@ const DEFAULTS: PortalSettings = {
   title: "Servicio suspendido",
   subtitle: "Tu conexión está temporalmente inactiva",
   message: "Hola, tu servicio de internet fue suspendido por falta de pago. Regularizá el saldo pendiente y lo reactivamos al instante.",
-  whatsapp: "5959XXXXXXX",
+  whatsapp: "591XXXXXXXX",
   whatsapp_message: "Hola, quiero pagar mi factura y reactivar el servicio",
   phone: "021-XXXXXX",
-  company_name: "Mi ISP",
+  company_name: "MEGANET",
   logo_url: null,
   primary_color: "#dc2626",
   secondary_color: "#f97316",
@@ -138,6 +149,15 @@ function SettingsPortal() {
     if (error) toast.error(error.message); else toast.success("Guardado. Los clientes verán la nueva plantilla.");
   }
 
+  async function copyFromReceipt() {
+    const { data } = await (supabase as any).from("receipt_settings").select("company_name, logo_url, phone").eq("id", true).maybeSingle();
+    if (!data) { toast.error("No hay datos en el diseño de recibo"); return; }
+    const digits = String(data.phone ?? "").replace(/\D/g, "");
+    const wa = digits ? (digits.startsWith("591") ? digits : `591${digits}`) : s.whatsapp;
+    setS({ ...s, company_name: data.company_name || s.company_name, logo_url: data.logo_url || s.logo_url, phone: data.phone || s.phone, whatsapp: wa });
+    toast.success("Datos copiados del recibo. Revisá y guardá.");
+  }
+
   async function applyRules() {
     setApplyingRules(true);
     try {
@@ -161,11 +181,13 @@ function SettingsPortal() {
           <div>
             <h1 className="text-2xl font-bold">Portal de corte</h1>
             <p className="text-slate-600 text-sm">Personalizá lo que ven los clientes suspendidos. Optimizado para celular (Android/iOS).</p>
+            <p className="text-slate-500 text-xs mt-1">Cada router necesita la IP del panel en "IP página de aviso" (Red → Routers). Luego presiona "Reaplicar MikroTik".</p>
           </div>
           <div className="flex gap-2">
             <button onClick={save} disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium disabled:opacity-50 text-sm">
               {saving ? "Guardando…" : "Guardar cambios"}
             </button>
+            <button onClick={copyFromReceipt} className="border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded font-medium text-sm">Usar datos del recibo</button>
             <a href="/suspendido" target="_blank" rel="noreferrer" className="border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded font-medium text-sm">Abrir ↗</a>
             <button onClick={applyRules} disabled={applyingRules} className="border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 px-4 py-2 rounded font-medium disabled:opacity-50 text-sm">
               {applyingRules ? "…" : "Reaplicar MikroTik"}
@@ -191,7 +213,7 @@ function SettingsPortal() {
                 <Field label="Nota al pie"><textarea className={inputCls} rows={2} value={s.footer_note} onChange={e => setS({ ...s, footer_note: e.target.value })} /></Field>
 
                 <h2 className="font-semibold text-slate-800 border-b pb-2 pt-3">Contacto</h2>
-                <Field label="WhatsApp (con código país, sin +)"><input className={inputCls} value={s.whatsapp} onChange={e => setS({ ...s, whatsapp: e.target.value })} placeholder="595971234567" /></Field>
+                <Field label="WhatsApp (con código país, sin +)"><input className={inputCls} value={s.whatsapp} onChange={e => setS({ ...s, whatsapp: e.target.value })} placeholder="59171234567" /></Field>
                 <Field label="Mensaje pre-cargado del WhatsApp"><input className={inputCls} value={s.whatsapp_message} onChange={e => setS({ ...s, whatsapp_message: e.target.value })} /></Field>
                 <Field label="Teléfono"><input className={inputCls} value={s.phone} onChange={e => setS({ ...s, phone: e.target.value })} /></Field>
 

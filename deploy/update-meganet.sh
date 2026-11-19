@@ -180,6 +180,17 @@ bash "$DEPLOY_DIR/deploy/install-cutoff-schedule.sh" "$DEPLOY_DIR/.env.productio
 log "Cortes y reactivaciones programados cada 5 minutos"
 
 # ---------------------------------------------------------------- 8. Reiniciar
+
+# ---- Pantalla de corte: los clientes redirigidos por MikroTik ven el aviso ----
+NGINX_SITE=/etc/nginx/sites-available/meganet
+if [[ -f "$NGINX_SITE" ]] && ! grep -q "meganet-corte" "$NGINX_SITE"; then
+  cp "$NGINX_SITE" "$NGINX_SITE.bak-corte"
+  # Si el Host no es una IP ni el dominio del panel, es un cliente cortado navegando: mostrar aviso.
+  sed -i '0,/client_max_body_size 50M;/s%%client_max_body_size 50M;\n    # meganet-corte\n    set $mg_aviso 1;\n    if ($host ~* "^([0-9.]+|localhost)$") { set $mg_aviso 0; }\n    if ($host = $server_name) { set $mg_aviso 0; }\n    if ($uri ~ "^/(suspendido|assets|_build|_serverFn|_server|favicon)") { set $mg_aviso 0; }\n    if ($mg_aviso) { return 302 http://$server_addr/suspendido; }%' "$NGINX_SITE"
+  if nginx -t 2>/dev/null; then systemctl reload nginx; log "Pantalla de corte activada en el servidor web"
+  else cp "$NGINX_SITE.bak-corte" "$NGINX_SITE"; warn "No se pudo activar la pantalla de corte en nginx (se restauró)"; fi
+fi
+
 systemctl daemon-reload
 systemctl restart mikrotik-agent 2>/dev/null || warn "mikrotik-agent no está activo"
 systemctl restart meganet-web 2>/dev/null || err "meganet-web no se pudo reiniciar"
