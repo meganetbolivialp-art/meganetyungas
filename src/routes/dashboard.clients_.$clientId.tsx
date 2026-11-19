@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { useServerFn } from "@tanstack/react-start";
 import { suspendService, reactivateService, changeServicePlan, provisionPPPoE, registerPayment, getServiceLive, getServicePppoeSecret, getNextAvailableIp, listRouterPools, poolIpUsage } from "@/lib/isp.functions";
-import { RefreshCw, List as ListIcon, X as XClose } from "lucide-react";
+import { RefreshCw, Settings2, Banknote, List as ListIcon, X as XClose } from "lucide-react";
 import { sendClientMessage } from "@/lib/comms.functions";
 import { toast } from "sonner";
 import { ClientTrafficChart } from "@/components/client-traffic-chart";
@@ -608,10 +608,10 @@ function FacturacionTab(props: any) {
   const { presentReceipt } = usePaymentReceipt();
 
   const subs = [
-    { id: "facturas", label: "Facturas", icon: "📄" },
-    { id: "config", label: "Configuración", icon: "⚙️" },
-    { id: "trans", label: "Transacciones", icon: "Bs" },
-    { id: "saldos", label: "Saldos", icon: "💰" },
+    { id: "facturas", label: "Facturas", icon: ReceiptText },
+    { id: "config", label: "Configuración", icon: Settings2 },
+    { id: "trans", label: "Transacciones", icon: Banknote },
+    { id: "saldos", label: "Saldos", icon: Wallet },
   ] as const;
 
   const pending = invoices.filter((i: any) => i.status !== "paid" && i.status !== "cancelled").reduce((a: number, b: any) => a + Number(b.amount), 0);
@@ -619,13 +619,13 @@ function FacturacionTab(props: any) {
 
   return (
     <div className="space-y-3">
-      <div className="flex bg-white rounded shadow-sm border overflow-x-auto">
+      <div className="flex gap-1 bg-white rounded-xl shadow-sm border p-1 overflow-x-auto">
         {subs.map(s => {
           const active = sub === s.id;
           return (
             <button key={s.id} onClick={() => setSub(s.id as any)}
-              className={`inline-flex items-center gap-1.5 px-4 h-9 text-[12.5px] font-semibold whitespace-nowrap border-b-2 ${active ? "border-[#ff5722] text-[#ff5722]" : "border-transparent text-slate-600 hover:text-slate-900"}`}>
-              <span>{s.icon}</span> {s.label}
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 h-8 rounded-lg text-[12.5px] font-semibold whitespace-nowrap transition-all ${active ? "bg-[#e8f1fa] text-[#1e4f7a] shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}>
+              <s.icon className="w-3.5 h-3.5 text-[#3498db]" /> {s.label}
             </button>
           );
         })}
