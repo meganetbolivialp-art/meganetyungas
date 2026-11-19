@@ -7,6 +7,8 @@ export type CutoffPolicy = {
   description: string | null;
   grace_days: number;
   cut_hour: number;
+  cut_day: number | null;
+  router_ids?: string[];
   cut_mode: "ip" | "speed" | "pppoe";
   speed_reduced_kbps: number | null;
   prior_notice_hours: number;
@@ -29,27 +31,52 @@ export const listCutoffPolicies = createServerFn({ method: "GET" })
       .order("is_default", { ascending: false })
       .order("name");
     if (error) throw new Error(error.message);
-    return (data ?? []) as CutoffPolicy[];
+    const { data: routers } = await context.supabase.from("routers").select("id, cutoff_policy_id");
+    return ((data ?? []) as CutoffPolicy[]).map((p) => ({
+      ...p,
+      router_ids: (routers ?? []).filter((r: any) => r.cutoff_policy_id === p.id).map((r: any) => r.id as string),
+    }));
   });
 
 export const upsertCutoffPolicy = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Partial<CutoffPolicy> & { name: string }) => d)
   .handler(async ({ data, context }) => {
-    const row: any = { ...data };
+    const { router_ids: routerIds, ...rest } = data;
+    const row: any = { ...rest };
+    if (row.cut_day != null && (row.cut_day < 1 || row.cut_day > 28)) throw new Error("El día de corte debe estar entre 1 y 28");
     if (row.is_default) {
       await context.supabase.from("cutoff_policies").update({ is_default: false }).neq("id", row.id ?? "00000000-0000-0000-0000-000000000000");
     }
+    let id: string;
     if (row.id) {
       const { error } = await context.supabase.from("cutoff_policies").update(row).eq("id", row.id);
       if (error) throw new Error(error.message);
-      return { ok: true, id: row.id };
+      id = row.id;
     } else {
       delete row.id;
       const { data: ins, error } = await context.supabase.from("cutoff_policies").insert(row).select("id").single();
       if (error) throw new Error(error.message);
-      return { ok: true, id: ins.id };
+      id = ins.id;
     }
+    if (routerIds) {
+      // Nodos asignados: sus clientes usan esta plantilla salvo que tengan una propia.
+      const { error: e1 } = await context.supabase.from("routers").update({ cutoff_policy_id: null }).eq("cutoff_policy_id", id);
+      if (e1) throw new Error(e1.message);
+      if (routerIds.length) {
+        const { error: e2 } = await context.supabase.from("routers").update({ cutoff_policy_id: id }).in("id", routerIds);
+        if (e2) throw new Error(e2.message);
+      }
+    }
+    return { ok: true, id };
+  });
+
+export const listPolicyRouters = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from("routers").select("id, name, cutoff_policy_id").order("name");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as { id: string; name: string; cutoff_policy_id: string | null }[];
   });
 
 export const deleteCutoffPolicy = createServerFn({ method: "POST" })

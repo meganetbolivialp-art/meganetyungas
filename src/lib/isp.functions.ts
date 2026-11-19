@@ -7,9 +7,10 @@ import { clientStatusAfterReactivation, shouldReactivateAfterPayment } from "./p
 // ---------- Facturación masiva ----------
 export const generateMonthlyInvoices = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { month?: number; year?: number }) => d ?? {})
+  .inputValidator((d: { month?: number; year?: number; routerId?: string | null }) => d ?? {})
   .handler(async ({ data, context }) => {
-    const args: { p_month?: number; p_year?: number } = {};
+    const args: { p_month?: number; p_year?: number; p_router_id?: string } = {};
+    if (data.routerId) args.p_router_id = data.routerId;
     if (data.month != null) args.p_month = data.month;
     if (data.year != null) args.p_year = data.year;
     const { data: res, error } = await context.supabase.rpc("generate_monthly_invoices", args);

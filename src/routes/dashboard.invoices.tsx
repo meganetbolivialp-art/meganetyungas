@@ -31,6 +31,21 @@ function InvoicesPage() {
   const [form, setForm] = useState({ client_id: "", amount: 40, due_date: new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10), concept: "Servicio mensual" });
   const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
   const genFn = useServerFn(generateMonthlyInvoices);
+  const [routerOpts, setRouterOpts] = useState<{ id: string; name: string }[]>([]);
+  const [genRouter, setGenRouter] = useState("");
+  const [generating, setGenerating] = useState(false);
+  useEffect(() => { supabase.from("routers").select("id, name").order("name").then(({ data }) => setRouterOpts(data ?? [])); }, []);
+  const generate = async () => {
+    const label = genRouter ? routerOpts.find((r) => r.id === genRouter)?.name : "todos los clientes";
+    if (!confirm(`¿Generar las facturas de este mes para ${label}? Los que ya tienen factura del mes no se repiten.`)) return;
+    setGenerating(true);
+    try {
+      const r = await genFn({ data: { routerId: genRouter || null } });
+      toast.success(`Facturas generadas: ${r.created}`);
+      load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setGenerating(false); }
+  };
   const overFn = useServerFn(markOverdueInvoices);
   const payFn = useServerFn(registerPayment);
   const { presentReceipt } = usePaymentReceipt();
@@ -108,7 +123,7 @@ function InvoicesPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="flex gap-1 p-1 rounded-md bg-muted">
           {(["all", "pending", "paid", "overdue"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 text-xs rounded ${filter === f ? "bg-background shadow-sm" : "text-muted-foreground"}`}>
@@ -116,8 +131,12 @@ function InvoicesPage() {
             </button>
           ))}
         </div>
-        <div className="flex gap-2">
-          <button onClick={async () => { const r = await genFn({ data: {} }); alert(`Facturas generadas: ${r.created}`); load(); }} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm hover:bg-muted"><Zap className="w-4 h-4 text-primary" /> Generar mes</button>
+        <div className="flex gap-2 flex-wrap">
+          <select aria-label="Nodo para facturar" value={genRouter} onChange={(e) => setGenRouter(e.target.value)} className="px-2 py-2 rounded-md border bg-background text-sm">
+            <option value="">Todos los nodos</option>
+            {routerOpts.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+          <button disabled={generating} onClick={generate} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm hover:bg-muted disabled:opacity-50"><Zap className="w-4 h-4 text-primary" /> {generating ? "Generando…" : "Generar facturas del mes"}</button>
           <button onClick={async () => { const r = await overFn({ data: {} }); alert(`Vencidas: ${r.overdue} · Suspendidos: ${r.suspended}`); load(); }} className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm hover:bg-muted"><AlertTriangle className="w-4 h-4 text-amber-600" /> Aplicar mora</button>
           <button onClick={() => setShowForm(s => !s)} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm">
             <Plus className="w-4 h-4" /> Nueva factura

@@ -14,10 +14,11 @@
 - [x] Verificar el cobro, la reactivación y los accesos en computadora y celular.
 - [x] Revisar todas las pestañas y varios clientes en computadora y celular.
 - [x] Verificar que los cortes automáticos se ejecuten y que pagar reactive al cliente suspendido.
-- [ ] Instalar el actualizador v17 en Proxmox para activar allí el corte manual por nodo, los cortes automáticos y los recibos (pendiente de ejecución del usuario).
+- [ ] Instalar el actualizador v18 en Proxmox para activar allí el corte manual por nodo, los cortes automáticos y los recibos (pendiente de ejecución del usuario).
 - [x] Verificar la reactivación automática también desde la pantalla Facturas.
 - [x] Imprimir obligatoriamente un recibo térmico de 80 mm después de cada cobro.
 - [x] Añadir un diseño de recibo editable con logo y datos completos de la empresa.
 - [x] Añadir corte inmediato por nodo o cliente para deuda vencida, con selección y confirmación extra para forzar excepciones.
-- [x] Verificar el corte manual en computadora y celular y preparar el actualizador v17.
+- [x] Verificar el corte manual en computadora y celular y preparar el actualizador v18.
 - [x] Pantalla de corte: acceso en menú, datos del recibo y aviso automático en el servidor.
+- [x] Plantillas de corte con día fijo del mes, asignación por nodo y facturas del mes por nodo.

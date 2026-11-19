@@ -608,6 +608,7 @@ export type Database = {
         Row: {
           auto_suspend: boolean
           created_at: string
+          cut_day: number | null
           cut_hour: number
           cut_mode: string
           description: string | null
@@ -628,6 +629,7 @@ export type Database = {
         Insert: {
           auto_suspend?: boolean
           created_at?: string
+          cut_day?: number | null
           cut_hour?: number
           cut_mode?: string
           description?: string | null
@@ -648,6 +650,7 @@ export type Database = {
         Update: {
           auto_suspend?: boolean
           created_at?: string
+          cut_day?: number | null
           cut_hour?: number
           cut_mode?: string
           description?: string | null
@@ -1979,6 +1982,7 @@ export type Database = {
           client_pool_cidr: string | null
           client_pool_gateway: string | null
           created_at: string
+          cutoff_policy_id: string | null
           id: string
           ip_address: string
           last_sync_at: string | null
@@ -1999,6 +2003,7 @@ export type Database = {
           client_pool_cidr?: string | null
           client_pool_gateway?: string | null
           created_at?: string
+          cutoff_policy_id?: string | null
           id?: string
           ip_address: string
           last_sync_at?: string | null
@@ -2019,6 +2024,7 @@ export type Database = {
           client_pool_cidr?: string | null
           client_pool_gateway?: string | null
           created_at?: string
+          cutoff_policy_id?: string | null
           id?: string
           ip_address?: string
           last_sync_at?: string | null
@@ -2032,7 +2038,15 @@ export type Database = {
           updated_at?: string
           walled_garden_ip?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "routers_cutoff_policy_id_fkey"
+            columns: ["cutoff_policy_id"]
+            isOneToOne: false
+            referencedRelation: "cutoff_policies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -2632,7 +2646,7 @@ export type Database = {
       }
       generate_license_key: { Args: never; Returns: string }
       generate_monthly_invoices: {
-        Args: { p_month?: number; p_year?: number }
+        Args: { p_month?: number; p_router_id?: string; p_year?: number }
         Returns: number
       }
       has_permission: {

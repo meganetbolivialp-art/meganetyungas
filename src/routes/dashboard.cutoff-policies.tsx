@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin-layout";
 import {
-  listCutoffPolicies, upsertCutoffPolicy, deleteCutoffPolicy,
+  listCutoffPolicies, listPolicyRouters, upsertCutoffPolicy, deleteCutoffPolicy,
   type CutoffPolicy,
 } from "@/lib/cutoff-policies.functions";
 import { Plus, Pencil, Trash2, Star, ShieldCheck } from "lucide-react";
@@ -26,6 +26,8 @@ const empty: Partial<CutoffPolicy> = {
   description: "",
   grace_days: 5,
   cut_hour: 9,
+  cut_day: null,
+  router_ids: [],
   cut_mode: "ip",
   speed_reduced_kbps: null,
   prior_notice_hours: 24,
@@ -46,9 +48,15 @@ export function CutoffPoliciesPageContent() {
   const del = useServerFn(deleteCutoffPolicy);
 
   const q = useQuery({ queryKey: ["cutoff-policies"], queryFn: () => list() });
+  const listRouters = useServerFn(listPolicyRouters);
+  const routersQ = useQuery({ queryKey: ["cutoff-policy-routers"], queryFn: () => listRouters() });
+  const routers = routersQ.data ?? [];
   const [editing, setEditing] = useState<Partial<CutoffPolicy> | null>(null);
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["cutoff-policies"] });
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["cutoff-policies"] });
+    qc.invalidateQueries({ queryKey: ["cutoff-policy-routers"] });
+  };
 
   const onSave = async () => {
     if (!editing?.name?.trim()) { toast.error("Nombre requerido"); return; }
@@ -90,19 +98,20 @@ export function CutoffPoliciesPageContent() {
             <tr>
               <th className="px-3 py-2 text-left">Nombre</th>
               <th className="px-3 py-2 text-left">Modo</th>
-              <th className="px-3 py-2 text-right">Gracia</th>
+              <th className="px-3 py-2 text-right">Cuándo corta</th>
               <th className="px-3 py-2 text-right">Hora</th>
               <th className="px-3 py-2 text-right">Aviso</th>
               <th className="px-3 py-2 text-right">Reconexión</th>
+              <th className="px-3 py-2 text-left">Nodos</th>
               <th className="px-3 py-2 text-center">Notif.</th>
               <th className="px-3 py-2 text-center">Estado</th>
               <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {q.isLoading && <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">Cargando…</td></tr>}
+            {q.isLoading && <tr><td colSpan={10} className="text-center py-8 text-muted-foreground">Cargando…</td></tr>}
             {!q.isLoading && (q.data ?? []).length === 0 && (
-              <tr><td colSpan={9} className="text-center py-10 text-muted-foreground">Sin plantillas aún.</td></tr>
+              <tr><td colSpan={10} className="text-center py-10 text-muted-foreground">Sin plantillas aún.</td></tr>
             )}
             {(q.data ?? []).map(p => (
               <tr key={p.id} className="border-t hover:bg-muted/30">
@@ -114,10 +123,13 @@ export function CutoffPoliciesPageContent() {
                   {p.description && <div className="text-[11px] text-muted-foreground">{p.description}</div>}
                 </td>
                 <td className="px-3 py-2">{modeLabel(p.cut_mode)}{p.cut_mode === "speed" && p.speed_reduced_kbps ? ` (${p.speed_reduced_kbps}k)` : ""}</td>
-                <td className="px-3 py-2 text-right">{p.grace_days}d</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{p.cut_day ? `Día ${p.cut_day} del mes` : `${p.grace_days}d de gracia`}</td>
                 <td className="px-3 py-2 text-right">{String(p.cut_hour).padStart(2,"0")}:00</td>
                 <td className="px-3 py-2 text-right">{p.prior_notice_hours}h</td>
                 <td className="px-3 py-2 text-right">Bs {Number(p.reconnect_fee).toFixed(2)}</td>
+                <td className="px-3 py-2 text-[11px]">
+                  {(p.router_ids ?? []).map((id) => routers.find((r) => r.id === id)?.name).filter(Boolean).join(", ") || "—"}
+                </td>
                 <td className="px-3 py-2 text-center text-[11px]">
                   {[p.notify_sms && "SMS", p.notify_email && "Email", p.notify_whatsapp && "WA"].filter(Boolean).join(" · ") || "—"}
                 </td>
@@ -161,9 +173,21 @@ export function CutoffPoliciesPageContent() {
               <Field label="Descripción" wide>
                 <input className="mw-input" value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} />
               </Field>
-              <Field label="Días de gracia">
-                <input type="number" min={0} className="mw-input" value={editing.grace_days ?? 0} onChange={e => setEditing({ ...editing, grace_days: Number(e.target.value) })} />
+              <Field label="¿Cuándo corta?">
+                <select className="mw-input" value={editing.cut_day ? "day" : "grace"} onChange={e => setEditing({ ...editing, cut_day: e.target.value === "day" ? (editing.cut_day || 5) : null })}>
+                  <option value="grace">Días después del vencimiento</option>
+                  <option value="day">Un día fijo del mes</option>
+                </select>
               </Field>
+              {editing.cut_day ? (
+                <Field label="Día de corte del mes (1-28)">
+                  <input type="number" min={1} max={28} className="mw-input" value={editing.cut_day} onChange={e => setEditing({ ...editing, cut_day: Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
+                </Field>
+              ) : (
+                <Field label="Días de gracia">
+                  <input type="number" min={0} className="mw-input" value={editing.grace_days ?? 0} onChange={e => setEditing({ ...editing, grace_days: Number(e.target.value) })} />
+                </Field>
+              )}
               <Field label="Hora de corte (0-23)">
                 <input type="number" min={0} max={23} className="mw-input" value={editing.cut_hour ?? 9} onChange={e => setEditing({ ...editing, cut_hour: Number(e.target.value) })} />
               </Field>
@@ -181,6 +205,25 @@ export function CutoffPoliciesPageContent() {
               <Field label="Mora (Bs)">
                 <input type="number" step="0.01" className="mw-input" value={editing.late_fee ?? 0} onChange={e => setEditing({ ...editing, late_fee: Number(e.target.value) })} />
               </Field>
+            </div>
+
+            <div className="mt-4 border-t pt-3">
+              <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aplicar automáticamente a los nodos</div>
+              <p className="text-[11px] text-muted-foreground mb-2">Los clientes de estos nodos usan esta plantilla, salvo los que tengan una plantilla propia.</p>
+              {routers.length === 0 ? <p className="text-sm text-muted-foreground">No hay nodos registrados.</p> : (
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                  {routers.map((r) => {
+                    const ids = editing.router_ids ?? [];
+                    const other = r.cutoff_policy_id && r.cutoff_policy_id !== editing.id;
+                    return (
+                      <label key={r.id} className="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={ids.includes(r.id)} onChange={e => setEditing({ ...editing, router_ids: e.target.checked ? [...ids, r.id] : ids.filter((x) => x !== r.id) })} />
+                        <span>{r.name}{other && !ids.includes(r.id) ? <span className="text-[10px] text-muted-foreground"> (tiene otra)</span> : null}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="mt-4 border-t pt-3">
