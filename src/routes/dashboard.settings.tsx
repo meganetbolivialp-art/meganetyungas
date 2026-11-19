@@ -29,6 +29,10 @@ const TILES: Tile[] = [
   { to: "/dashboard/branches", label: "Sucursales", icon: Building2 },
   { to: "/dashboard/payroll", label: "Nómina", icon: Wallet },
   { to: "/dashboard/jobs", label: "Tareas automáticas", icon: RouteIcon },
+  { to: "/dashboard/backup", label: "Backup del sistema", icon: Cloud },
+  { to: "/dashboard/settings-portal", label: "Pantalla de corte", icon: Signpost },
+  { to: "/dashboard/receipt-settings", label: "Diseño de recibo", icon: ReceiptText },
+  { to: "/dashboard/employees", label: "Operadores", icon: Users2 },
 ];
 
 function SettingsPage() {
