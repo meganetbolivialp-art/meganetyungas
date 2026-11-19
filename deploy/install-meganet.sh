@@ -186,6 +186,7 @@ services:
       GOTRUE_API_PORT: 9999
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
       GOTRUE_API_EXTERNAL_URL: ${API_EXTERNAL_URL}
       GOTRUE_SITE_URL: ${SITE_URL}
       GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
@@ -337,7 +338,7 @@ services:
 KONG
 # Escribir URLs directamente (sin depender de la interpolación de docker compose)
 sed -i "s|\${API_EXTERNAL_URL}|$SITE_URL|g; s|\${SITE_URL}|$SITE_URL|g; s|\${SUPABASE_PUBLIC_URL}|$SITE_URL|g; s|\${ADDITIONAL_REDIRECT_URLS}|$SITE_URL/*,$SITE_URL/auth/callback|g" supabase/docker-compose.yml
-grep -q "GOTRUE_API_EXTERNAL_URL: http" supabase/docker-compose.yml || err "Configuración de Auth incompleta (API_EXTERNAL_URL)"
+grep -q "^      API_EXTERNAL_URL: http" supabase/docker-compose.yml || err "Configuración de Auth incompleta (API_EXTERNAL_URL)"
 sed -i "s|ANON_KEY_PLACEHOLDER|$ANON_KEY|g; s|SERVICE_ROLE_KEY_PLACEHOLDER|$SERVICE_ROLE_KEY|g" supabase/kong.yml
 
 # Roles/contraseñas de servicios: se aplican DESPUÉS de que la imagen termine
