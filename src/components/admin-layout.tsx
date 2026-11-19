@@ -384,15 +384,6 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
             );
           })}
 
-          {!collapsed && (
-            <div className="px-3 mt-4">
-              <div className="rounded-md px-3 py-2 flex items-center gap-2 text-[11px] font-semibold text-white" style={{ background: "linear-gradient(90deg,#f59e0b,#d97706)" }}>
-                <Settings className="w-3.5 h-3.5" />
-                ACTUALIZACIÓN DISPONIBLE
-              </div>
-            </div>
-          )}
-
           {/* Mobile-only logout */}
           <div className="md:hidden px-3 mt-4 mb-2">
             <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded text-[13px] text-white/80 hover:bg-white/5 hover:text-white">

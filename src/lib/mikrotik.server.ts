@@ -325,9 +325,10 @@ async function withRouterLock<T>(routerId: string, fn: () => Promise<T>): Promis
 // si funciona, el circuito se cierra; si falla, se vuelve a abrir con backoff.
 type Breaker = { fails: number; openUntil: number; opens: number; probing?: boolean };
 const routerBreakers = new Map<string, Breaker>();
+const trafficCounters = new Map<string, { t: number; rx: number; tx: number }>();
 const BREAKER_THRESHOLD = 3;
 const BREAKER_COOLDOWN_MS = 10_000;
-const BREAKER_MAX_COOLDOWN_MS = 60_000;
+const BREAKER_MAX_COOLDOWN_MS = 120_000;
 // Credenciales inválidas: cooldown largo. Evita repetir /login con la misma contraseña
 // equivocada (llena el log del MikroTik con "login failure" y dispara sus bloqueos).
 const AUTH_COOLDOWN_MS = 10 * 60_000;
@@ -396,7 +397,8 @@ async function withSession<T>(router: MtRouter, fn: (socket: net.Socket) => Prom
       br.opens += 1;
       const wait = Math.min(BREAKER_COOLDOWN_MS * br.opens, BREAKER_MAX_COOLDOWN_MS);
       br.openUntil = Date.now() + wait;
-      console.warn(`[mikrotik] ${router.name} circuit-breaker ABIERTO ${wait / 1000}s tras ${br.fails} fallos`);
+      // Avisar solo la primera vez y luego cada 10 aperturas para no llenar el log.
+      if (br.opens === 1 || br.opens % 10 === 0) console.warn(`[mikrotik] ${router.name} sin respuesta — reintento en ${wait / 1000}s (aviso #${br.opens})`);
     }
     throw lastErr;
   });
@@ -1200,11 +1202,29 @@ export const mikrotik = {
       async () => withSession(router, async (s) => {
         const res = await sendCommand(s, ["/interface/monitor-traffic", `=interface=${iface}`, "=once="]);
         const a = res.find((r) => r.reply === "!re")?.attrs || {};
-        return {
-          ok: true as const,
-          rx_bps: parseInt(a["rx-bits-per-second"] || "0", 10),
-          tx_bps: parseInt(a["tx-bits-per-second"] || "0", 10),
-        };
+        let rx_bps = parseInt(a["rx-bits-per-second"] || "0", 10) || 0;
+        let tx_bps = parseInt(a["tx-bits-per-second"] || "0", 10) || 0;
+        // Respaldo: si monitor-traffic devuelve 0 (nombres con caracteres raros o versiones
+        // de RouterOS que no responden bien), calcular bps por diferencia de contadores.
+        if (!rx_bps && !tx_bps) {
+          try {
+            const st = await sendCommand(s, ["/interface/print", `?name=${iface}`, "=.proplist=rx-byte,tx-byte"]);
+            const b = st.find((r) => r.reply === "!re")?.attrs;
+            if (b) {
+              const now = Date.now();
+              const rxB = Number(b["rx-byte"] || 0), txB = Number(b["tx-byte"] || 0);
+              const key = `${router.id}:${iface}`;
+              const prev = trafficCounters.get(key);
+              trafficCounters.set(key, { t: now, rx: rxB, tx: txB });
+              if (prev && now > prev.t && rxB >= prev.rx && txB >= prev.tx) {
+                const sec = (now - prev.t) / 1000;
+                rx_bps = Math.round(((rxB - prev.rx) * 8) / sec);
+                tx_bps = Math.round(((txB - prev.tx) * 8) / sec);
+              }
+            }
+          } catch { /* sin respaldo */ }
+        }
+        return { ok: true as const, rx_bps, tx_bps };
       }),
       () => simulate("interface/monitor-traffic", { router: router.name, iface }, {
         ok: true as const,
