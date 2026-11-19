@@ -118,6 +118,7 @@ SERVICE_ROLE_KEY=""
 DASHBOARD_PASSWORD=$(gen 16)
 AGENT_TOKEN=$(gen 24)
 SITE_URL="https://$DOMAIN"; [[ $USE_IP -eq 1 ]] && SITE_URL="http://$DOMAIN"
+[[ "$SITE_URL" =~ ^https?://[^/]+ ]] || err "No se pudo detectar la IP del servidor. Ejecuta con SERVER_IP=192.168.x.x"
 
 # Generar JWTs
 gen_jwt() {
@@ -334,6 +335,9 @@ services:
       - {name: key-auth, config: {hide_credentials: false}}
       - {name: acl, config: {hide_groups_header: true, allow: [admin]}}
 KONG
+# Escribir URLs directamente (sin depender de la interpolación de docker compose)
+sed -i "s|\${API_EXTERNAL_URL}|$SITE_URL|g; s|\${SITE_URL}|$SITE_URL|g; s|\${SUPABASE_PUBLIC_URL}|$SITE_URL|g; s|\${ADDITIONAL_REDIRECT_URLS}|$SITE_URL/*,$SITE_URL/auth/callback|g" supabase/docker-compose.yml
+grep -q "GOTRUE_API_EXTERNAL_URL: http" supabase/docker-compose.yml || err "Configuración de Auth incompleta (API_EXTERNAL_URL)"
 sed -i "s|ANON_KEY_PLACEHOLDER|$ANON_KEY|g; s|SERVICE_ROLE_KEY_PLACEHOLDER|$SERVICE_ROLE_KEY|g" supabase/kong.yml
 
 # Roles/contraseñas de servicios: se aplican DESPUÉS de que la imagen termine
@@ -393,7 +397,7 @@ for i in {1..100}; do
     AUTH_SCHEMA=1; break
   fi
   # Si Auth quedó en reinicio por un fallo previo, reintentarlo
-  if (( i % 20 == 0 )); then (cd supabase && docker compose --env-file .env restart auth >/dev/null 2>&1) || true; fi
+  if (( i % 20 == 0 )); then (cd supabase && docker compose --env-file .env up -d --force-recreate auth >/dev/null 2>&1) || true; fi
   echo -n "."; sleep 3
 done
 echo ""
