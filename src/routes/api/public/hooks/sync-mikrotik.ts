@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/public/hooks/sync-mikrotik")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Auth: secreto privado (CRON_SECRET), no la publishable key
+        // Acepta el programador administrado y el cron local de Proxmox.
         const provided = request.headers.get("x-cron-secret")
           ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
           ?? "";
@@ -16,6 +16,11 @@ export const Route = createFileRoute("/api/public/hooks/sync-mikrotik")({
         const b = enc.encode(expected);
         let ok = expected.length > 0 && a.length === b.length;
         if (ok) { let diff = 0; for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]; ok = diff === 0; }
+        if (!ok && process.env.LOVABLE_CRON_SECRET) {
+          const { authenticateCronRequest } = await import("@/integrations/supabase/cron-auth");
+          const authError = await authenticateCronRequest(request);
+          if (!authError) ok = true;
+        }
         if (!ok) {
           return new Response("Unauthorized", { status: 401 });
         }
@@ -42,15 +47,22 @@ export const Route = createFileRoute("/api/public/hooks/sync-mikrotik")({
           // A) Ejecutar cortes programados vencidos
           const nowIso = new Date().toISOString();
           const { data: dueSched } = await supabaseAdmin
-            .from("services").select("id")
+            .from("services").select("id, client_id, clients(dont_cut, payment_promise_until)")
             .not("scheduled_suspend_at", "is", null)
             .lte("scheduled_suspend_at", nowIso)
             .eq("status", "active");
-          if (dueSched && dueSched.length > 0) {
+          const today = new Date().toISOString().slice(0, 10);
+          const due = (dueSched ?? []).filter((s: any) =>
+            !s.clients?.dont_cut &&
+            (!s.clients?.payment_promise_until || s.clients.payment_promise_until < today)
+          );
+          if (due.length > 0) {
             await supabaseAdmin.from("services").update({
               status: "suspended", suspended_at: nowIso,
               scheduled_suspend_at: null, suspend_reason: "Corte programado ejecutado",
-            }).in("id", dueSched.map((s: any) => s.id));
+            }).in("id", due.map((s: any) => s.id));
+            const clientIds = [...new Set(due.map((s: any) => s.client_id))];
+            await supabaseAdmin.from("clients").update({ status: "suspended" }).in("id", clientIds);
           }
 
           // B) Expirar promesas de pago vencidas
@@ -143,7 +155,7 @@ export const Route = createFileRoute("/api/public/hooks/sync-mikrotik")({
             }
           }
 
-          const detail = { portalRules, suspendPushed, reactPushed };
+          const detail = { scheduledExecuted: due.length, portalRules, suspendPushed, reactPushed };
           await finish("success", detail);
           return Response.json({ ok: true, ...detail });
         } catch (e) {

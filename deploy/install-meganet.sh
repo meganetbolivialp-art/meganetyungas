@@ -428,7 +428,12 @@ elif [[ -d "/opt/meganet-deploy/supabase/migrations" ]]; then
         psql -h 127.0.0.1 -U supabase_admin -d postgres -q -v ON_ERROR_STOP=0 < "$migration" >/dev/null 2>/tmp/meganet-mig.err || true
       grep "ERROR" /tmp/meganet-mig.err | grep -v "already exists" | grep -v "duplicate key" | sed 's/^/     aviso: /' || true
     fi
-  done < <(find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort)
+  done < <(
+    find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort
+    if [[ -d /opt/meganet-deploy/drizzle/migrations ]]; then
+      find /opt/meganet-deploy/drizzle/migrations -maxdepth 1 -type f -name '*.sql' | sort
+    fi
+  )
   # Las migraciones históricas incluyen admin@admin.com/admin; no dejar ese acceso conocido.
   dbq -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
   for t in profiles user_roles clients plans payments routers; do
@@ -673,6 +678,10 @@ docker exec meganet-supabase-db-1 pg_dumpall -U postgres | gzip > /opt/meganet/b
 find /opt/meganet/backups -name "db-*.sql.gz" -mtime +14 -delete
 CRON
 chmod +x /etc/cron.daily/meganet-backup
+
+# Cortes por deuda y reactivaciones pendientes cada cinco minutos
+bash "$INSTALL_DIR/frontend-src/deploy/install-cutoff-schedule.sh" "$INSTALL_DIR/frontend-src/.env.production"
+systemctl restart meganet-web
 
 # ============================================================================
 #  RESUMEN

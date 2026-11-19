@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { errorMessage } from "@/lib/error-message";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseRouterProfileRate } from "./isp-sync.server";
-import { clientStatusAfterReactivation } from "./payment-status";
+import { clientStatusAfterReactivation, shouldReactivateAfterPayment } from "./payment-status";
 
 // ---------- Facturación masiva ----------
 export const generateMonthlyInvoices = createServerFn({ method: "POST" })
@@ -580,7 +580,7 @@ export const recordPayment = createServerFn({ method: "POST" })
       .lt("due_date", new Date().toISOString().slice(0, 10));
 
     const reactivated: string[] = [];
-    if (!pending || pending.length === 0) {
+    if (shouldReactivateAfterPayment(pending?.length ?? 0)) {
       const { data: suspSvcs } = await context.supabase.from("services")
         .select("id, service_type, pppoe_user, hotspot_user, ip_address, queue_target, routers(*)")
         .eq("client_id", data.client_id)
@@ -606,7 +606,13 @@ export const recordPayment = createServerFn({ method: "POST" })
           } catch (e) { console.error("reactivate push failed", e); }
         }
         await context.supabase.from("services")
-          .update({ status: "active", suspended_at: null, previous_profile: null })
+          .update({
+            status: "active",
+            suspended_at: null,
+            previous_profile: null,
+            // La tarea de sincronización reintenta quitar el corte si el router estaba offline.
+            ...(router ? { mikrotik_synced_at: new Date().toISOString() } : {}),
+          })
           .eq("id", svc.id);
         await context.supabase.from("client_actions").insert({
           client_id: data.client_id, service_id: svc.id, action: "reactivate",
@@ -671,7 +677,12 @@ export const registerPayment = createServerFn({ method: "POST" })
             }
           } catch (e) { console.error("auto-reactivate failed", e); }
         }
-        await context.supabase.from("services").update({ status: "active", suspended_at: null, previous_profile: null }).eq("id", svc.id);
+        await context.supabase.from("services").update({
+          status: "active",
+          suspended_at: null,
+          previous_profile: null,
+          ...(router ? { mikrotik_synced_at: new Date().toISOString() } : {}),
+        }).eq("id", svc.id);
         const { count } = await context.supabase
           .from("services")
           .select("id", { count: "exact", head: true })

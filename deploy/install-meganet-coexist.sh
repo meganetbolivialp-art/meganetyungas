@@ -519,6 +519,12 @@ find /opt/meganet/backups -name "db-*.sql.gz" -mtime +14 -delete
 CRON
 chmod +x /etc/cron.daily/meganet-backup
 
+# Cortes por deuda y reactivaciones pendientes cada cinco minutos
+if [[ -f "$INSTALL_DIR/frontend-src/.env.production" ]]; then
+  bash "$INSTALL_DIR/frontend-src/deploy/install-cutoff-schedule.sh" "$INSTALL_DIR/frontend-src/.env.production"
+  pm2 restart meganet-web >/dev/null 2>&1 || true
+fi
+
 # ============================================================================
 #  RESUMEN
 # ============================================================================

@@ -128,7 +128,12 @@ if [[ -n "$POSTGRES_PASSWORD" ]] && docker ps --format '{{.Names}}' | grep -q "^
     grep "ERROR" /tmp/meganet-upd.err 2>/dev/null | grep -v "already exists" | grep -v "duplicate key" | sed 's/^/     aviso: /' || true
     dbq -q -c "INSERT INTO public.meganet_migrations (name) VALUES ('$name') ON CONFLICT DO NOTHING" >/dev/null 2>&1 || true
     NEW_COUNT=$((NEW_COUNT + 1))
-  done < <(find "$DEPLOY_DIR/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | sort)
+  done < <(
+    find "$DEPLOY_DIR/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | sort
+    if [[ -d "$DEPLOY_DIR/drizzle/migrations" ]]; then
+      find "$DEPLOY_DIR/drizzle/migrations" -maxdepth 1 -type f -name '*.sql' | sort
+    fi
+  )
   log "Migraciones aplicadas: $NEW_COUNT nueva(s)"
 
   # --- 5b. Corregir permisos: nadie más es administrador por defecto ---
@@ -170,7 +175,11 @@ if [[ -f "$DEPLOY_DIR/deploy/mikrotik-agent.mjs" ]]; then
   log "Agente MikroTik actualizado"
 fi
 
-# ---------------------------------------------------------------- 7. Reiniciar
+# ------------------------------------------------------- 7. Cortes automáticos
+bash "$DEPLOY_DIR/deploy/install-cutoff-schedule.sh" "$DEPLOY_DIR/.env.production"
+log "Cortes y reactivaciones programados cada 5 minutos"
+
+# ---------------------------------------------------------------- 8. Reiniciar
 systemctl daemon-reload
 systemctl restart mikrotik-agent 2>/dev/null || warn "mikrotik-agent no está activo"
 systemctl restart meganet-web 2>/dev/null || err "meganet-web no se pudo reiniciar"
@@ -183,7 +192,7 @@ done
 [[ "$WEB_OK" == "1" ]] || { journalctl -u meganet-web -n 30 --no-pager >&2 || true; err "El panel no responde después de reiniciar"; }
 log "Panel en línea"
 
-# ---------------------------------------------------------------- 8. Resumen
+# ---------------------------------------------------------------- 9. Resumen
 IP="${SERVER_IP:-$(hostname -I | awk '{print $1}')}"
 echo ""
 echo "============================================================"
