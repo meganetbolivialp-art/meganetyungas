@@ -163,7 +163,7 @@ services:
     restart: unless-stopped
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./init/99-meganet-roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-meganet-roles.sql:ro
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: postgres
@@ -337,7 +337,7 @@ sed -i "s|ANON_KEY_PLACEHOLDER|$ANON_KEY|g; s|SERVICE_ROLE_KEY_PLACEHOLDER|$SERV
 
 # Roles iniciales Postgres
 mkdir -p supabase/init
-cat > supabase/init/00-roles.sql <<SQL
+cat > supabase/init/99-meganet-roles.sql <<SQL
 DO \$\$ BEGIN
   CREATE ROLE anon NOLOGIN NOINHERIT;
 EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
@@ -351,6 +351,11 @@ DO \$\$ BEGIN
   CREATE ROLE authenticator LOGIN NOINHERIT PASSWORD '$POSTGRES_PASSWORD';
 EXCEPTION WHEN duplicate_object THEN NULL; END \$\$;
 GRANT anon, authenticated, service_role TO authenticator;
+ALTER USER authenticator WITH PASSWORD '$POSTGRES_PASSWORD';
+ALTER USER supabase_auth_admin WITH PASSWORD '$POSTGRES_PASSWORD';
+ALTER USER supabase_storage_admin WITH PASSWORD '$POSTGRES_PASSWORD';
+ALTER USER supabase_admin WITH PASSWORD '$POSTGRES_PASSWORD';
+ALTER USER postgres WITH PASSWORD '$POSTGRES_PASSWORD';
 SQL
 
 log "Levantando Supabase (esto tarda 2-3 min)..."
@@ -360,7 +365,7 @@ cd ..
 
 echo -n "Esperando Postgres"
 DB_READY=0
-for i in {1..120}; do
+for i in {1..200}; do
   if docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
      "SELECT 1 FROM pg_roles WHERE rolname='postgres'" 2>/dev/null | grep -q 1 \
      && docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
@@ -370,7 +375,7 @@ for i in {1..120}; do
   echo -n "."; sleep 3
 done
 echo ""
-[[ "$DB_READY" == 1 ]] || err "Postgres no terminó de inicializar (rol postgres / auth.users). Revisa: docker logs meganet-supabase-db-1"
+[[ "$DB_READY" == 1 ]] || { docker logs --tail 40 meganet-supabase-auth-1 2>&1 || true; err "Postgres no terminó de inicializar (rol postgres / auth.users). Revisa: docker logs meganet-supabase-db-1"; }
 
 # ============================================================================
 #  5. IMPORTAR ESQUEMA DE LOVABLE CLOUD
