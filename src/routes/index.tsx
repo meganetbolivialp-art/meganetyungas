@@ -68,7 +68,7 @@ function Landing() {
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
               <Star className="w-3.5 h-3.5" /> Software ISP hecho en Bolivia 🇧🇴
             </span>
-            <h1 className="mt-5 font-black leading-[1.05] tracking-tight" style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)" }}>
+            <h1 className="lp-h1 mt-5 font-black leading-[1.05] tracking-tight" style={{ fontSize: "clamp(2.25rem, 6vw, 3.75rem)" }}>
               Administra tu <span className="lp-gradient-text">WISP</span> sin complicaciones
             </h1>
             <p className="mt-5 text-lg text-muted-foreground max-w-xl">

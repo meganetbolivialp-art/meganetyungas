@@ -255,7 +255,7 @@ button, a { transition: background-color .15s, color .15s, transform .12s, box-s
   .mw-panel-header { padding: .5rem .75rem; }
 }
 @media (max-width: 639px) {
-  h1 { font-size: 1.15rem !important; }
+  h1:not(.lp-h1) { font-size: 1.15rem !important; }
   .mw-btn { height: 34px; padding: 0 .6rem; }
   .mw-panel { border-radius: .6rem; }
   .overflow-x-auto { -webkit-overflow-scrolling: touch; }
