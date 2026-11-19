@@ -77,7 +77,18 @@ export function usePermissions() {
 
 // Módulos disponibles en el sistema (para permisos)
 export const MODULES: Array<{ key: string; label: string; actions: Array<{ key: string; label: string }> }> = [
-  { key: "inicio", label: "Inicio", actions: [{ key: "view", label: "Ver" }] },
+  { key: "inicio", label: "Inicio", actions: [
+    { key: "view", label: "Ver menú" },
+    { key: "w_clientes", label: "Clientes online" },
+    { key: "w_transacciones", label: "Transacciones hoy" },
+    { key: "w_facturas", label: "Facturas no pagadas" },
+    { key: "w_tickets", label: "Tickets soporte" },
+    { key: "w_ingresos", label: "Ingresos 7 días" },
+    { key: "w_resumen", label: "Resumen del sistema" },
+    { key: "w_trafico", label: "Tráfico en vivo" },
+    { key: "w_pagos", label: "Últimos pagos" },
+    { key: "w_conectados", label: "Últimos conectados" },
+  ] },
   { key: "clientes", label: "Clientes", actions: [
     { key: "view", label: "Ver" }, { key: "create", label: "Crear" },
     { key: "edit", label: "Editar" }, { key: "delete", label: "Eliminar" },

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/admin-layout";
 import { TrafficChart } from "@/components/traffic-chart";
 import { getLiveOnlineCount } from "@/lib/dashboard.functions";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({
@@ -71,6 +72,8 @@ function DashboardHome() {
   const [connected, setConnected] = useState<any[]>([]);
   const [weekly, setWeekly] = useState<{ date: string; amount: number }[]>([]);
   const fetchLive = useServerFn(getLiveOnlineCount);
+  const { can } = usePermissions();
+  const w = (k: string) => can("inicio", `w_${k}`);
 
   useEffect(() => {
     (async () => {
@@ -172,26 +175,31 @@ function DashboardHome() {
 
       {/* 4 stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+        {w("clientes") && (
         <StatCard label="Clientes Online" value={liveOnline ?? s.services}
           sub={<>PPPoE activos ahora {liveOnline !== null && <b className="text-emerald-300">● LIVE</b>}<br/>Total Registrados <b>{s.clients}</b></>}
           color="#16a394" Icon={Users}
-          href="/dashboard/clients" cta="Ver clientes" />
+          href="/dashboard/clients" cta="Ver clientes" />)}
+        {w("transacciones") && (
         <StatCard label="Transacciones Hoy" value={`Bs ${todayTotal.toFixed(2)}`}
           sub={<>Cobrado este mes <b>Bs {s.revenueMonth.toFixed(2)}</b></>}
           color="#2e9cd6" Icon={CreditCard}
-          href="/dashboard/payments" cta="Ver transacciones" />
+          href="/dashboard/payments" cta="Ver transacciones" />)}
+        {w("facturas") && (
         <StatCard label="Facturas No Pagadas" value={s.pending + s.overdue}
           sub={<>Total vencidas <b>{s.overdue}</b></>}
           color="#8e5bbf" Icon={Receipt}
-          href="/dashboard/invoices" cta="Ver Facturas" />
+          href="/dashboard/invoices" cta="Ver Facturas" />)}
+        {w("tickets") && (
         <StatCard label="Ticket Soporte" value={s.tickets}
           sub={<>Total Abiertos <b>{s.tickets}</b></>}
           color="#3d4b5c" Icon={MessageCircle}
-          href="/dashboard/tickets" cta="Ver Tickets" />
+          href="/dashboard/tickets" cta="Ver Tickets" />)}
       </div>
 
       {/* Revenue chart + summary */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+        {w("ingresos") && (
         <div className="xl:col-span-2 bg-card rounded-md border overflow-hidden">
           <div className="px-4 py-3 border-b flex items-center justify-between">
             <div>
@@ -246,7 +254,9 @@ function DashboardHome() {
             </div>
           </div>
         </div>
+        )}
 
+        {w("resumen") && (
         <div className="bg-card rounded-md border overflow-hidden">
           <div className="px-4 py-3 border-b"><h3 className="font-semibold text-sm">Resumen del sistema</h3></div>
           <SummaryRow n={1} label="Routers Activos" value={s.routersOn} color="#16a394" />
@@ -257,10 +267,11 @@ function DashboardHome() {
           <SummaryRow n={6} label="Facturas pendientes" value={s.pending} color="#f59e0b" />
           <SummaryRow n={7} label="Facturas vencidas" value={s.overdue} color="#8b5cf6" />
         </div>
+        )}
       </div>
 
       {/* Tráfico en vivo del router principal */}
-      {firstRouter && (
+      {firstRouter && w("trafico") && (
         <div className="mb-5">
           <TrafficChart routerId={firstRouter} iface="ether1" intervalMs={3000} />
         </div>
@@ -269,6 +280,7 @@ function DashboardHome() {
 
       {/* Payments + connected */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {w("pagos") && (
         <div className="bg-card rounded-md border overflow-hidden">
           <div className="px-4 py-3 border-b"><h3 className="font-semibold text-sm">Últimos pagos registrados</h3></div>
           <table className="w-full text-sm">
@@ -296,7 +308,9 @@ function DashboardHome() {
             <Link to="/dashboard/payments" className="text-xs text-primary hover:underline">Ver todos →</Link>
           </div>
         </div>
+        )}
 
+        {w("conectados") && (
         <div className="bg-card rounded-md border overflow-hidden">
           <div className="px-4 py-3 border-b"><h3 className="font-semibold text-sm">Últimos conectados</h3></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
@@ -315,6 +329,7 @@ function DashboardHome() {
             <Link to="/dashboard/clients" className="text-xs text-primary hover:underline">Ver todos →</Link>
           </div>
         </div>
+        )}
       </div>
     </AdminLayout>
   );
