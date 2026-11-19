@@ -359,11 +359,18 @@ docker compose --env-file .env up -d
 cd ..
 
 echo -n "Esperando Postgres"
-for i in {1..60}; do
-  docker exec meganet-supabase-db-1 pg_isready -U postgres &>/dev/null && break
-  echo -n "."; sleep 2
+DB_READY=0
+for i in {1..120}; do
+  if docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
+     "SELECT 1 FROM pg_roles WHERE rolname='postgres'" 2>/dev/null | grep -q 1 \
+     && docker exec meganet-supabase-db-1 psql -U supabase_admin -d postgres -tAc \
+     "SELECT 1 FROM information_schema.tables WHERE table_schema='auth' AND table_name='users'" 2>/dev/null | grep -q 1; then
+    DB_READY=1; break
+  fi
+  echo -n "."; sleep 3
 done
 echo ""
+[[ "$DB_READY" == 1 ]] || err "Postgres no terminó de inicializar (rol postgres / auth.users). Revisa: docker logs meganet-supabase-db-1"
 
 # ============================================================================
 #  5. IMPORTAR ESQUEMA DE LOVABLE CLOUD
@@ -372,16 +379,16 @@ warn "PASO 5/8 — Importando esquema Meganet"
 
 if [[ -f "$INSTALL_DIR/backups/meganet-dump.sql" ]]; then
   log "Restaurando dump previo..."
-  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres < "$INSTALL_DIR/backups/meganet-dump.sql"
+  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin < "$INSTALL_DIR/backups/meganet-dump.sql"
 elif [[ -d "/opt/meganet-deploy/supabase/migrations" ]]; then
   log "Instalación nueva: creando tablas y funciones desde las migraciones..."
   while IFS= read -r migration; do
     echo "  -> $(basename "$migration")"
-    docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres -d postgres < "$migration" \
+    docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin -d postgres < "$migration" \
       || err "Falló la migración $(basename "$migration")"
   done < <(find /opt/meganet-deploy/supabase/migrations -maxdepth 1 -type f -name '*.sql' | sort)
   # Las migraciones históricas incluyen admin@admin.com/admin; no dejar ese acceso conocido.
-  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U postgres -d postgres \
+  docker exec -i meganet-supabase-db-1 psql -v ON_ERROR_STOP=1 -U supabase_admin -d postgres \
     -c "DELETE FROM auth.users WHERE email = 'admin@admin.com';"
   log "Base de datos inicial creada"
 else
