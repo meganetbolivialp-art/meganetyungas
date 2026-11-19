@@ -456,6 +456,9 @@ curl -fsS --max-time 20 -X POST "http://localhost:8000/auth/v1/admin/users" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$ADMIN_USER\",\"password\":\"$ADMIN_PASS\",\"email_confirm\":true}" >/dev/null \
   || err "No se pudo crear el usuario administrador"
+# Asignar permiso de administrador (sin esto la cuenta no puede entrar al panel).
+dbq "insert into public.user_roles (user_id, role) select id, 'admin' from auth.users where email = '$ADMIN_USER' on conflict do nothing;" >/dev/null \
+  || err "No se pudo asignar el rol de administrador"
 
 # ============================================================================
 #  6. FRONTEND
