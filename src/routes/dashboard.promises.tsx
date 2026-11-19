@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AdminLayout } from "@/components/admin-layout";
 import { listPaymentPromises, setPaymentPromise } from "@/lib/cutoffs.functions";
 import { CalendarClock, CheckCircle2, XCircle, Search, DollarSign, ShieldCheck, Clock } from "lucide-react";
 
@@ -15,8 +14,12 @@ export const Route = createFileRoute("/dashboard/promises")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: PromisesPage,
+  component: PromisesRedirect,
 });
+
+function PromisesRedirect() {
+  return <Navigate to="/dashboard/cortes" search={{ tab: "promesas", clientId: undefined }} replace />;
+}
 
 function Kpi({ label, value, color, Icon }: { label: string; value: string | number; color: string; Icon: any }) {
   return (
@@ -32,7 +35,7 @@ function Kpi({ label, value, color, Icon }: { label: string; value: string | num
   );
 }
 
-function PromisesPage() {
+export function PromisesPageContent() {
   const list = useServerFn(listPaymentPromises);
   const savePromise = useServerFn(setPaymentPromise);
   const qc = useQueryClient();
@@ -91,8 +94,7 @@ function PromisesPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="p-6 space-y-4">
+    <div className="space-y-4">
         <div className="flex items-center gap-3">
           <CalendarClock className="w-6 h-6 text-amber-600" />
           <div>
@@ -197,8 +199,8 @@ function PromisesPage() {
                   <td className="px-3 py-2">
                     <div className="flex justify-end gap-1">
                       <Link
-                        to="/dashboard/cobrar"
-                        search={{ clientId: undefined }}
+                        to="/dashboard/cortes"
+                        search={{ tab: "cobrar", clientId: r.client_id }}
                         className="px-2 py-1 text-xs rounded bg-emerald-600 text-white hover:bg-emerald-700"
                         title="Cobrar"
                       >Cobrar</Link>
@@ -224,7 +226,6 @@ function PromisesPage() {
             </tbody>
           </table>
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

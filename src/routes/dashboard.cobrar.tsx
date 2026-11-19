@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminLayout } from "@/components/admin-layout";
 import { recordPayment } from "@/lib/isp.functions";
 import { toast } from "sonner";
 import { Search, User, CheckCircle2, AlertTriangle, DollarSign, Receipt, Wallet, X } from "lucide-react";
@@ -18,8 +17,13 @@ export const Route = createFileRoute("/dashboard/cobrar")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: CobrarPage,
+  component: CobrarRedirect,
 });
+
+function CobrarRedirect() {
+  const { clientId } = Route.useSearch();
+  return <Navigate to="/dashboard/cortes" search={{ tab: "cobrar", clientId }} replace />;
+}
 
 
 type ClientRow = {
@@ -29,8 +33,7 @@ type Invoice = {
   id: string; concept: string; amount: number; due_date: string; status: string; days_overdue: number | null;
 };
 
-function CobrarPage() {
-  const { clientId: preselectId } = Route.useSearch();
+export function CobrarPageContent({ preselectId }: { preselectId?: string }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<ClientRow[]>([]);
   const [searching, setSearching] = useState(false);
@@ -237,20 +240,16 @@ function CobrarPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold">Cobrar</h1>
-        <p className="text-sm text-muted-foreground">Buscá al cliente, revisá su deuda y registrá el pago al toque.</p>
-      </div>
-
+    <>
       {/* Buscador */}
       <div className="bg-card border rounded-md p-4 mb-4 relative">
-        <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+        <label htmlFor="payment-client-search" className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
           Buscar cliente (nombre, CI o teléfono)
         </label>
         <div className="relative mt-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
+            id="payment-client-search"
             ref={inputRef}
             value={q}
             onChange={e => { setQ(e.target.value); if (selected) setSelected(null); }}
@@ -527,6 +526,6 @@ function CobrarPage() {
           )}
         </>
       )}
-    </AdminLayout>
+    </>
   );
 }

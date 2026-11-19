@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { errorMessage } from "@/lib/error-message";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseRouterProfileRate } from "./isp-sync.server";
+import { clientStatusAfterReactivation } from "./payment-status";
 
 // ---------- Facturación masiva ----------
 export const generateMonthlyInvoices = createServerFn({ method: "POST" })
@@ -199,11 +200,9 @@ export const reactivateService = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("client_id", svc.client_id)
       .eq("status", "suspended");
-    if ((count ?? 0) === 0) {
-      await context.supabase.from("clients")
-        .update({ status: "active" })
-        .eq("id", svc.client_id);
-    }
+    await context.supabase.from("clients")
+      .update({ status: clientStatusAfterReactivation(count ?? 0) })
+      .eq("id", svc.client_id);
     await context.supabase.from("client_actions").insert({
       client_id: svc.client_id, service_id: svc.id, action: "reactivate",
       detail: queued ? "Reactivación · en cola (router offline)" : "Reactivación", performed_by: context.userId,
@@ -562,6 +561,7 @@ export const recordPayment = createServerFn({ method: "POST" })
       amount: data.amount,
       method: data.method,
       reference: data.reference ?? null,
+      created_by: context.userId,
     }).select().single();
     if (pErr) throw new Error(pErr.message);
 
@@ -614,6 +614,16 @@ export const recordPayment = createServerFn({ method: "POST" })
         });
         reactivated.push(svc.id);
       }
+      if (reactivated.length > 0) {
+        const { count } = await context.supabase
+          .from("services")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", data.client_id)
+          .eq("status", "suspended");
+        await context.supabase.from("clients")
+          .update({ status: clientStatusAfterReactivation(count ?? 0) })
+          .eq("id", data.client_id);
+      }
     }
 
     return { ok: true, payment_id: pay.id, reactivated };
@@ -632,6 +642,7 @@ export const registerPayment = createServerFn({ method: "POST" })
     await context.supabase.from("payments").insert({
       client_id: inv.client_id, invoice_id: inv.id, amount: inv.amount,
       method: data.method ?? "cash", reference: data.reference ?? null,
+      created_by: context.userId,
     });
     await context.supabase.from("client_actions").insert({
       client_id: inv.client_id, action: "payment",
@@ -661,6 +672,14 @@ export const registerPayment = createServerFn({ method: "POST" })
           } catch (e) { console.error("auto-reactivate failed", e); }
         }
         await context.supabase.from("services").update({ status: "active", suspended_at: null, previous_profile: null }).eq("id", svc.id);
+        const { count } = await context.supabase
+          .from("services")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", inv.client_id)
+          .eq("status", "suspended");
+        await context.supabase.from("clients")
+          .update({ status: clientStatusAfterReactivation(count ?? 0) })
+          .eq("id", inv.client_id);
       }
     }
 

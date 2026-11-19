@@ -661,6 +661,7 @@ function ClientsPage() {
                     </div>
                     <div className="mt-2.5 -mr-1 flex items-center justify-end gap-0.5 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                       {busy && <Loader2 className="w-4 h-4 animate-spin text-primary mx-1" />}
+                      <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: r.id }} onClick={(e) => e.stopPropagation()} className="tap w-9 h-9 rounded-full hover:bg-primary/10 text-primary inline-flex items-center justify-center" title="Cobrar"><DollarSign className="w-4 h-4" /></Link>
                       <button disabled={busy} onClick={(e) => { e.stopPropagation(); openEdit(r); }} className="tap w-9 h-9 rounded-full hover:bg-blue-500/10 text-blue-600 disabled:opacity-40 inline-flex items-center justify-center" title="Editar"><Pencil className="w-4 h-4" /></button>
                       {(st === "suspended" || st === "cancelled") ? (
                         <button disabled={busy} onClick={(e) => { e.stopPropagation(); reactivateClient(r.id, r.full_name); }} className="tap w-9 h-9 rounded-full hover:bg-emerald-500/10 text-emerald-600 disabled:opacity-40 inline-flex items-center justify-center" title="Reactivar"><UserCheck className="w-4 h-4" /></button>
@@ -798,6 +799,7 @@ function ClientsPage() {
                 <td className="px-2 py-1">
                   <div className="flex items-center justify-center gap-0">
                     {busy && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary mr-1" />}
+                    <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: r.id }} className="w-6 h-6 rounded inline-flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition" title="Cobrar"><DollarSign className="w-3.5 h-3.5" strokeWidth={2} /></Link>
                     <button disabled={busy} onClick={() => openEdit(r)} className="w-6 h-6 rounded inline-flex items-center justify-center text-blue-600 hover:bg-blue-500 hover:text-white disabled:opacity-40 transition" title="Editar"><Pencil className="w-3.5 h-3.5" strokeWidth={2} /></button>
                     <button disabled={busy} onClick={() => remove(r.id, r.full_name)} className="w-6 h-6 rounded inline-flex items-center justify-center text-rose-600 hover:bg-rose-500 hover:text-white disabled:opacity-40 transition" title="Eliminar"><Trash2 className="w-3.5 h-3.5" strokeWidth={2} /></button>
                     {(st === "suspended" || st === "cancelled") ? (
@@ -840,6 +842,9 @@ function ClientsPage() {
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+                      <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: r.id }} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition">
+                        <DollarSign className="w-3 h-3" /> Cobrar ahora
+                      </Link>
                       <Link to="/dashboard/clients/$clientId" params={{ clientId: r.id }} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-primary text-white text-[11px] font-semibold hover:bg-primary/90 transition">
                         <ExternalLink className="w-3 h-3" /> Abrir ficha completa
                       </Link>

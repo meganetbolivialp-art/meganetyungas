@@ -314,6 +314,12 @@ export function CutoffsPageContent() {
                       </div>
                     </td>
                     <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <Link
+                        to="/dashboard/cortes"
+                        search={{ tab: "cobrar", clientId: r.client_id }}
+                        className="inline-flex items-center text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground px-2 py-1 rounded font-semibold mr-1"
+                        title="Cobrar deuda y reactivar automáticamente"
+                      >Cobrar</Link>
                       <button
                         onClick={() => onReactivateOne(r.service_id)}
                         className="text-[11px] bg-[#16a394] hover:bg-[#128677] text-white px-2 py-1 rounded font-semibold mr-1"

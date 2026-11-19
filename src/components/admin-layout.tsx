@@ -2,7 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  Home, Network, Wifi, Users, Ticket as TicketIcon, ClipboardList, DollarSign,
+  Home, Network, Wifi, Users, ClipboardList, DollarSign,
   Package, Settings, MessageSquare, LogOut, Search, Bell, Send, ChevronDown,
   ChevronRight, User, Camera, ChevronsLeft, Menu, X,
 } from "lucide-react";
@@ -11,7 +11,7 @@ import sidebarBg from "@/assets/sidebar-bg.jpg";
 import { InlineSearch } from "@/components/inline-search";
 import { usePermissions } from "@/hooks/use-permissions";
 
-type NavItem = { to?: string; label: string; badge?: number; mod?: string; action?: string };
+type NavItem = { to?: string; label: string; badge?: number; mod?: string; action?: string; anyOf?: Array<[string, string]> };
 type NavGroup = { label: string; icon: any; to?: string; items?: NavItem[]; badge?: number; mod?: string };
 
 const GROUPS: NavGroup[] = [
@@ -26,14 +26,12 @@ const GROUPS: NavGroup[] = [
     { to: "/dashboard/network-map", label: "Mapa clientes", mod: "clientes", action: "view" },
   ]},
 
-  { label: "Cortes", icon: TicketIcon, mod: "cortes", items: [
-    { to: "/dashboard/cortes", label: "Panel de cortes", mod: "cortes", action: "view" },
-    { to: "/dashboard/promises", label: "Promesas de pago", mod: "cortes", action: "promise" },
+  { label: "Cobros y cortes", icon: DollarSign, items: [
+    { to: "/dashboard/cortes", label: "Centro de cobros y cortes", anyOf: [["finanzas", "cobrar"], ["cortes", "view"], ["cortes", "promise"]] },
   ]},
 
   { label: "Finanzas", icon: DollarSign, mod: "finanzas", items: [
     { to: "/dashboard/finanzas", label: "Panel financiero", mod: "finanzas", action: "view" },
-    { to: "/dashboard/cobrar", label: "Cobrar", mod: "finanzas", action: "cobrar" },
     { to: "/dashboard/invoices", label: "Facturas", mod: "finanzas", action: "invoice" },
     { to: "/dashboard/payments", label: "Pagos recibidos", mod: "finanzas", action: "view" },
     { to: "/dashboard/cash", label: "Caja diaria", mod: "finanzas", action: "view" },
@@ -101,7 +99,9 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       const ok = g.mod ? can(g.mod, "view") : true;
       return ok ? g : null;
     }
-    const items = g.items.filter(it => !it.mod || !it.action || can(it.mod, it.action));
+    const items = g.items.filter(it => it.anyOf
+      ? it.anyOf.some(([mod, action]) => can(mod, action))
+      : !it.mod || !it.action || can(it.mod, it.action));
     if (items.length === 0) return null;
     return { ...g, items };
   }).filter(Boolean) as NavGroup[];
@@ -426,7 +426,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
 
           <div className="flex items-center gap-1 shrink-0">
             <button title="Enviar mensaje" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><Send className="w-4 h-4" /></button>
-            <Link to="/dashboard/cobrar" search={{ clientId: undefined }} title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
+            <Link to="/dashboard/cortes" search={{ tab: "cobrar", clientId: undefined }} title="Cobrar" className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground"><DollarSign className="w-4 h-4" /></Link>
             <button className="w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground relative">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-400 text-[9px] font-bold text-white grid place-items-center">1</span>

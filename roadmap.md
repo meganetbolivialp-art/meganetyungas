@@ -10,3 +10,5 @@
 - [x] Validar el instalador corregido y entregar el archivo de reemplazo.
 - [x] Instalar primero el sistema y dejar OpenVPN como paso posterior opcional.
 - [x] Generar y validar el instalador v3 sin dependencia de la VPN.
+- [x] Simplificar el flujo de clientes, cobros, suspensiones y reactivaciones.
+- [x] Verificar el cobro, la reactivación y los accesos en computadora y celular.
