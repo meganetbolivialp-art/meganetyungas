@@ -84,8 +84,11 @@ export const createOperator = createServerFn({ method: "POST" })
       throw new Error(empErr.message);
     }
 
+    // Dejar SOLO el rol del tipo elegido (la base puede asignar "admin" por defecto
+    // a cuentas nuevas; si quedara, el operador vería todo el menú).
     const role = roleForOperatorType(data.operator_type);
-    await supabaseAdmin.from("user_roles").upsert({ user_id: uid, role }, { onConflict: "user_id,role" });
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
+    await supabaseAdmin.from("user_roles").insert({ user_id: uid, role });
 
     return { ok: true, user_id: uid };
   });
@@ -159,8 +162,10 @@ export const updateOperator = createServerFn({ method: "POST" })
       if (authErr) throw new Error(normalizePasswordAuthError(authErr.message));
     }
 
-    if (existing.user_id && existing.user_id !== context.userId && data.patch.operator_type && data.patch.operator_type !== existing.operator_type) {
-      const newRole = roleForOperatorType(data.patch.operator_type);
+    // Sincronizar siempre el rol con el tipo de operador (corrige operadores que
+    // quedaron como admin por error). Nunca sobre tu propia cuenta.
+    if (existing.user_id && existing.user_id !== context.userId) {
+      const newRole = roleForOperatorType(data.patch.operator_type ?? existing.operator_type);
       await supabaseAdmin.from("user_roles").delete().eq("user_id", existing.user_id);
       await supabaseAdmin.from("user_roles").insert({ user_id: existing.user_id, role: newRole });
     }
