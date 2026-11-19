@@ -14,5 +14,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Sin precarga de módulos: algunas extensiones de Chrome rompen el appendChild de <link rel=modulepreload>
+  // y la página que carga mapas (Clientes) fallaba con "Invalid or unexpected token".
+  vite: { build: { modulePreload: false } },
   ...(selfHostNitroPreset ? { nitro: { preset: selfHostNitroPreset } } : {}),
 });
