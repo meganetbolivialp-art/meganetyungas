@@ -1,4 +1,8 @@
-// Simple thermal-style receipt printer (opens new window and triggers print)
+export interface ReceiptItem {
+  concept: string;
+  amount: number;
+}
+
 export interface ReceiptData {
   id?: string;
   paid_at?: string | Date;
@@ -6,6 +10,7 @@ export interface ReceiptData {
   client_document?: string;
   client_phone?: string;
   concept?: string;
+  items?: ReceiptItem[];
   method?: string;
   reference?: string;
   amount: number;
@@ -14,28 +19,36 @@ export interface ReceiptData {
 }
 
 const METHOD: Record<string, string> = {
-  cash: "Efectivo", transfer: "Transferencia", qr: "QR", card: "Tarjeta", other: "Otro",
+  cash: "Efectivo",
+  transfer: "Transferencia",
+  qr: "QR",
+  card: "Tarjeta",
+  other: "Otro",
 };
 
 const bs = (n: number) =>
   `Bs ${Number(n ?? 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export function printReceipt(r: ReceiptData) {
-  const company = r.company ?? {
-    name: "MEGANET ISP",
-    nit: "",
-    address: "",
-    phone: "",
-  };
+export function buildReceiptHtml(r: ReceiptData, autoPrint = true) {
+  const company = r.company ?? { name: "MEGANET ISP", nit: "", address: "", phone: "" };
   const date = r.paid_at ? new Date(r.paid_at) : new Date();
   const dateStr = date.toLocaleString("es-BO", {
-    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+    timeZone: "America/La_Paz",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Recibo ${r.id ?? ""}</title>
+  const items = r.items?.length
+    ? r.items
+    : [{ concept: r.concept ?? "Pago de servicio", amount: r.amount }];
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Recibo ${escapeHtml(r.id ?? "")}</title>
 <style>
   @page { size: 80mm auto; margin: 4mm; }
   * { box-sizing: border-box; }
-  body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; margin: 0; padding: 8px; width: 72mm; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; background: #fff; margin: 0; padding: 8px; width: 72mm; }
   .center { text-align: center; }
   .right { text-align: right; }
   .bold { font-weight: bold; }
@@ -44,6 +57,7 @@ export function printReceipt(r: ReceiptData) {
   hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   td { padding: 2px 0; vertical-align: top; }
+  .concept { padding-right: 6px; overflow-wrap: anywhere; }
   .label { color: #333; }
   .total { border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 6px 0; margin-top: 6px; font-size: 16px; font-weight: bold; }
   .footer { margin-top: 10px; font-size: 10px; text-align: center; }
@@ -51,10 +65,10 @@ export function printReceipt(r: ReceiptData) {
   .btnbar { position: fixed; top: 8px; right: 8px; display: flex; gap: 6px; }
   .btnbar button { padding: 6px 12px; font-family: inherit; cursor: pointer; border: 1px solid #333; background: #fff; border-radius: 4px; }
 </style></head><body>
-<div class="btnbar noprint">
+${autoPrint ? `<div class="btnbar noprint">
   <button onclick="window.print()">Imprimir</button>
   <button onclick="window.close()">Cerrar</button>
-</div>
+</div>` : ""}
 <div class="center bold xl">${escapeHtml(company.name ?? "")}</div>
 ${company.nit ? `<div class="center">NIT: ${escapeHtml(company.nit)}</div>` : ""}
 ${company.address ? `<div class="center">${escapeHtml(company.address)}</div>` : ""}
@@ -71,7 +85,7 @@ ${r.id ? `<div class="center">Nº ${escapeHtml(String(r.id).slice(0, 8).toUpperC
 </table>
 <hr>
 <table>
-  <tr><td class="label">Concepto:</td><td class="right">${escapeHtml(r.concept ?? "Pago de servicio")}</td></tr>
+  ${items.map((item) => `<tr><td class="concept">${escapeHtml(item.concept)}</td><td class="right">${bs(item.amount)}</td></tr>`).join("")}
   <tr><td class="label">Método:</td><td class="right">${escapeHtml(METHOD[r.method ?? ""] ?? r.method ?? "—")}</td></tr>
   ${r.reference ? `<tr><td class="label">Referencia:</td><td class="right">${escapeHtml(r.reference)}</td></tr>` : ""}
 </table>
@@ -81,17 +95,23 @@ ${r.id ? `<div class="center">Nº ${escapeHtml(String(r.id).slice(0, 8).toUpperC
 ${r.operator ? `<div style="margin-top:8px;font-size:11px">Atendido por: ${escapeHtml(r.operator)}</div>` : ""}
 <div class="footer">
   ¡Gracias por su pago!<br>
+  Documento generado electrónicamente<br>
   ${dateStr}
 </div>
-<script>window.addEventListener('load', () => setTimeout(() => window.print(), 250));</script>
+${autoPrint ? `<script>window.addEventListener('load', () => setTimeout(() => window.print(), 250));</script>` : ""}
 </body></html>`;
+}
+
+// Reimpresión desde el historial: abre una ventana independiente y lanza la impresión.
+export function printReceipt(r: ReceiptData) {
   const w = window.open("", "_blank", "width=380,height=640");
-  if (!w) return;
+  if (!w) return false;
   w.document.open();
-  w.document.write(html);
+  w.document.write(buildReceiptHtml(r));
   w.document.close();
+  return true;
 }
 
 function escapeHtml(s: string) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

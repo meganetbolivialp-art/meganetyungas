@@ -14,5 +14,6 @@
 - [x] Verificar el cobro, la reactivación y los accesos en computadora y celular.
 - [x] Revisar todas las pestañas y varios clientes en computadora y celular.
 - [x] Verificar que los cortes automáticos se ejecuten y que pagar reactive al cliente suspendido.
-- [ ] Instalar el actualizador v13 en Proxmox para activar allí la revisión cada cinco minutos (pendiente de ejecución del usuario).
+- [ ] Instalar el actualizador v14 en Proxmox para activar allí la revisión cada cinco minutos y el recibo obligatorio (pendiente de ejecución del usuario).
 - [x] Verificar la reactivación automática también desde la pantalla Facturas.
+- [x] Imprimir obligatoriamente un recibo térmico de 80 mm después de cada cobro.

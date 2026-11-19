@@ -9,6 +9,7 @@ import { Wallet, TrendingUp, CreditCard, Filter, RotateCcw, Download, Plus, Tras
 import { recordPayment } from "@/lib/isp.functions";
 import { getFinanceOperators } from "@/lib/finance.functions";
 import { printReceipt } from "@/lib/print-receipt";
+import { usePaymentReceipt } from "@/components/payment-receipt-provider";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/payments")({
@@ -56,7 +57,7 @@ function PaymentsPage() {
 
   const loadFormData = async () => {
     const [c, i] = await Promise.all([
-      supabase.from("clients").select("id, full_name").order("full_name"),
+      supabase.from("clients").select("id, full_name, document, phone").order("full_name"),
       supabase.from("invoices").select("id, concept, amount, client_id").neq("status", "paid"),
     ]);
     setClients(c.data ?? []); setInvoices(i.data ?? []);
@@ -175,6 +176,7 @@ function PaymentsPage() {
   }, {});
 
   const recordPay = useServerFn(recordPayment);
+  const { presentReceipt } = usePaymentReceipt();
   const create = async () => {
     if (!f.client_id || !f.amount) return;
     const client = clients.find(c => c.id === f.client_id);
@@ -183,17 +185,17 @@ function PaymentsPage() {
       const res = await recordPay({ data: { client_id: f.client_id, invoice_id: f.invoice_id || undefined, amount: f.amount, method: f.method, reference: f.reference } });
       if (res.reactivated.length > 0) toast.success(`Pago registrado. ${res.reactivated.length} servicio(s) reactivado(s) ✅`);
       else toast.success("Pago registrado");
-      if (confirm("¿Imprimir recibo?")) {
-        printReceipt({
-          id: (res as any)?.payment_id,
-          paid_at: new Date(),
-          client_name: client?.full_name,
-          concept: invoice?.concept ?? "Pago directo",
-          method: f.method,
-          reference: f.reference,
-          amount: f.amount,
-        });
-      }
+      presentReceipt({
+        id: res.payment_id,
+        paid_at: res.paid_at,
+        client_name: client?.full_name,
+        client_document: client?.document ?? undefined,
+        client_phone: client?.phone ?? undefined,
+        concept: invoice?.concept ?? "Pago directo",
+        method: f.method,
+        reference: f.reference,
+        amount: f.amount,
+      });
     } catch (e) { toast.error((e as Error).message); return; }
     setF({ client_id: "", invoice_id: "", amount: 0, method: "cash", reference: "" });
     setShow(false); refetch();

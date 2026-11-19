@@ -4,7 +4,7 @@
 set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUTPUT="${1:-/mnt/documents/meganet-actualizacion-v13.run}"
+OUTPUT="${1:-/mnt/documents/meganet-actualizacion-v14.run}"
 WORK_DIR="$(mktemp -d /tmp/meganet-update.XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
@@ -37,7 +37,7 @@ fi
 cat > "$OUTPUT" <<'LAUNCHER'
 #!/usr/bin/env bash
 # MEGANET — Actualización en caliente. No borra la base de datos.
-# Uso: sudo bash meganet-actualizacion-v13.run
+# Uso: sudo bash meganet-actualizacion-v14.run
 set -Eeuo pipefail
 
 ARCHIVE_LINE="$(awk '/^__MEGANET_ARCHIVE_BELOW__$/ {print NR + 1; exit 0}' "$0")"

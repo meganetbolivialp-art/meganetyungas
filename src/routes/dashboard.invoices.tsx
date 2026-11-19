@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { generateMonthlyInvoices, markOverdueInvoices, registerPayment } from "@/lib/isp.functions";
 import { AdminLayout } from "@/components/admin-layout";
+import { usePaymentReceipt } from "@/components/payment-receipt-provider";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/invoices")({
   head: () => ({
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/dashboard/invoices")({
   component: InvoicesPage,
 });
 
-type Invoice = { id: string; client_id: string; amount: number; due_date: string; status: string; concept: string | null; paid_at: string | null; clients: { full_name: string } | null };
+type Invoice = { id: string; client_id: string; amount: number; due_date: string; status: string; concept: string | null; paid_at: string | null; clients: { full_name: string; document: string | null; phone: string | null } | null };
 type ClientOpt = { id: string; full_name: string };
 
 function InvoicesPage() {
@@ -31,10 +33,11 @@ function InvoicesPage() {
   const genFn = useServerFn(generateMonthlyInvoices);
   const overFn = useServerFn(markOverdueInvoices);
   const payFn = useServerFn(registerPayment);
+  const { presentReceipt } = usePaymentReceipt();
 
   const load = async () => {
     const [inv, cs] = await Promise.all([
-      supabase.from("invoices").select("*, clients(full_name)").order("due_date", { ascending: false }),
+      supabase.from("invoices").select("*, clients(full_name, document, phone)").order("due_date", { ascending: false }),
       supabase.from("clients").select("id, full_name").order("full_name"),
     ]);
     setRows((inv.data as Invoice[]) ?? []);
@@ -50,8 +53,29 @@ function InvoicesPage() {
   };
 
   const markPaid = async (id: string) => {
-    await payFn({ data: { invoiceId: id, method: "cash" } });
-    load();
+    const invoice = rows.find((row) => row.id === id);
+    if (!invoice) return;
+    try {
+      const result = await payFn({ data: { invoiceId: id, method: "cash" } });
+      if (result.already) {
+        toast.info("La factura ya estaba pagada");
+      } else {
+        presentReceipt({
+          id: result.payment_id,
+          paid_at: result.paid_at,
+          client_name: invoice.clients?.full_name,
+          client_document: invoice.clients?.document ?? undefined,
+          client_phone: invoice.clients?.phone ?? undefined,
+          concept: invoice.concept ?? "Servicio de internet",
+          method: "cash",
+          amount: Number(invoice.amount),
+        });
+        toast.success("Pago registrado; imprime el recibo para finalizar");
+      }
+      await load();
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
   };
 
   const remove = async (id: string) => {

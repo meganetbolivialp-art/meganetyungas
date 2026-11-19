@@ -632,7 +632,7 @@ export const recordPayment = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true, payment_id: pay.id, reactivated };
+    return { ok: true, payment_id: pay.id, paid_at: pay.paid_at, reactivated };
   });
 
 
@@ -645,11 +645,12 @@ export const registerPayment = createServerFn({ method: "POST" })
     if (error || !inv) throw new Error("Factura no encontrada");
     if (inv.status === "paid") return { ok: true, already: true };
     await context.supabase.from("invoices").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", inv.id);
-    await context.supabase.from("payments").insert({
+    const { data: payment, error: paymentError } = await context.supabase.from("payments").insert({
       client_id: inv.client_id, invoice_id: inv.id, amount: inv.amount,
       method: data.method ?? "cash", reference: data.reference ?? null,
       created_by: context.userId,
-    });
+    }).select("id, paid_at").single();
+    if (paymentError) throw new Error(paymentError.message);
     await context.supabase.from("client_actions").insert({
       client_id: inv.client_id, action: "payment",
       detail: `Pago registrado por $${inv.amount}`, performed_by: context.userId,
@@ -694,7 +695,7 @@ export const registerPayment = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true };
+    return { ok: true, payment_id: payment.id, paid_at: payment.paid_at };
   });
 
 

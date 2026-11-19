@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordPayment } from "@/lib/isp.functions";
 import { toast } from "sonner";
+import { usePaymentReceipt } from "@/components/payment-receipt-provider";
 import { Search, User, CheckCircle2, AlertTriangle, DollarSign, Receipt, Wallet, X } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/cobrar")({
@@ -50,6 +51,7 @@ export function CobrarPageContent({ preselectId }: { preselectId?: string }) {
   const [promiseSaving, setPromiseSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const doPay = useServerFn(recordPayment);
+  const { presentReceipt } = usePaymentReceipt();
 
   useEffect(() => { if (!preselectId) inputRef.current?.focus(); }, [preselectId]);
 
@@ -202,6 +204,11 @@ export function CobrarPageContent({ preselectId }: { preselectId?: string }) {
     setSaving(true);
     try {
       let reactivatedTotal = 0;
+      const paymentIds: string[] = [];
+      const paidItems = [
+        ...pickedInvoices.map((inv) => ({ concept: inv.concept, amount: Number(inv.amount) })),
+        ...(extraNum > 0 ? [{ concept: "Pago adelantado / saldo a favor", amount: extraNum }] : []),
+      ];
       // Cobrar factura por factura (para marcar cada una como pagada)
       for (const inv of pickedInvoices) {
         const res = await doPay({
@@ -213,6 +220,7 @@ export function CobrarPageContent({ preselectId }: { preselectId?: string }) {
             reference: reference || undefined,
           },
         });
+        paymentIds.push(res.payment_id);
         reactivatedTotal += res.reactivated?.length ?? 0;
       }
       // Pago libre extra sin factura
@@ -225,8 +233,20 @@ export function CobrarPageContent({ preselectId }: { preselectId?: string }) {
             reference: reference || undefined,
           },
         });
+        paymentIds.push(res.payment_id);
         reactivatedTotal += res.reactivated?.length ?? 0;
       }
+      presentReceipt({
+        id: paymentIds[0],
+        paid_at: new Date(),
+        client_name: selected.full_name,
+        client_document: selected.document ?? undefined,
+        client_phone: selected.phone ?? undefined,
+        items: paidItems,
+        method,
+        reference: reference || undefined,
+        amount: grandTotal,
+      });
       toast.success(
         `✅ Pago Bs ${grandTotal.toFixed(2)} registrado` +
         (reactivatedTotal > 0 ? ` · ${reactivatedTotal} servicio(s) reactivado(s)` : "")

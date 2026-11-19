@@ -10,6 +10,7 @@ import { RefreshCw, List as ListIcon, X as XClose } from "lucide-react";
 import { sendClientMessage } from "@/lib/comms.functions";
 import { toast } from "sonner";
 import { ClientTrafficChart } from "@/components/client-traffic-chart";
+import { usePaymentReceipt } from "@/components/payment-receipt-provider";
 
 function TrafficToggle({ serviceId }: { serviceId: string }) {
   const [show, setShow] = useState(false);
@@ -605,6 +606,7 @@ function FacturacionTab(props: any) {
     editInvId, editInvForm, setEditInvForm, startEditInv, saveEditInv, setEditInvId, deleteInv,
     payFn, run, busy, onSaved } = props;
   const [sub, setSub] = useState<"facturas" | "config" | "trans" | "saldos">("facturas");
+  const { presentReceipt } = usePaymentReceipt();
 
   const subs = [
     { id: "facturas", label: "Facturas", icon: "📄" },
@@ -692,7 +694,23 @@ function FacturacionTab(props: any) {
                           <button onClick={() => startEditInv(i)} title="Editar" className="p-1 rounded hover:bg-[#3498db]/10 text-[#3498db] inline-block mr-1"><Pencil className="w-4 h-4" /></button>
                           <button onClick={() => deleteInv(i.id)} title="Eliminar" className="p-1 rounded hover:bg-red-500/10 text-red-600 inline-block mr-1"><Trash2 className="w-4 h-4" /></button>
                           {i.status !== "paid" && (
-                            <button disabled={!!busy} onClick={() => run("Cobrar factura", () => payFn({ data: { invoiceId: i.id, method: "cash" } }))}
+                            <button disabled={!!busy} onClick={() => run("Cobrar factura", async () => {
+                              const result = await payFn({ data: { invoiceId: i.id, method: "cash" } });
+                              if (result.already) {
+                                toast.info("La factura ya estaba pagada");
+                                return;
+                              }
+                              presentReceipt({
+                                id: result.payment_id,
+                                paid_at: result.paid_at,
+                                client_name: client?.full_name,
+                                client_document: client?.document ?? undefined,
+                                client_phone: client?.phone ?? undefined,
+                                concept: i.concept ?? "Servicio de internet",
+                                method: "cash",
+                                amount: Number(i.amount),
+                              });
+                            })}
                               className="mw-btn mw-btn-green h-7 text-[11px]"><DollarSign className="w-3 h-3" />Cobrar</button>
                           )}
                         </>
