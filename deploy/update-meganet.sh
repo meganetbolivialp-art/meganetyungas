@@ -119,7 +119,9 @@ if [[ -n "$POSTGRES_PASSWORD" ]] && docker ps --format '{{.Names}}' | grep -q "^
   NEW_COUNT=0
   while IFS= read -r mig; do
     name="$(basename "$mig")"
-    if dbq -tAc "SELECT 1 FROM public.meganet_migrations WHERE name = '$name'" 2>/dev/null | grep -q 1; then
+    # Las migraciones de drizzle/ son seguras de repetir: se aplican siempre para reparar
+    # instalaciones donde quedaron marcadas pero no se crearon (tablas/columnas faltantes).
+    if [[ "$mig" != *"/drizzle/migrations/"* ]] && dbq -tAc "SELECT 1 FROM public.meganet_migrations WHERE name = '$name'" 2>/dev/null | grep -q 1; then
       continue
     fi
     echo "  -> aplicando $name"
@@ -134,7 +136,14 @@ if [[ -n "$POSTGRES_PASSWORD" ]] && docker ps --format '{{.Names}}' | grep -q "^
       find "$DEPLOY_DIR/drizzle/migrations" -maxdepth 1 -type f -name '*.sql' | sort
     fi
   )
-  log "Migraciones aplicadas: $NEW_COUNT nueva(s)"
+  log "Migraciones aplicadas/verificadas: $NEW_COUNT"
+  # Recargar el esquema de la API para que vea las columnas y tablas nuevas.
+  dbq -q -c "NOTIFY pgrst, 'reload schema'" >/dev/null 2>&1 || true
+  REST_C="$(docker ps --format '{{.Names}}' | grep -E 'rest' | head -1 || true)"
+  [[ -n "$REST_C" ]] && docker restart "$REST_C" >/dev/null 2>&1 && log "API reiniciada ($REST_C)"
+  for chk in "receipt_settings" "billing_settings"; do
+    dbq -tAc "SELECT to_regclass('public.$chk')" 2>/dev/null | grep -q "$chk" || warn "Falta la tabla $chk: revisa /tmp/meganet-upd.err"
+  done
 
   # --- 5b. Corregir permisos: nadie más es administrador por defecto ---
   #     El primer usuario de la instalación nunca se baja de administrador.
