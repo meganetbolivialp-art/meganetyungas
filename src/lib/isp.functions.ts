@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { errorMessage } from "@/lib/error-message";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseRouterProfileRate } from "./isp-sync.server";
 
@@ -231,7 +232,7 @@ export const syncPlanToRouters = createServerFn({ method: "POST" })
         try { await mikrotik.upsertHotspotProfile(r as any, { name: profileName, rateDown: plan.download_mbps, rateUp: plan.upload_mbps }); } catch { /* ignore */ }
         results.push({ router: r.name, ok: true, updated: res.updated });
       } catch (e) {
-        results.push({ router: r.name, ok: false, error: (e as Error).message });
+        results.push({ router: r.name, ok: false, error: errorMessage(e) });
       }
     }
     await context.supabase.from("plans").update({ mikrotik_profile_name: profileName, synced_at: new Date().toISOString() }).eq("id", plan.id);
@@ -319,7 +320,7 @@ export const pingRouter = createServerFn({ method: "POST" })
         }
         (res as any).flushed = flushed;
       } catch (e) {
-        console.error("[mikrotik-queue] flush failed", (e as Error).message);
+        console.error("[mikrotik-queue] flush failed", errorMessage(e));
       }
     }
     return res;
@@ -468,7 +469,7 @@ export const testRouterConnection = createServerFn({ method: "POST" })
         .eq("id", r.id);
       return { ok: true as const, mode: r.simulated ? "simulated" : "real", latency_ms: res.latency_ms, elapsed_ms: elapsed };
     } catch (e) {
-      const message = (e as Error).message;
+      const message = errorMessage(e);
       const bridgeError = /(agente .*|agent handshake failed|TLS fingerprint mismatch|unauthorized)/i.test(message);
       // Un fallo del puente panel→VPS no demuestra que el MikroTik esté caído.
       // Conservamos el último estado para evitar falsos "Desconectado".
@@ -533,7 +534,7 @@ export const provisionNewClient = createServerFn({ method: "POST" })
         });
         steps.push({ key: "pppoe", ok: true, detail: `id ${res.id ?? "ok"}` });
       } catch (e) {
-        steps.push({ key: "pppoe", ok: false, detail: (e as Error).message });
+        steps.push({ key: "pppoe", ok: false, detail: errorMessage(e) });
       }
     } else {
       steps.push({ key: "pppoe", ok: true, detail: "omitido" });
@@ -905,7 +906,7 @@ export const pingAllRouters = createServerFn({ method: "POST" })
             .eq("id", r.id);
           return { id: r.id, name: r.name, ok: true, latency_ms: res.latency_ms, elapsed_ms: Date.now() - started };
         } catch (e) {
-          const message = (e as Error).message;
+          const message = errorMessage(e);
           const bridgeError = /(agente .*|agent handshake failed|TLS fingerprint mismatch|unauthorized)/i.test(message);
           // El estado del túnel/agent es independiente del estado del router.
           // Solo marcamos offline cuando sí alcanzamos el puente y falla el equipo.
@@ -1054,7 +1055,7 @@ export const updateRouterProfilesForServices = createServerFn({ method: "POST" }
         });
         results.push({ service_id: s.id, user: s.pppoe_user, ok: true });
       } catch (e) {
-        results.push({ service_id: s.id, user: s.pppoe_user, ok: false, error: (e as Error).message });
+        results.push({ service_id: s.id, user: s.pppoe_user, ok: false, error: errorMessage(e) });
       }
     }
     return { ok: true, results, updated: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length };
@@ -1181,7 +1182,7 @@ export const pushMissingSecretsToRouter = createServerFn({ method: "POST" })
         });
         results.push({ service_id: s.id, user: s.pppoe_user, ok: true });
       } catch (e) {
-        results.push({ service_id: s.id, user: s.pppoe_user, ok: false, error: (e as Error).message });
+        results.push({ service_id: s.id, user: s.pppoe_user, ok: false, error: errorMessage(e) });
       }
     }
     return { ok: true, results, pushed: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length };
@@ -1529,7 +1530,7 @@ export const deleteClientCascade = createServerFn({ method: "POST" })
             router: router.name,
             user: svc.pppoe_user || svc.hotspot_user || svc.id,
             ok: false,
-            error: (e as Error).message,
+            error: errorMessage(e),
           });
         }
       }

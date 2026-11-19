@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { errorMessage } from "@/lib/error-message";
 
 // Real-time PPPoE online count aggregated from every online router.
 export const getLiveOnlineCount = createServerFn({ method: "GET" })
@@ -19,7 +20,7 @@ export const getLiveOnlineCount = createServerFn({ method: "GET" })
       total += c;
       perRouter.push({ id: r.id, name: r.name, count: c });
     } catch (e) {
-      perRouter.push({ id: r.id, name: r.name, count: 0, error: (e as Error).message });
+      perRouter.push({ id: r.id, name: r.name, count: 0, error: errorMessage(e) });
     }
   }
   return { total, perRouter };
