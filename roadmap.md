@@ -14,3 +14,4 @@
 - [x] Verificar el cobro, la reactivación y los accesos en computadora y celular.
 - [x] Revisar todas las pestañas y varios clientes en computadora y celular.
 - [x] Verificar que los cortes automáticos se ejecuten y que pagar reactive al cliente suspendido.
+- [ ] Instalar el actualizador v13 en Proxmox para activar allí la revisión cada cinco minutos (pendiente de ejecución del usuario).
