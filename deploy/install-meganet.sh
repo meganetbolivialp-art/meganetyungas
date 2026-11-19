@@ -86,9 +86,10 @@ fi
 docker compose version &>/dev/null || apt-get install -y -qq docker-compose-plugin >/dev/null
 
 # Node.js (para el agente MikroTik)
-if ! command -v node &>/dev/null; then
-  log "Instalando Node.js 20..."
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
+# Node 22+ obligatorio: el panel usa WebSocket nativo (Node 20 da "WebSocket nativo no encontrado")
+if ! command -v node &>/dev/null || (( $(node -p 'process.versions.node.split(".")[0]') < 22 )); then
+  log "Instalando Node.js 22..."
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
   apt-get install -y -qq nodejs >/dev/null
 fi
 
