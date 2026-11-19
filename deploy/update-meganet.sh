@@ -111,13 +111,14 @@ if [[ -n "$POSTGRES_PASSWORD" ]] && docker ps --format '{{.Names}}' | grep -q "^
   dbq -q -c "CREATE TABLE IF NOT EXISTS public.meganet_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())" >/dev/null
   dbq -q -c "ALTER TABLE public.meganet_migrations ENABLE ROW LEVEL SECURITY" >/dev/null 2>&1 || true
   dbq -q -c "REVOKE ALL ON public.meganet_migrations FROM anon, authenticated" >/dev/null 2>&1 || true
-  while IFS= read -r name; do
+  while IFS= read -r name <&3; do
     [[ -n "$name" ]] || continue
-    dbq -q -c "INSERT INTO public.meganet_migrations (name) VALUES ('$name') ON CONFLICT DO NOTHING" >/dev/null 2>&1 || true
-  done < "$APPLIED_LIST"
+    dbq -q -c "INSERT INTO public.meganet_migrations (name) VALUES ('$name') ON CONFLICT DO NOTHING" </dev/null >/dev/null 2>&1 || true
+  done 3< "$APPLIED_LIST"
 
   NEW_COUNT=0
-  while IFS= read -r mig; do
+  # fd 3: "docker exec -i" dentro del bucle leía la lista de migraciones por stdin y se saltaba archivos.
+  while IFS= read -r mig <&3; do
     name="$(basename "$mig")"
     # Las migraciones de drizzle/ son seguras de repetir: se aplican siempre para reparar
     # instalaciones donde quedaron marcadas pero no se crearon (tablas/columnas faltantes).
@@ -130,7 +131,7 @@ if [[ -n "$POSTGRES_PASSWORD" ]] && docker ps --format '{{.Names}}' | grep -q "^
     grep "ERROR" /tmp/meganet-upd.err 2>/dev/null | grep -v "already exists" | grep -v "duplicate key" | sed 's/^/     aviso: /' || true
     dbq -q -c "INSERT INTO public.meganet_migrations (name) VALUES ('$name') ON CONFLICT DO NOTHING" >/dev/null 2>&1 || true
     NEW_COUNT=$((NEW_COUNT + 1))
-  done < <(
+  done 3< <(
     find "$DEPLOY_DIR/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | sort
     if [[ -d "$DEPLOY_DIR/drizzle/migrations" ]]; then
       find "$DEPLOY_DIR/drizzle/migrations" -maxdepth 1 -type f -name '*.sql' | sort
