@@ -329,9 +329,16 @@ h1, h2, h3, h4, .dash-stat__value, .dash-chart-total strong {
   --header: oklch(0.995 0.002 240);
   --header-foreground: oklch(0.28 0.025 250);
   --header-border: oklch(0.91 0.008 245);
-  background: oklch(0.965 0.008 245);
+  background: var(--background);
   font-size: 14px;
 }
+
+.dark .mw-admin-shell {
+  --header: var(--card);
+  --header-foreground: var(--foreground);
+  --header-border: var(--border);
+}
+.dark .dash-live-pill { color: var(--dash-teal); }
 
 .mw-admin-shell main {
   background-image: radial-gradient(circle at 85% 0%, oklch(0.68 0.16 238 / 5%), transparent 28rem);
@@ -408,10 +415,10 @@ h1, h2, h3, h4, .dash-stat__value, .dash-chart-total strong {
 }
 .dash-stat__icon {
   position: absolute;
-  right: -12px;
+  right: 16px;
   bottom: 6px;
-  width: 118px;
-  height: 118px;
+  width: 104px;
+  height: 104px;
   color: oklch(1 0 0 / 11%);
   transform: rotate(-7deg);
   pointer-events: none;

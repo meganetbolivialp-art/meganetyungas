@@ -204,7 +204,7 @@ function DashboardHome() {
         <div className="dash-live-pill"><Activity className="h-4 w-4" /> Monitoreo en tiempo real</div>
       </section>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="dash-stats-grid mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {w("clientes") && (
           <StatCard
             label="Clientes online"
