@@ -748,6 +748,10 @@ h1, h2, h3, h4, .dash-stat__value, .dash-chart-total strong {
 .dark .client-detail-page .border-slate-200 { border-color: var(--border); }
 .dark .client-detail-page .mw-input { border-color: var(--input); background: var(--background); color: var(--foreground); }
 .dark .clients-page .divide-slate-200\/70 > * + * { border-color: var(--border); }
+.clients-page .clients-table tbody tr.client-row--suspended { background: color-mix(in oklab, var(--dash-amber) 8%, var(--card)) !important; }
+.clients-page .clients-table tbody tr.client-row--cancelled { background: color-mix(in oklab, var(--dash-red) 7%, var(--card)) !important; }
+.dark .clients-page .clients-table tbody tr.client-row--suspended { background: color-mix(in oklab, var(--dash-amber) 10%, var(--card)) !important; }
+.dark .clients-page .clients-table tbody tr.client-row--cancelled { background: color-mix(in oklab, var(--dash-red) 10%, var(--card)) !important; }
 
 @media (min-width: 640px) {
   .clients-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }

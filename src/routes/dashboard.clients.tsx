@@ -747,8 +747,8 @@ function ClientsPage() {
               const onlineSvc = r.services?.find((s: any) => { const k = svcOnlineKey(s); return k ? onlineStatus[k] != null : false; });
               const activeInfo = connStatus === "online" && onlineSvc ? onlineStatus[svcOnlineKey(onlineSvc)!] : null;
               const zebra = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
-              const rowTint = st === "suspended" ? "!bg-amber-50/70"
-                : st === "cancelled" ? "!bg-rose-50/60"
+              const rowTint = st === "suspended" ? "client-row--suspended"
+                : st === "cancelled" ? "client-row--cancelled"
                 : "";
               const stripe = st === "active" ? "bg-emerald-500"
                 : st === "suspended" ? "bg-amber-500"

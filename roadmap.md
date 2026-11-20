@@ -2,7 +2,7 @@
 
 - [x] Modernizar la lista de clientes y la ficha del cliente con letras grandes y diseño elegante.
 - [x] Eliminar recargas automáticas y gestos que puedan recargar o hacer retroceder el panel en celular.
-- [x] Verificar ambas pantallas en PC, celular, claro y oscuro, y preparar el actualizador v38.
+- [x] Verificar cada estado de cliente y ambas pantallas en PC, celular, claro y oscuro; preparar el actualizador v39.
 - [x] Modernizar el panel de Inicio con tipografía grande, tarjetas de color y gráficos elegantes adaptados a PC, tablet y celular.
 - [x] Verificar visualmente el nuevo panel con sesión iniciada, en claro y oscuro, y preparar el actualizador v37.
 - [x] Entregar un instalador único con Meganet completo y OpenVPN para la VM de Proxmox.
