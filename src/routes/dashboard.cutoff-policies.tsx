@@ -9,12 +9,17 @@ import {
   type CutoffPolicy,
 } from "@/lib/cutoff-policies.functions";
 import { Plus, Pencil, Trash2, Star, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dashboard/cutoff-policies")({
   head: () => ({
     meta: [
       { title: "Plantillas de corte — MikroSystem" },
       { name: "description", content: "Plantillas reutilizables de política de corte: días de gracia, hora, modo y notificaciones." },
+      { property: "og:title", content: "Plantillas de corte — MEGANET" },
+      { property: "og:description", content: "Ciclo de facturación, vencimiento y corte por nodo y cliente en MEGANET." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -54,20 +59,30 @@ export function CutoffPoliciesPageContent() {
   const routersQ = useQuery({ queryKey: ["cutoff-policy-routers"], queryFn: () => listRouters() });
   const routers = routersQ.data ?? [];
   const [editing, setEditing] = useState<Partial<CutoffPolicy> | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["cutoff-policies"] });
     qc.invalidateQueries({ queryKey: ["cutoff-policy-routers"] });
+    qc.invalidateQueries({ queryKey: ["clients"] });
+    qc.invalidateQueries({ queryKey: ["cutoff-dashboard"] });
   };
 
   const onSave = async () => {
+    if (saving) return;
     if (!editing?.name?.trim()) { toast.error("Nombre requerido"); return; }
+    const selectedNodes = routers.filter(r => editing.router_ids?.includes(r.id));
+    if (selectedNodes.length && !window.confirm(
+      `¿Aplicar la plantilla a TODOS los clientes de ${selectedNodes.map(r => r.name).join(", ")}?\n\nSe reemplazarán sus plantillas anteriores y se actualizarán el día de pago, la gracia y el corte automático. Los pagos, facturas, precios, promesas y «no cortar» se conservarán.`
+    )) return;
+    setSaving(true);
     try {
-      await save({ data: editing as any });
-      toast.success("Plantilla guardada");
+      const result = await save({ data: { ...editing, name: editing.name.trim() } });
+      toast.success(`Plantilla guardada · ${result.updatedClients} clientes actualizados`);
       setEditing(null);
       refresh();
     } catch (e) { toast.error((e as Error).message); }
+    finally { setSaving(false); }
   };
 
   const onDelete = async (id: string) => {
@@ -156,9 +171,9 @@ export function CutoffPoliciesPageContent() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4" onClick={() => setEditing(null)}>
-          <div className="bg-card rounded-md border w-full max-w-2xl p-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/50 grid place-items-center z-50 p-4" onClick={() => { if (!saving) setEditing(null); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="cutoff-policy-dialog-title" className="bg-card rounded-md border w-full max-w-2xl p-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 id="cutoff-policy-dialog-title" className="font-semibold mb-3 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#ff5722]" />
               {editing.id ? "Editar plantilla" : "Nueva plantilla de corte"}
             </h3>
@@ -221,7 +236,7 @@ export function CutoffPoliciesPageContent() {
 
             <div className="mt-4 border-t pt-3">
               <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Aplicar automáticamente a los nodos</div>
-              <p className="text-[11px] text-muted-foreground mb-2">Los clientes de estos nodos usan esta plantilla, salvo los que tengan una plantilla propia.</p>
+              <p className="text-sm text-muted-foreground mb-2">Todos los clientes de estos nodos, incluso los que tengan otra plantilla. Se conservan pagos, facturas, precios, promesas y «no cortar».</p>
               {routers.length === 0 ? <p className="text-sm text-muted-foreground">No hay nodos registrados.</p> : (
                 <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
                   {routers.map((r) => {
@@ -254,8 +269,8 @@ export function CutoffPoliciesPageContent() {
             </div>
 
             <div className="mt-5 flex gap-2 justify-end">
-              <button onClick={() => setEditing(null)} className="px-3 py-2 text-sm border rounded">Cancelar</button>
-              <button onClick={onSave} className="px-4 py-2 text-sm bg-[#ff5722] hover:bg-[#e64a19] text-white rounded font-semibold">Guardar plantilla</button>
+              <Button variant="outline" size="lg" disabled={saving} onClick={() => setEditing(null)}>Cancelar</Button>
+              <Button size="lg" disabled={saving} onClick={onSave}>{saving ? "Actualizando clientes…" : "Guardar plantilla"}</Button>
             </div>
           </div>
         </div>

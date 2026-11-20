@@ -1,5 +1,9 @@
 # Tareas
 
+- [x] Aplicar la plantilla a todos los clientes de los nodos seleccionados, reemplazando asignaciones anteriores sin borrar facturas ni pagos.
+- [x] Verificar el guardado por nodo, las fechas de cobro y la conservación de datos con pruebas y sesión iniciada.
+- [x] Mostrar el ciclo real de la plantilla en Resumen y Facturación de todos los clientes afectados, en claro y oscuro, PC y celular; entregar v42.
+
 - [x] Agrandar y ordenar la barra lateral como la referencia, con perfil neutro y todos los accesos y permisos intactos.
 - [x] Verificar la barra en PC, celular, expandida y contraída, y preparar el actualizador v40.
 
