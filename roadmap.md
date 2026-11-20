@@ -1,5 +1,7 @@
 # Tareas
 
+- [x] Modernizar el panel de Inicio con tipografía grande, tarjetas de color y gráficos elegantes adaptados a PC, tablet y celular.
+- [x] Verificar visualmente el nuevo panel con sesión iniciada y preparar el actualizador v36.
 - [x] Entregar un instalador único con Meganet completo y OpenVPN para la VM de Proxmox.
 - [x] Validar el paquete autocontenido y sus instrucciones de uso.
 - [x] Cambiar el aprovisionamiento predeterminado de routers a OpenVPN.

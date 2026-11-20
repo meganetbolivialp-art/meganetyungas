@@ -281,7 +281,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="mw-admin-shell min-h-screen flex bg-background text-foreground">
       {/* Backdrop for mobile drawer */}
       {mobileOpen && (
         <div
@@ -411,7 +411,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
       {/* MAIN */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER */}
-        <header className="h-14 flex items-center gap-2 px-3 md:px-4 border-b" style={{ background: "var(--header)", color: "var(--header-foreground)", borderColor: "var(--header-border)" }}>
+        <header className="h-16 flex items-center gap-2 px-3 md:px-5 border-b shadow-sm" style={{ background: "var(--header)", color: "var(--header-foreground)", borderColor: "var(--header-border)" }}>
           {/* Mobile hamburger */}
           <button
             className="md:hidden w-9 h-9 grid place-items-center rounded hover:bg-muted text-muted-foreground shrink-0"

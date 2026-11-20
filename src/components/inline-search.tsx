@@ -77,7 +77,7 @@ export function InlineSearch() {
         onFocus={() => setOpen(true)}
         onKeyDown={onKey}
         placeholder="Buscar clientes, PPPoE, IP, facturas..."
-        className="w-full h-9 rounded-md bg-muted/60 border border-transparent hover:border-primary/40 focus:border-primary/60 outline-none pl-9 pr-3 text-sm"
+        className="mw-global-search w-full h-10 rounded-xl bg-muted/60 border border-transparent hover:border-primary/40 focus:border-primary/60 outline-none pl-10 pr-3 text-sm"
       />
       {open && q.trim() !== "" && (
         <div className="absolute left-0 right-0 top-11 bg-card rounded-md shadow-2xl border overflow-hidden z-50 max-h-[60vh] overflow-y-auto">
