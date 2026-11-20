@@ -4,8 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Home, Network, Wifi, Users, ClipboardList, DollarSign,
-  Package, Settings, MessageSquare, LogOut, Search, Bell, Send, ChevronDown,
-  ChevronRight, User, Camera, ChevronsLeft, Menu, X,
+  Package, Settings, MessageSquare, LogOut, Send, ChevronDown,
+  ChevronRight, Camera, ChevronsLeft, Menu, X, Star, Ticket,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import sidebarBg from "@/assets/sidebar-bg.jpg";
@@ -17,59 +17,47 @@ type NavGroup = { label: string; icon: any; to?: string; items?: NavItem[]; badg
 
 const GROUPS: NavGroup[] = [
   { label: "Inicio", icon: Home, to: "/dashboard", mod: "inicio" },
-
-
-  { label: "Clientes", icon: Users, mod: "clientes", items: [
-    { to: "/dashboard/clients", label: "Usuarios", mod: "clientes", action: "view" },
+  { label: "Gestión de Red", icon: Network, items: [
+    { to: "/dashboard/routers", label: "Routers", mod: "red", action: "view" },
+    { to: "/dashboard/network-map", label: "Mapa de red", mod: "red", action: "view" },
+  ]},
+  { label: "Servicios", icon: Star, items: [
     { to: "/dashboard/services", label: "Servicios activos", mod: "servicios", action: "view" },
+    { to: "/dashboard/plans", label: "Servicios de internet", mod: "servicios", action: "view" },
+  ]},
+  { label: "Clientes", icon: Users, items: [
+    { to: "/dashboard/clients", label: "Usuarios", mod: "clientes", action: "view" },
     { to: "/dashboard/leads", label: "CRM Leads", mod: "leads", action: "view" },
     { to: "/dashboard/portal-users", label: "Cuentas Portal", mod: "clientes", action: "view" },
   ]},
-
-  { label: "Cobros y cortes", icon: DollarSign, items: [
-    { to: "/dashboard/cortes", label: "Centro de cobros y cortes", anyOf: [["finanzas", "cobrar"], ["cortes", "view"], ["cortes", "promise"]] },
+  { label: "Fichas Hotspot", icon: Wifi, items: [
+    { to: "/dashboard/vouchers", label: "Vouchers", mod: "hotspot", action: "view" },
   ]},
-
-  { label: "Finanzas", icon: DollarSign, mod: "finanzas", items: [
+  { label: "Tareas", icon: ClipboardList, items: [
+    { to: "/dashboard/work-orders", label: "Órdenes de trabajo", mod: "tareas", action: "view" },
+  ]},
+  { label: "Finanzas", icon: DollarSign, items: [
+    { to: "/dashboard/cortes", label: "Cobros y cortes", anyOf: [["finanzas", "cobrar"], ["cortes", "view"], ["cortes", "promise"]] },
     { to: "/dashboard/finanzas", label: "Panel financiero", mod: "finanzas", action: "view" },
     { to: "/dashboard/invoices", label: "Facturas", mod: "finanzas", action: "invoice" },
     { to: "/dashboard/payments", label: "Pagos recibidos", mod: "finanzas", action: "view" },
     { to: "/dashboard/cash", label: "Caja diaria", mod: "finanzas", action: "view" },
     { to: "/dashboard/accounting", label: "Contabilidad", mod: "finanzas", action: "accounting" },
   ]},
-
-
-  { label: "Tareas", icon: ClipboardList, mod: "tareas", items: [
-    { to: "/dashboard/work-orders", label: "Órdenes de trabajo", mod: "tareas", action: "view" },
-    { to: "/dashboard/tickets", label: "Tickets", mod: "tickets", action: "view" },
-  ]},
-
-  { label: "Mensajería", icon: MessageSquare, mod: "mensajeria", items: [
-    { to: "/dashboard/messaging", label: "Envío masivo", mod: "mensajeria", action: "bulk" },
-    { to: "/dashboard/bulk-router", label: "Cambios por router", mod: "mensajeria", action: "bulk" },
-  ]},
-
-  { label: "Red", icon: Network, mod: "red", items: [
-    { to: "/dashboard/routers", label: "Routers", mod: "red", action: "view" },
-    { to: "/dashboard/plans", label: "Servicios de internet", mod: "servicios", action: "view" },
-    { to: "/dashboard/network-map", label: "Mapa de red", mod: "red", action: "view" },
-  ]},
-
-  { label: "Hotspot", icon: Wifi, mod: "hotspot", items: [
-    { to: "/dashboard/vouchers", label: "Vouchers", mod: "hotspot", action: "view" },
-  ]},
-
-  { label: "Almacén", icon: Package, mod: "almacen", items: [
+  { label: "Almacén", icon: Package, items: [
     { to: "/dashboard/inventory", label: "Inventario", mod: "almacen", action: "view" },
     { to: "/dashboard/serials", label: "Equipos (seriales)", mod: "almacen", action: "view" },
   ]},
-
-  { label: "Reportes", icon: ClipboardList, mod: "ajustes", items: [
+  { label: "Tickets", icon: Ticket, to: "/dashboard/tickets", mod: "tickets" },
+  { label: "Mensajería", icon: MessageSquare, items: [
+    { to: "/dashboard/messaging", label: "Envío masivo", mod: "mensajeria", action: "bulk" },
+    { to: "/dashboard/bulk-router", label: "Cambios por router", mod: "mensajeria", action: "bulk" },
+  ]},
+  { label: "Ajustes", icon: Settings, items: [
+    { to: "/dashboard/settings", label: "Ajustes generales", mod: "ajustes", action: "view" },
     { to: "/dashboard/kpis", label: "KPIs del negocio", mod: "ajustes", action: "view" },
     { to: "/dashboard/audit", label: "Auditoría", mod: "ajustes", action: "view" },
   ]},
-
-  { label: "Configuración", icon: Settings, to: "/dashboard/settings", mod: "ajustes" },
 ];
 
 
@@ -216,7 +204,7 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
     return <div className="min-h-screen grid place-items-center bg-background text-muted-foreground">Cargando...</div>;
   }
 
-  const sidebarWidth = collapsed ? "md:w-16" : "md:w-[240px]";
+  const sidebarWidth = collapsed ? "md:w-[72px]" : "md:w-[280px]";
   const ROLE_LABELS: Record<string, string> = { admin: "Administrador", operator: "Operador", cashier: "Cajero / Cobrador", technician: "Técnico", seller: "Vendedor" };
   const displayName = (employee?.full_name?.trim() || email.split("@")[0] || "Admin");
   const roleLabel = isAdmin ? "Administrador" : (ROLE_LABELS[employee?.operator_type ?? ""] ?? "Operador");
@@ -234,38 +222,35 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
 
       {/* SIDEBAR */}
       <aside
-        className={`${sidebarWidth} w-[260px] shrink-0 transition-transform duration-200 flex flex-col
+        className={`${sidebarWidth} w-[290px] shrink-0 transition-[width,transform] duration-200 flex flex-col
           fixed md:static inset-y-0 left-0 z-50
           ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
         style={{ background: "var(--sidebar)", color: "var(--sidebar-foreground)" }}
       >
         {/* Logo */}
-        <div className="h-14 flex items-center justify-between md:justify-center px-3 md:px-0 border-b border-white/5">
-          <div className="flex items-center gap-2 font-black text-white">
-            <div className="w-8 h-8 rounded grid place-items-center" style={{ background: "linear-gradient(135deg,#ff4d2e,#c93a1e)" }}>
-              <span className="text-[13px]">M</span>
+        <div className="h-16 flex items-center justify-between md:justify-center px-5 md:px-3 border-b border-sidebar-border/50">
+          <div className="flex items-center gap-3 font-black text-sidebar-foreground">
+            <div className="w-9 h-9 shrink-0 rounded-full border border-sidebar-border bg-sidebar-accent grid place-items-center">
+              <span className="text-base">M</span>
             </div>
-            {!collapsed && <span className="text-sm tracking-wide">MEGA<span style={{ color: "#ff4d2e" }}>NET</span></span>}
+            {!collapsed && <span className="text-[17px] tracking-[0.16em] text-sidebar-accent-foreground">MEGANET</span>}
           </div>
-          <button className="md:hidden text-white/70 hover:text-white p-1" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú">
+          <button className="md:hidden text-sidebar-foreground hover:text-sidebar-accent-foreground p-2" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* User card with bg */}
         {!collapsed && (
-          <div className="relative h-[130px] border-b border-white/5 overflow-hidden">
-            <img src={sidebarBg} alt="" loading="lazy" width={512} height={512} className="absolute inset-0 w-full h-full object-cover opacity-40" />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/70" />
-            <div key={displayName + roleLabel} className="relative h-full flex flex-col items-center justify-center gap-1.5 px-4 text-center">
-              <div className="mw-avatar-ring relative w-14 h-14 rounded-full p-[2px]">
-                <div className="w-full h-full rounded-full grid place-items-center text-lg font-black text-white" style={{ background: "linear-gradient(135deg,#ff4d2e,#c93a1e)" }}>
-                  {initials || <User className="w-7 h-7" />}
-                </div>
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-400 ring-2 ring-black/60 mw-online-dot" title="Conectado" />
+          <div className="relative h-[154px] border-b border-sidebar-border/50 overflow-hidden">
+            <img src={sidebarBg} alt="" loading="lazy" width={512} height={512} className="absolute inset-0 w-full h-full object-cover opacity-90 grayscale brightness-150 contrast-125" />
+            <div className="absolute inset-0 bg-gradient-to-b from-sidebar/10 to-sidebar/90" />
+            <div key={displayName + roleLabel} className="relative h-full flex flex-col items-center justify-center gap-2 px-4 text-center">
+              <div className="mw-fade-in w-16 h-16 rounded-full border-4 border-sidebar-foreground/60 bg-sidebar-accent grid place-items-center text-2xl font-semibold text-sidebar-accent-foreground shadow-lg">
+                {initials || "A"}
               </div>
-              <div className="mw-fade-in text-[14px] font-bold text-white leading-tight truncate max-w-full capitalize">{displayName}</div>
-              <div className="mw-fade-in mw-delay inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+              <div className="mw-fade-in text-[17px] font-semibold text-sidebar-accent-foreground leading-tight truncate max-w-full capitalize">{displayName}</div>
+              <div className="mw-fade-in mw-delay inline-flex items-center gap-1.5 text-[12px] font-medium text-sidebar-foreground">
                 {isAdmin && <span aria-hidden>★</span>}{roleLabel}
               </div>
             </div>
@@ -273,12 +258,12 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
         )}
 
         {/* Menu label */}
-        {!collapsed && <div className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-widest text-white/40">Menú</div>}
+        {!collapsed && <div className="px-5 pt-4 pb-2 text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55">Menú</div>}
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-1 overscroll-contain">
           {permsLoading && visibleGroups.length === 0 && (
-            <div className="px-4 py-3 text-[11px] text-white/40">Cargando menú...</div>
+            <div className="px-5 py-3 text-[13px] text-sidebar-foreground/60">Cargando menú...</div>
           )}
           {visibleGroups.map(g => {
 
@@ -288,11 +273,10 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
             const hasChildren = !!g.items?.length;
 
             const Row = (
-              <div className={`group flex items-center gap-3 px-4 py-2.5 text-[13px] cursor-pointer transition-colors
-                ${active ? "text-white bg-black/25 border-l-2 border-[--sidebar-primary]" : "border-l-2 border-transparent hover:bg-white/5 hover:text-white"}`}
-                style={active ? { borderLeftColor: "var(--sidebar-primary)" } : undefined}
+              <div className={`group flex items-center gap-3.5 px-5 py-3 text-[15px] cursor-pointer transition-colors border-l-[3px]
+                ${active ? "text-sidebar-accent-foreground bg-sidebar-accent border-sidebar-primary" : "text-sidebar-foreground border-transparent hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"}`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="w-[19px] h-[19px] shrink-0" strokeWidth={active ? 2.2 : 1.8} />
                 {!collapsed && <span className="flex-1 truncate">{g.label}</span>}
                 {!collapsed && g.badge !== undefined && (
                   <span className="px-1.5 py-0.5 text-[10px] rounded bg-emerald-500 text-white font-semibold">{g.badge}</span>
@@ -310,13 +294,13 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
                 ) : Row}
 
                 {!collapsed && hasChildren && open && (
-                  <ul className="bg-black/20 py-1">
+                  <ul className="bg-sidebar-accent/65 py-1.5">
                     {g.items!.map(it => {
                       const a = isActive(it.to);
                       const content = (
-                        <li className={`flex items-center gap-2 pl-10 pr-4 py-1.5 text-[12px] cursor-pointer
-                          ${a ? "text-white" : "text-white/60 hover:text-white"}`}>
-                          <span className="w-1 h-1 rounded-full bg-current opacity-60 shrink-0" />
+                        <li className={`flex items-center gap-2.5 pl-[52px] pr-5 py-2.5 text-[13.5px] cursor-pointer transition-colors
+                          ${a ? "text-sidebar-accent-foreground font-semibold" : "text-sidebar-foreground/75 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60 shrink-0" />
                           <span className="truncate">{it.label}</span>
                         </li>
                       );
@@ -330,20 +314,20 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
 
           {/* Mobile-only logout */}
           <div className="md:hidden px-3 mt-4 mb-2">
-            <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded text-[13px] text-white/80 hover:bg-white/5 hover:text-white">
+            <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-3 rounded text-[14px] text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
               <LogOut className="w-4 h-4" /> Cerrar sesión
             </button>
           </div>
         </nav>
 
         {/* Collapse toggle (desktop only) */}
-        <button onClick={() => setCollapsed(c => !c)} className="hidden md:flex h-10 border-t border-white/5 items-center justify-center text-white/50 hover:text-white hover:bg-white/5">
+        <button onClick={() => setCollapsed(c => !c)} aria-label={collapsed ? "Expandir menú" : "Contraer menú"} className="hidden md:flex h-11 border-t border-sidebar-border/50 items-center justify-center text-sidebar-foreground/60 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent">
           <ChevronsLeft className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
         </button>
 
         {!collapsed && (
-          <div className="hidden md:block p-3 border-t border-white/5">
-            <button className="w-10 h-10 rounded-full grid place-items-center text-white" style={{ background: "var(--primary)" }}>
+          <div className="hidden md:block p-4 border-t border-sidebar-border/50">
+            <button aria-label="Cambiar foto de perfil" className="w-11 h-11 rounded-full border border-sidebar-border grid place-items-center text-sidebar-foreground bg-sidebar-accent hover:text-sidebar-accent-foreground">
               <Camera className="w-4 h-4" />
             </button>
           </div>

@@ -1,5 +1,8 @@
 # Tareas
 
+- [x] Agrandar y ordenar la barra lateral como la referencia, con perfil neutro y todos los accesos y permisos intactos.
+- [x] Verificar la barra en PC, celular, expandida y contraída, y preparar el actualizador v40.
+
 - [x] Modernizar la lista de clientes y la ficha del cliente con letras grandes y diseño elegante.
 - [x] Eliminar recargas automáticas y gestos que puedan recargar o hacer retroceder el panel en celular.
 - [x] Verificar cada estado de cliente y ambas pantallas en PC, celular, claro y oscuro; preparar el actualizador v39.

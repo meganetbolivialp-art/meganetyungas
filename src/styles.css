@@ -76,15 +76,15 @@
   --header-foreground: oklch(0.28 0.02 240);
   --header-border: oklch(0.90 0.006 240);
 
-  /* Sidebar: MikroWisp deep slate */
-  --sidebar: #1e2a38;
-  --sidebar-foreground: #b8c2cc;
-  --sidebar-primary: #ff5722;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #16202b;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a3644;
-  --sidebar-ring: #ff5722;
+  /* Sidebar: carbón neutro, como la referencia de Meganet */
+  --sidebar: oklch(0.29 0.012 240);
+  --sidebar-foreground: oklch(0.82 0.008 240);
+  --sidebar-primary: oklch(0.79 0.025 230);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.24 0.012 240);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.39 0.012 240);
+  --sidebar-ring: oklch(0.79 0.025 230);
 
   /* Stat card gradients (MikroWisp palette) */
   --stat-teal-from: #1abc9c;
