@@ -877,10 +877,10 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
           </CfgRow>}
           {policy && <CfgRow label="Plantilla"><div className="min-h-8 text-sm font-semibold text-foreground py-1.5">{policy.name}</div></CfgRow>}
           <CfgRow label="Aplicar Mora">
-            <SwitchTiny checked={!!f.aplicar_mora} onChange={v => upd("aplicar_mora", v)} />
+            {policy ? <div className="min-h-8 text-sm text-foreground py-1.5">Bs {Number(client.cutoff_policies.late_fee ?? 0).toFixed(2)}</div> : <SwitchTiny checked={!!f.aplicar_mora} onChange={v => upd("aplicar_mora", v)} />}
           </CfgRow>
           <CfgRow label="Aplicar Reconexión">
-            <SwitchTiny checked={!!f.aplicar_reconexion} onChange={v => upd("aplicar_reconexion", v)} />
+            {policy ? <div className="min-h-8 text-sm text-foreground py-1.5">Bs {Number(client.cutoff_policies.reconnect_fee ?? 0).toFixed(2)}</div> : <SwitchTiny checked={!!f.aplicar_reconexion} onChange={v => upd("aplicar_reconexion", v)} />}
           </CfgRow>
         </div>
       </Panel>
@@ -996,7 +996,6 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
   const activeSvcs = services.filter(s => s.status === "active").length;
   const status = client.status === "cancelled" ? "cancelled" : services.length === 0 ? client.status : activeSvcs > 0 ? "active" : "suspended";
   const debt = invoices.filter(i => i.status !== "paid").reduce((s, r) => s + Number(r.amount), 0);
-  const nextDue = invoices.filter(i => i.status !== "paid").sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
   const policy: ClientPolicySchedule | null = client.cutoff_policies ?? null;
   const schedule = policy ? clientPolicySchedule(policy, client.billing_day) : null;
 
@@ -1155,7 +1154,7 @@ function MwTile({ color, icon: Icon, title, sub, wide }: { color: string; icon: 
 function Panel({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="mw-panel !rounded-xl overflow-hidden shadow-sm mb-3">
-      <div className="mw-panel-header !bg-gradient-to-r from-[#f4f8fc] to-white">
+      <div className="mw-panel-header !bg-muted text-foreground">
         <div className="mw-panel-title flex items-center gap-2"><span className="text-[#ff5722]">»</span> {title}</div>
         {right}
       </div>
