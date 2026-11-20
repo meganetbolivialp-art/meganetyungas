@@ -2692,6 +2692,10 @@ export type Database = {
         Returns: boolean
       }
       mark_overdue_invoices: { Args: { p_grace_days?: number }; Returns: Json }
+      save_cutoff_policy_with_nodes: {
+        Args: { p_policy: Json; p_router_ids?: string[] }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

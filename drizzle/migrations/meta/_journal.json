@@ -50,6 +50,13 @@
       "when": 1795109754397,
       "tag": "0006_restrict_settings_read_to_staff",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795142567797,
+      "tag": "0007_save_cutoff_policy_and_sync_nodes",
+      "breakpoints": true
     }
   ]
 }

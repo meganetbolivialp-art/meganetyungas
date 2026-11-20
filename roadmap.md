@@ -1,5 +1,8 @@
 # Tareas
 
+- [ ] Aplicar la plantilla a todos los clientes de los nodos seleccionados, reemplazando asignaciones anteriores sin borrar facturas ni pagos.
+- [ ] Verificar el guardado por nodo, las fechas de cobro y la conservación de datos con pruebas y sesión iniciada.
+
 - [x] Agrandar y ordenar la barra lateral como la referencia, con perfil neutro y todos los accesos y permisos intactos.
 - [x] Verificar la barra en PC, celular, expandida y contraída, y preparar el actualizador v40.
 
