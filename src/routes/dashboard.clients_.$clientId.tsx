@@ -12,6 +12,7 @@ import { sendClientMessage } from "@/lib/comms.functions";
 import { toast } from "sonner";
 import { ClientTrafficChart } from "@/components/client-traffic-chart";
 import { usePaymentReceipt } from "@/components/payment-receipt-provider";
+import { clientPolicySchedule, type ClientPolicySchedule } from "@/lib/client-policy-schedule";
 
 function TrafficToggle({ serviceId }: { serviceId: string }) {
   const [show, setShow] = useState(false);
@@ -33,7 +34,15 @@ function TrafficToggle({ serviceId }: { serviceId: string }) {
 }
 
 export const Route = createFileRoute("/dashboard/clients_/$clientId")({
-  head: () => ({ meta: [{ title: "Cliente — ISP Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [
+    { title: "Ficha del cliente — MEGANET" },
+    { name: "description", content: "Servicios, pagos y ciclo de facturación del cliente en MEGANET." },
+    { property: "og:title", content: "Ficha del cliente — MEGANET" },
+    { property: "og:description", content: "Servicios, pagos y ciclo de facturación del cliente en MEGANET." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   component: ClientDetail,
 });
 
@@ -83,7 +92,7 @@ function ClientDetail() {
 
   const load = async () => {
     const [c, s, i, a, p, pl, m, r] = await Promise.all([
-      supabase.from("clients").select("*").eq("id", clientId).single(),
+      supabase.from("clients").select("*, cutoff_policies(*)").eq("id", clientId).single(),
       supabase.from("services").select("*, plans(name, price, download_mbps, upload_mbps), routers(name, ip_address)").eq("client_id", clientId),
       supabase.from("invoices").select("*").eq("client_id", clientId).order("due_date", { ascending: false }),
       supabase.from("client_actions").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(50),
@@ -781,6 +790,8 @@ const BILLING_DEFAULTS = {
 };
 
 function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any }) {
+  const policy: ClientPolicySchedule | null = client.cutoff_policies ?? null;
+  const schedule = policy ? clientPolicySchedule(policy, client.billing_day) : null;
   const cfg = { ...BILLING_DEFAULTS, ...(client.billing_config ?? {}), dia_pago: client.billing_day ?? 1, dias_gracia: client.grace_days_override ?? 5 };
   const [f, setF] = useState<any>(cfg);
   const [saving, setSaving] = useState(false);
@@ -811,11 +822,12 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
             </select>
           </CfgRow>
           <CfgRow label="Día pago">
-            <select value={f.dia_pago} onChange={e => upd("dia_pago", Number(e.target.value))} className="mw-input h-8">
+            <select disabled={!!policy} value={f.dia_pago} onChange={e => upd("dia_pago", Number(e.target.value))} className="mw-input h-8">
               {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{String(d).padStart(2, "0")}</option>)}
             </select>
           </CfgRow>
           <CfgRow label="Crear Factura">
+            {schedule ? <div className="min-h-8 text-sm text-foreground py-1.5">{schedule.invoice}</div> : (
             <select value={f.crear_factura} onChange={e => upd("crear_factura", e.target.value)} className="mw-input h-8">
               <option value="0">El mismo día</option>
               <option value="1">1 Día antes</option>
@@ -824,6 +836,7 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
               <option value="7">7 Días antes</option>
               <option value="10">10 Días antes</option>
             </select>
+            )}
           </CfgRow>
           <CfgRow label="Tipo impuesto">
             <select value={f.tipo_impuesto} onChange={e => upd("tipo_impuesto", e.target.value)} className="mw-input h-8">
@@ -833,11 +846,12 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
             </select>
           </CfgRow>
           <CfgRow label="Días de gracia" help="días tolerancia para aplicar corte">
-            <select value={f.dias_gracia} onChange={e => upd("dias_gracia", Number(e.target.value))} className="mw-input h-8">
+            <select disabled={!!policy} value={f.dias_gracia} onChange={e => upd("dias_gracia", Number(e.target.value))} className="mw-input h-8">
               {[0,1,2,3,4,5,6,7,10,15,20,30].map(d => <option key={d} value={d}>{d} Días</option>)}
             </select>
           </CfgRow>
           <CfgRow label="Aplicar Corte">
+            {schedule ? <div className="min-h-8 text-sm text-foreground py-1.5">{schedule.cutoff}</div> : (
             <select value={f.aplicar_corte} onChange={e => upd("aplicar_corte", e.target.value)} className="mw-input h-8">
               <option value="nunca">Nunca</option>
               <option value="1fact">1 Factura vencida</option>
@@ -845,19 +859,23 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
               <option value="2mes">2 Meses vencidos</option>
               <option value="3mes">3 Meses vencidos</option>
             </select>
+            )}
           </CfgRow>
           <CfgRow label="Bajar Velocidad" help="Limita la velocidad del cliente y no suspende. Se quita el límite Automáticamente cuando el cliente paga todas sus facturas.">
+            {policy ? <div className="min-h-8 text-sm text-foreground py-1.5">{policy.cut_mode === "speed" ? "Activado" : "Desactivado"}</div> : (
             <select value={f.bajar_velocidad ? "1" : "0"} onChange={e => upd("bajar_velocidad", e.target.value === "1")} className="mw-input h-8">
               <option value="0">Desactivado</option>
               <option value="1">Activado</option>
             </select>
+            )}
           </CfgRow>
-          <CfgRow label="Fecha Fija">
+          {!policy && <CfgRow label="Fecha Fija">
             <input type="date" value={f.fecha_fija} onChange={e => upd("fecha_fija", e.target.value)} placeholder="Automático" className="mw-input h-8" />
-          </CfgRow>
-          <CfgRow label="Corte Fijo Programado">
+          </CfgRow>}
+          {!policy && <CfgRow label="Corte Fijo Programado">
             <input type="date" value={f.corte_fijo} onChange={e => upd("corte_fijo", e.target.value)} placeholder="Automático" className="mw-input h-8" />
-          </CfgRow>
+          </CfgRow>}
+          {policy && <CfgRow label="Plantilla"><div className="min-h-8 text-sm font-semibold text-foreground py-1.5">{policy.name}</div></CfgRow>}
           <CfgRow label="Aplicar Mora">
             <SwitchTiny checked={!!f.aplicar_mora} onChange={v => upd("aplicar_mora", v)} />
           </CfgRow>
@@ -913,8 +931,8 @@ function BillingConfigTab({ client, onSaved }: { client: any; onSaved: () => any
 
 function CfgRow({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[160px_1fr] gap-3 items-start">
-      <label className="text-[12.5px] text-slate-600 pt-1.5 text-right">{label}</label>
+    <div className="grid grid-cols-1 sm:grid-cols-[160px_minmax(0,1fr)] gap-1 sm:gap-3 items-start">
+      <label className="text-[12.5px] text-slate-600 pt-1.5 sm:text-right">{label}</label>
       <div>
         {children}
         {help && <div className="text-[11px] text-red-500 mt-1 leading-tight">*{help}</div>}
@@ -979,7 +997,8 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
   const status = client.status === "cancelled" ? "cancelled" : services.length === 0 ? client.status : activeSvcs > 0 ? "active" : "suspended";
   const debt = invoices.filter(i => i.status !== "paid").reduce((s, r) => s + Number(r.amount), 0);
   const nextDue = invoices.filter(i => i.status !== "paid").sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
-  const nextCut = new Date(); nextCut.setDate(nextCut.getDate() + 5);
+  const policy: ClientPolicySchedule | null = client.cutoff_policies ?? null;
+  const schedule = policy ? clientPolicySchedule(policy, client.billing_day) : null;
 
   return (
     <div className="client-summary-grid grid lg:grid-cols-[1.4fr_1fr] gap-4 bg-white border border-slate-200 rounded-xl p-5">
@@ -1087,11 +1106,11 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
           <span className="text-[#3498db]">»</span> Resumen Notificaciones
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          <MwTile color="#16a394" icon={Calendar} title={nextDue ? new Date(nextDue.due_date).toLocaleDateString() : "—"} sub="Día de Pago" />
-          <MwTile color="#f39c12" icon={MailOpen} title={nextDue ? new Date(nextDue.due_date).toLocaleDateString() + " 07:30:00 am" : "Sin pendiente"} sub="Crear & Enviar Factura" />
+          <MwTile color="#16a394" icon={Calendar} title={schedule?.payment ?? `Día ${client.billing_day} de cada mes`} sub="Día de Pago" />
+          <MwTile color="#f39c12" icon={MailOpen} title={schedule?.invoice ?? "Generación manual"} sub="Generación de factura" />
           <MwTile color={client.dont_cut ? "#16a394" : "#16a394"} icon={Monitor} title={client.dont_cut ? "Desactivado" : "Activado"} sub="Aviso en pantalla" />
-          <MwTile color="#8e44ad" icon={MessagesSquare} title={client.phone ? "Activado 08:50:00 am" : "Desactivado"} sub="Aviso SMS" />
-          <MwTile color="#e74c3c" icon={Ban} title={nextCut.toLocaleDateString() + " 06:00:00 am"} sub="Próximo Corte de Servicios" />
+          <MwTile color="#8e44ad" icon={MessagesSquare} title={policy?.notify_sms ? "Activado" : "Desactivado"} sub="Aviso SMS" />
+          <MwTile color="#e74c3c" icon={Ban} title={client.dont_cut ? "Protegido · No cortar" : schedule?.cutoff ?? "Según vencimiento y gracia"} sub="Programación de corte" />
           <MwTile color="#3498db" icon={Wallet} title={`Bs ${debt.toFixed(2)}`} sub="Deuda Actual" />
           <MwTile color="#e91e63" icon={ReceiptText} title={`Bs ${Number(client.balance ?? 0).toFixed(2)}`} sub="Saldos" wide />
         </div>

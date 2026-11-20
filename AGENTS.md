@@ -11,3 +11,4 @@
 
 - Save node cutoff policies through the authenticated, security-invoker `save_cutoff_policy_with_nodes` RPC so policy, router, client, and service changes commit atomically under existing RLS.
 - Use the service node-policy trigger for new or reassigned services so client billing dates and automatic suspension inherit the selected node's policy without rewriting invoices or payments.
+- Read the client's assigned policy for billing-cycle presentation; existing invoice due dates are historical records, not the policy schedule, and must remain unchanged.
