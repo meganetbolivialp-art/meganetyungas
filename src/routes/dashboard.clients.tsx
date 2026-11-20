@@ -1,7 +1,7 @@
 import { ZoneInput } from "@/components/zone-input";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff, ChevronDown, ChevronUp, Minus, Phone, Mail, CreditCard, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Search, Eye, Check, KeyRound, HelpCircle, MapPin, Calendar, User, Users, Lock, ChevronLeft, X, Loader2, CheckCircle2, XCircle, Pencil, Power, UserX, Wrench, Filter, List, Save, RefreshCw, Send, DollarSign, UserCheck, Wifi, WifiOff, ChevronDown, ChevronUp, Minus, Phone, Mail, CreditCard, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { AdminLayout } from "@/components/admin-layout";
@@ -433,17 +433,26 @@ function ClientsPage() {
 
   return (
     <AdminLayout>
+      <div className="clients-page">
+      <header className="clients-page__hero">
+        <div className="min-w-0">
+          <div className="clients-page__eyebrow">GESTIÓN DE CLIENTES</div>
+          <h1>Clientes</h1>
+          <p>Administra sus servicios, conexiones, saldos y cobros.</p>
+        </div>
+        <div className="clients-page__count"><Users className="h-5 w-5 shrink-0" /><span><b>{rows.length}</b> registrados</span></div>
+      </header>
       {/* KPI Stats — profesional y compacto */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-1.5 md:gap-2 mb-2">
+      <div className="clients-kpi-grid">
         {[
           { label: "Total", value: kpis.total, icon: User, cls: "from-slate-500 to-slate-700", ring: "ring-slate-200" },
           { label: "Activos", value: kpis.active, icon: CheckCircle2, cls: "from-emerald-500 to-teal-600", ring: "ring-emerald-200" },
           { label: "En línea", value: kpis.online, icon: Wifi, cls: "from-sky-500 to-blue-600", ring: "ring-sky-200", pulse: true },
-          { label: "Suspend.", value: kpis.suspended, icon: Power, cls: "from-amber-500 to-orange-600", ring: "ring-amber-200" },
+          { label: "Suspendidos", value: kpis.suspended, icon: Power, cls: "from-amber-500 to-orange-600", ring: "ring-amber-200" },
           { label: "Retirados", value: kpis.cancelled, icon: UserX, cls: "from-rose-500 to-red-600", ring: "ring-rose-200" },
           { label: "Deuda", value: kpis.debt, icon: DollarSign, cls: "from-fuchsia-500 to-pink-600", ring: "ring-fuchsia-200", sub: `Bs ${kpis.totalDebt.toFixed(0)}` },
         ].map((k) => (
-          <div key={k.label} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${k.cls} text-white p-2.5 md:p-3 shadow-sm ring-1 ${k.ring} active:scale-[.98] transition`}>
+          <div key={k.label} className={`client-kpi relative overflow-hidden rounded-xl bg-gradient-to-br ${k.cls} text-white p-2.5 md:p-3 shadow-sm ring-1 ${k.ring} active:scale-[.98] transition`}>
             <div className="flex items-center justify-between gap-1">
               <div className="text-[10px] md:text-[11px] uppercase tracking-wider opacity-90 font-semibold truncate">{k.label}</div>
               <k.icon className={`w-3.5 h-3.5 md:w-4 md:h-4 opacity-80 shrink-0 ${(k as any).pulse ? "animate-pulse" : ""}`} />
@@ -456,7 +465,7 @@ function ClientsPage() {
       </div>
 
       {/* Header cyan estilo Mikrowisp — sticky en mobile */}
-      <div className="rounded-t-md bg-gradient-to-r from-cyan-500 to-sky-500 text-white px-4 py-2.5 text-sm font-semibold flex items-center justify-between sticky top-0 z-20 shadow-sm">
+      <div className="clients-list-header rounded-t-md text-white px-4 py-2.5 font-semibold flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <span className="inline-flex items-center gap-2"><List className="w-4 h-4" /> Lista Usuarios <span className="hidden md:inline text-white/70 font-normal text-xs">· {filtered.length} de {rows.length}</span></span>
         <div className="flex gap-1">
           <button onClick={() => { load(); fetchOnlineStatus(); }} disabled={loading || onlineStatusLoading} className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-md transition disabled:opacity-60" title="Actualizar todo">
@@ -620,7 +629,7 @@ function ClientsPage() {
             const bal = Number(r.balance ?? 0);
             const initials = (r.full_name || "?").split(/\s+/).slice(0, 2).map((s) => s[0]).join("").toUpperCase();
             return (
-              <div key={r.id} className={`relative bg-card active:bg-muted/40 transition ${busy ? "opacity-60" : ""}`}>
+              <div key={r.id} className={`client-mobile-card relative bg-card active:bg-muted/40 transition ${busy ? "opacity-60" : ""}`}>
                 <span className={`absolute left-0 top-0 bottom-0 w-1 ${stripe}`} />
                 <Link
                   to="/dashboard/clients/$clientId"
@@ -638,7 +647,7 @@ function ClientsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold text-[14px] text-slate-800 truncate leading-tight">{r.full_name}</div>
+                        <div className="client-mobile-card__name font-semibold text-[14px] text-slate-800 truncate leading-tight">{r.full_name}</div>
                         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <span className="font-mono text-slate-400">#{String((curPage - 1) * pageSize + i + 1).padStart(4, "0")}</span>
                           <span className="text-slate-300">•</span>
@@ -682,7 +691,7 @@ function ClientsPage() {
 
         {/* Desktop table estilo MikroWisp - compacto */}
         <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-[12.5px] min-w-[900px] border-collapse">
+        <table className="clients-table w-full text-[12.5px] min-w-[900px] border-collapse">
           <thead>
             <tr className="text-left bg-slate-100 text-slate-600 border-b border-slate-300 text-[11px] uppercase tracking-wide">
               <th className="px-2 py-1.5 w-8 text-center">
@@ -1073,6 +1082,7 @@ function ClientsPage() {
 
       {/* Espacio inferior mobile para no tapar contenido con FAB */}
       <div className="md:hidden h-24" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} />
+      </div>
     </AdminLayout>
 
   );

@@ -43,17 +43,8 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   console.error(error);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-    // Tras una actualización, el navegador puede pedir archivos de la versión anterior.
-    // Recargamos una sola vez para traer la versión nueva.
-    const msg = String((error as any)?.message ?? error);
-    if (/dynamically imported module|Importing a module script failed|Failed to fetch|Loading chunk|error loading dynamically/i.test(msg)) {
-      const key = "meganet-reloaded-at";
-      const last = Number(sessionStorage.getItem(key) || 0);
-      if (Date.now() - last > 30000) {
-        sessionStorage.setItem(key, String(Date.now()));
-        window.location.reload();
-      }
-    }
+    // Nunca recargar automáticamente: la persona conserva su página y decide
+    // si quiere reintentar con el botón, especialmente en conexiones móviles.
   }, [error]);
 
   return (

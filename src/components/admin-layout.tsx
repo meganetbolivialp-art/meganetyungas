@@ -174,66 +174,8 @@ export function AdminLayout({ children }: { children: ReactNode; title?: string;
     };
   }, [nav, queryClient]);
 
-  // Pull-to-refresh móvil: tirar hacia abajo desde el tope para recargar
-  useEffect(() => {
-    if (typeof window === "undefined" || !("ontouchstart" in window)) return;
-    let startY = 0;
-    let pulling = false;
-    let indicator: HTMLDivElement | null = null;
-    const ensureIndicator = () => {
-      if (indicator) return indicator;
-      indicator = document.createElement("div");
-      indicator.style.cssText = "position:fixed;top:0;left:50%;transform:translate(-50%,-100%);z-index:9999;background:hsl(var(--primary));color:hsl(var(--primary-foreground));padding:8px 16px;border-radius:0 0 12px 12px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:transform .15s ease;pointer-events:none;";
-      indicator.textContent = "↓ Tira para actualizar";
-      document.body.appendChild(indicator);
-      return indicator;
-    };
-    // No recargar si el gesto ocurre dentro de un contenedor con scroll propio
-    const insideScrollable = (target: EventTarget | null) => {
-      let el = target as HTMLElement | null;
-      while (el && el !== document.body) {
-        const style = window.getComputedStyle(el);
-        if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight) return true;
-        el = el.parentElement;
-      }
-      return false;
-    };
-    const onStart = (e: TouchEvent) => {
-      // Nunca en formularios/modales abiertos: se perderían los datos cargados
-      if (isFormOpen() || insideScrollable(e.target) || window.scrollY > 0) { pulling = false; return; }
-      startY = e.touches[0].clientY;
-      pulling = true;
-    };
-    const onMove = (e: TouchEvent) => {
-      if (!pulling) return;
-      const dy = e.touches[0].clientY - startY;
-      if (dy <= 0) return;
-      const el = ensureIndicator();
-      const shown = Math.min(dy, 120);
-      el.style.transform = `translate(-50%, ${shown - 100}%)`;
-      el.textContent = dy > 70 ? "↑ Suelta para actualizar" : "↓ Tira para actualizar";
-    };
-    const onEnd = (e: TouchEvent) => {
-      if (!pulling) return;
-      pulling = false;
-      const dy = (e.changedTouches[0]?.clientY ?? startY) - startY;
-      if (indicator) indicator.style.transform = "translate(-50%,-100%)";
-      if (dy > 70 && window.scrollY === 0 && !isFormOpen()) {
-        if (indicator) indicator.textContent = "Actualizando...";
-        window.location.reload();
-      }
-    };
-    window.addEventListener("touchstart", onStart, { passive: true });
-    window.addEventListener("touchmove", onMove, { passive: true });
-    window.addEventListener("touchend", onEnd, { passive: true });
-    return () => {
-      window.removeEventListener("touchstart", onStart);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
-      if (indicator?.parentNode) indicator.parentNode.removeChild(indicator);
-    };
-  }, []);
-
+  // La actualización de datos se hace con los botones de cada pantalla.
+  // No recargamos ni navegamos automáticamente por gestos táctiles.
 
   // close mobile drawer & user menu on route change
   useEffect(() => {

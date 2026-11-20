@@ -246,19 +246,20 @@ function ClientDetail() {
 
   return (
     <AdminLayout>
+      <div className="client-detail-page">
       {/* Header cliente estilo MikroWisp */}
-      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+      <div className="client-detail__hero">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 rounded-full grid place-items-center text-white text-lg font-bold shrink-0 bg-gradient-to-br from-[#3498db] to-[#1e5f99] shadow-md ring-4 ring-[#3498db]/15">
+          <div className="client-detail__avatar w-12 h-12 rounded-full grid place-items-center text-white text-lg font-bold shrink-0 shadow-md">
             {client.full_name?.trim().charAt(0).toUpperCase() || "C"}
           </div>
           <div className="min-w-0">
-            <h1 className="text-[18px] sm:text-[22px] font-extrabold text-slate-800 uppercase truncate leading-tight">
+            <h1 className="client-detail__name text-[18px] sm:text-[22px] font-extrabold text-slate-800 uppercase leading-tight">
               {client.full_name} <span className="text-slate-400 text-[14px] font-normal normal-case">(#{String(client.id).slice(0,6).toUpperCase()})</span>
             </h1>
           </div>
         </div>
-        <nav className="text-[12px] text-slate-500 flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+        <nav className="client-detail__breadcrumb text-[12px] text-slate-500 flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
           <button onClick={() => nav({ to: "/dashboard" })} className="hover:text-[#3498db]">Inicio</button>
           <span className="text-slate-300">/</span>
           <button onClick={() => nav({ to: "/dashboard/clients" })} className="hover:text-[#3498db]">Lista usuarios (Activos)</button>
@@ -268,7 +269,7 @@ function ClientDetail() {
       </div>
 
       {/* Tabs MikroWisp — underline azul */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-3 p-1.5">
+      <div className="client-detail-tabs bg-white border border-slate-200 rounded-xl shadow-sm mb-4 p-1.5">
         <div className="flex items-center overflow-x-auto">
           <div className="flex flex-1 gap-1">
             {TABS.map(t => {
@@ -281,14 +282,6 @@ function ClientDetail() {
                 </button>
               );
             })}
-          </div>
-          <div className="flex items-center gap-1 pr-3 shrink-0">
-            <button className="w-6 h-6 rounded-full bg-[#1e4f7a] text-white grid place-items-center hover:bg-[#3498db] hover:text-white transition-colors">
-              <ChevronRight className="w-3 h-3 rotate-180" />
-            </button>
-            <button className="w-6 h-6 rounded-full bg-[#1e4f7a] text-white grid place-items-center hover:bg-[#3498db] hover:text-white transition-colors">
-              <ChevronRight className="w-3 h-3" />
-            </button>
           </div>
         </div>
       </div>
@@ -597,6 +590,7 @@ function ClientDetail() {
           </ul>
         </Panel>
       )}
+      </div>
     </AdminLayout>
   );
 }
@@ -988,10 +982,10 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
   const nextCut = new Date(); nextCut.setDate(nextCut.getDate() + 5);
 
   return (
-    <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 bg-white border border-t-0 border-slate-200 rounded-b p-5">
+    <div className="client-summary-grid grid lg:grid-cols-[1.4fr_1fr] gap-4 bg-white border border-slate-200 rounded-xl p-5">
       {/* Datos del cliente — MikroWisp style */}
       <div>
-        <div className="text-[15px] font-semibold text-slate-700 flex items-center gap-2 mb-4">
+        <div className="client-section-title text-[15px] font-semibold text-slate-700 flex items-center gap-2 mb-4">
           <span className="text-[#3498db]">»</span> Datos del cliente
         </div>
         <div className="space-y-3">
@@ -1089,7 +1083,7 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
 
       {/* Resumen Notificaciones — MikroWisp tiles */}
       <div>
-        <div className="text-[15px] font-semibold text-slate-700 flex items-center gap-2 mb-4">
+        <div className="client-section-title text-[15px] font-semibold text-slate-700 flex items-center gap-2 mb-4">
           <span className="text-[#3498db]">»</span> Resumen Notificaciones
         </div>
         <div className="grid grid-cols-2 gap-2.5">
@@ -1109,7 +1103,7 @@ function ResumenTab({ client, services, invoices, onSaved }: { client: any; serv
 
 function MwField({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[160px_1fr] gap-4 items-start">
+    <div className="client-field grid grid-cols-[160px_1fr] gap-4 items-start">
       <label className="text-[13px] text-slate-600 text-right pt-2">{label}</label>
       <div>{children}</div>
 
@@ -1128,11 +1122,11 @@ function MwFieldSm({ label, children }: { label: string; children: React.ReactNo
 
 function MwTile({ color, icon: Icon, title, sub, wide }: { color: string; icon: any; title: string; sub: string; wide?: boolean }) {
   return (
-    <div className={`rounded-xl text-white px-3 py-2.5 flex items-center gap-3 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all ${wide ? "col-span-2" : ""}`} style={{ background: `linear-gradient(135deg, ${color}, color-mix(in oklab, ${color} 70%, black))` }}>
-      <div className="w-9 h-9 rounded-lg bg-white/20 grid place-items-center shrink-0"><Icon className="w-5 h-5" strokeWidth={2} /></div>
+    <div className={`client-summary-tile rounded-xl text-white px-3 py-2.5 flex items-center gap-3 shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all ${wide ? "col-span-2" : ""}`} style={{ background: `linear-gradient(135deg, ${color}, color-mix(in oklab, ${color} 70%, black))` }}>
+      <div className="client-summary-tile__icon w-9 h-9 rounded-lg bg-white/20 grid place-items-center shrink-0"><Icon className="w-5 h-5" strokeWidth={2} /></div>
       <div className="min-w-0">
-        <div className="font-bold text-[13px] leading-tight truncate">{title}</div>
-        <div className="text-[11px] opacity-90 truncate">{sub}</div>
+        <div className="client-summary-tile__title font-bold text-[13px] leading-tight" title={title}>{title}</div>
+        <div className="client-summary-tile__sub text-[11px] opacity-90">{sub}</div>
       </div>
     </div>
   );
